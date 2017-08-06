@@ -1,3 +1,3 @@
 function GameObject () {
-    this.zz = null;
+    this.components = {};
 }
