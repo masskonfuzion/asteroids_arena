@@ -22,16 +22,5 @@ function ImageManager() {
     this.addImgToMap = function (key, imgObjRef) {
         this.imageMap[key] = imgObjRef;
     }
-
-    // Initialize ImageManager objects
-    // NOTE: This should be run in window.onload(), after adding images to the map
-    this.initialize = function() {
-        // TODO probably delete the initialization here
-        //for (var key in this.imageMap) {
-        //    if (this.imageMap.hasOwnProperty(key)) {
-        //        this.imageMap[key].loadFromFile();
-        //    }
-        //}
-    }
 }
 

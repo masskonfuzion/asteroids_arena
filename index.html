@@ -13,16 +13,14 @@
 
 <script type="text/javascript">
 var game = new GameApplication(512, 512);   // Global scope
-var imgMgr = new ImageManager();
 var frameID = null;
 
 function mainEntryPoint() {
     game.initialize();
 
     var imgAsset_spaceship = new ImageAsset("assets/images/spaceship_03.png");
-    imgMgr.addImgToMap("ship", imgAsset_spaceship);
+    game.imgMgr.addImgToMap("ship", imgAsset_spaceship);
 
-    imgMgr.initialize();
 
     start();
 }
@@ -65,12 +63,11 @@ function mainloop()
 function drawStuff()
 {
     // TODO the mainloop will call into the active State's functions (callbacks? No.. probably not; instead, each state will be its own object, with its own internal logic)
-    var imgMap = imgMgr.imageMap;
+    var imgMap = game.imgMgr.imageMap;
     for (key in imgMap) {
         if (imgMap.hasOwnProperty(key)) {
             var imgObj = imgMap[key].imgObj;
             if (imgObj.loadedByGame) {
-                console.log("Drawing " + key);
                 game.context.drawImage(imgObj, 30, 100);    // TODO soon, we'll stop hard-coding render locations
             }
         }
