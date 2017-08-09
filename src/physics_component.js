@@ -18,3 +18,15 @@ PhysicsComponentVerlet.prototype.update = function(dt_s) {
     vec2.scaleAndAdd(this.currPos, this.currPos, vel, dt_s * dt_s);
     vec2.copy(this.currPos, posTmp);
 }
+
+PhysicsComponentVerlet.prototype.setPosition = function(x, y) {
+    // Set both current and previous pos, so that the update() function does not obtain velocity
+    vec2.set(this.currPos, x, y);
+    vec2.set(this.prevPos, x, y);
+}
+
+// Set linear acceleration
+PhysicsComponentVerlet.prototype.setAcceleration = function(x, y) {
+    vec2.set(this.acceleration, x, y);
+}
+
