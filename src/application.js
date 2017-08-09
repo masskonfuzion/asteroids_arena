@@ -20,4 +20,5 @@ GameApplication.prototype.initialize = function() {
     this.context.font = '30px serif';
     this.context.fillStyle = 'white';
     this.context.fillText('Hello World!', this.canvas.width / 4, this.canvas.height / 4);
+
 }

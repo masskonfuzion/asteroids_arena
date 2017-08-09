@@ -8,11 +8,13 @@
 
 <script src="src/gl-matrix.js" type="text/javascript"></script>
 <script src="src/application.js" type="text/javascript"></script>
+<script src="src/timer.js" type="text/javascript"></script>
 <script src="src/queue_base.js" type="text/javascript"></script>
 <script src="src/message_queue.js" type="text/javascript"></script>
 <script src="src/image_manager.js" type="text/javascript"></script>
 <script src="src/game_object_component.js" type="text/javascript"></script>
 <script src="src/game_object.js" type="text/javascript"></script>
+<script src="src/game_logic.js" type="text/javascript"></script>
 <script src="src/physics_component.js" type="text/javascript"></script>
 <script src="src/render_component.js" type="text/javascript"></script>
 <script src="src/spaceship.js" type="text/javascript"></script>
@@ -20,9 +22,22 @@
 <script type="text/javascript">
 var game = new GameApplication(512, 512);   // Global scope
 var frameID = null;
-var gameObjs = {};  // could also go in a GameState, if time permits
+var gameLogic = new GameLogic();
+
+var gameObjs = {};  // could also go in a GameLogic, which, itself, could go into a GameState, if time permits (i.e., GameLogic belongs in GameState)
+
+
+// Trap keyboard events and forward them to game logic
+function keyboardHandler(evt) {
+    gameLogic.handleKeyboardInput(evt);
+}
 
 function mainEntryPoint() {
+    // Register event listener functions for keyboard input
+    document.addEventListener("keydown", keyboardHandler);
+    document.addEventListener("keyup", keyboardHandler);
+
+
     game.initialize();
 
     var imgAsset_spaceship = new ImageAsset("assets/images/spaceship_03.png");
@@ -68,6 +83,16 @@ function mainloop()
     // TODO replace/modify mainloop to support the State pattern
     drawStuff();
     frameID = requestAnimationFrame(mainloop);
+
+
+	//// update simulation (copied from Falldown -- modify for asteroids)
+	//while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
+	//	gameLogic.processMessages(gameLogic.fixed_dt_s);
+	//	gameLogic.update();
+	//	gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
+	//}
+    //gApp.drawScene(gameLogic);
+
 }
 
 function drawStuff()
