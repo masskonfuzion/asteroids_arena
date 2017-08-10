@@ -81,11 +81,11 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
     if (evt.code == "KeyC") {
         // User pressed C key
         console.log('Enqueueing a command message');    // TODO enqueue a regular ol' dict object
-        //cmdMsg = new CommandMessage('UserInput', 'ChangeCamera');
-        //this.messageQueue.enqueue(cmdMsg);  // Remember: we inherited a message queue from the base game logic class
+
         var cmdMsg = { "topic": "PlayerControl",
                        "command": "TODO pick something sensible"
                      };
+        this.messageQueue.enqueue(cmdMsg);  // Remember: we inherited a message queue from the base game logic class
 
     }
     // TODO from here, set controller state variables that the ship will use to control direction, thrust, guns, etc.

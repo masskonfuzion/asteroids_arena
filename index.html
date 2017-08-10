@@ -79,8 +79,11 @@ function stop()
     console.log("Stopped");
 }
 
-function mainloop()
+function mainloop(timestamp)
 {
+    // NOTE requestAnimationFrame passes in a timestamp into the function being called
+    gameLogic.timer.doFrameTimer(timestamp);
+
 	while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
 		gameLogic.processMessages(gameLogic.fixed_dt_s);
 		gameLogic.update();
