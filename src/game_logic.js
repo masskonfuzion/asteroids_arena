@@ -108,3 +108,7 @@ GameLogic.prototype.actOnUserInputMessage = function(msg) {
         }
     }
 }
+
+GameLogic.prototype.update = function(dt_s) {
+    // TODO perform integration, collision detection, etc. See Falldown WebGL for a good mainloop example
+}

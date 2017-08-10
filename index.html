@@ -39,6 +39,7 @@ function mainEntryPoint() {
 
 
     game.initialize();
+    gameLogic.initialize();
 
     var imgAsset_spaceship = new ImageAsset("assets/images/spaceship_03.png");
     game.imgMgr.addImgToMap("ship", imgAsset_spaceship);
@@ -80,18 +81,15 @@ function stop()
 
 function mainloop()
 {
+	while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
+		gameLogic.processMessages(gameLogic.fixed_dt_s);
+		gameLogic.update();
+		gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
+	}
+
     // TODO replace/modify mainloop to support the State pattern
     drawStuff();
     frameID = requestAnimationFrame(mainloop);
-
-
-	//// update simulation (copied from Falldown -- modify for asteroids)
-	//while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
-	//	gameLogic.processMessages(gameLogic.fixed_dt_s);
-	//	gameLogic.update();
-	//	gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
-	//}
-    //gApp.drawScene(gameLogic);
 
 }
 
