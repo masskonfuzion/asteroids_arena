@@ -1,23 +1,27 @@
 function GameLogic() {
-    this.keyState = {};     // keyboard key state handling (keeping it simple)
+    this.gameObjs = {};
+	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
     this.timer = null;
     this.fixed_dt_s = 0.015;
 }
 
 GameLogic.prototype.initialize = function() {
-    // Key state dict is keyed on keypress event "code", e.g. "KeyW" (as opposed to "keyCode", which is a number, like 87)
-    // Value is true if the key is down; false if the key is up
-    this.keyState["KeyW"] = false;
-    this.keyState["KeyA"] = false;
-    this.keyState["KeyS"] = false;
-    this.keyState["KeyD"] = false;
+    // Key control map is keyed on keypress event "code", e.g. "KeyW" (as opposed to "keyCode", which is a number, like 87)
+    this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
+    this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
+    this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
 
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(64);
-    this.messageQueue.registerListener('UserInput', this, this.actOnUserInputMessage);
+    this.messageQueue.registerListener('UserInput', this, this.actOnUserInputMessage);  // TODO - clean this up; the "UserInput" topic appears to be unused. The original idea was to first handle keyboard input (topic = UserInput), and then in the registered input listener function, enqueue messages with "GameCommand" (on both keyup and keydown events). But I don't think the 2-layer approach is necessary. I think we can go directly from the separate handleKeyDown and handleKeyUp functions to enqueueing the appropriate game actions
+    this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
 
     this.timer = new Timer();
+
+    this.gameObjs["ship"] = new Spaceship();
+    this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
+
 }
 
 
@@ -27,6 +31,29 @@ GameLogic.prototype.setThrust = function(shipRef) {
 
 GameLogic.prototype.setAngularVel = function(shipRef, angVel) {
     // 
+}
+
+GameLogic.prototype.draw = function() {
+    // the game application obj is global
+    // TODO pick up from here: iterate over game objects; draw whatever we have
+    //var imgMap = game.imgMgr.imageMap;
+    //for (key in imgMap) {
+    //    if (imgMap.hasOwnProperty(key)) {
+    //        var imgObj = imgMap[key].imgObj;
+    //        if (imgObj.loadedByGame) {
+    //            //game.context.drawImage(imgObj, 30, 100);    // TODO soon, we'll stop hard-coding render locations
+    //            gameObjs["ship"].components["render"].draw(game.context, 30, 100);
+    //        }
+    //    }
+    //}
+
+    for (var goKey in this.gameObjs) {
+        if (this.gameObjs.hasOwnProperty(goKey)) {
+            // For now, we're assuming that every game object in this.gameObjs has a render component (because we've cheated and set the game up that way). In general, that is not a safe assumption
+            this.gameObjs[goKey].components["render"].draw(game.context, 30, 100);  // TODO 
+
+        }
+    }
 }
 
 
@@ -51,7 +78,7 @@ GameLogic.prototype.processMessages = function(dt_s) {
                     //fn_to_call = this.messageQueue._registeredListeners[the_topic][j];
                     //fn_to_call(msg);
 
-                    let fn_to_call = this.messageQueue._registeredListeners[the_topic][j];
+                    var fn_to_call = this.messageQueue._registeredListeners[the_topic][j];
                     fn_to_call["func"].call(fn_to_call["obj"], msg)
                 }
             }
@@ -78,14 +105,18 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
     console.log('Key code ' + evt.keyCode + ' down');
 
     //if (evt.keyCode == 67) {
-    if (evt.code == "KeyC") {
-        // User pressed C key
-        console.log('Enqueueing a command message');    // TODO enqueue a regular ol' dict object
+    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
+        // User pressed thrust key
+        console.log('Engaging thruster');    // TODO enqueue a regular ol' dict object
 
-        var cmdMsg = { "topic": "PlayerControl",
-                       "command": "TODO pick something sensible"
-                     };
-        this.messageQueue.enqueue(cmdMsg);  // Remember: we inherited a message queue from the base game logic class
+        this.keyCtrlMap["thrust"]["state"] = true;
+
+        // Note that the payload of messages in the queue can vary depending on context. At a minimum, the message MUST have a topic
+        var cmdMsg = { "topic": "GameCommand",
+                       "command": "setThrustOn",
+                       "objRef": this.gameObjs["ship"]
+                     };     // TODO keep a reference to the player-controlled obj, instead of hard-coding?
+        this.messageQueue.enqueue(cmdMsg);
 
     }
     // TODO from here, set controller state variables that the ship will use to control direction, thrust, guns, etc.
@@ -94,21 +125,42 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
 
 GameLogic.prototype.handleKeyUpEvent = function(evt) {
     console.log('Key code ' + evt.keyCode + ' up');
+
+    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
+        // User pressed thrust key
+        console.log('Disengaging thruster');    // TODO enqueue a regular ol' dict object
+
+        this.keyCtrlMap["thrust"]["state"] = false;
+
+        var cmdMsg = { "topic": "GameCommand",
+                       "command": "setThrustOff",
+                       "objRef": this.gameObjs["ship"]
+                     };
+        this.messageQueue.enqueue(cmdMsg);
+    }
+};
+
+GameLogic.prototype.update = function(dt_s) {
+    // TODO perform integration, collision detection, etc. See Falldown WebGL for a good mainloop example
 };
 
 GameLogic.prototype.actOnUserInputMessage = function(msg) {
     console.log('actOnUserInputMessage: "this" =');
     console.log(this);
-    if (msg["topic"] == "PlayerControl") {
+    if (msg["topic"] == "UserInput") {
         console.log('Command: Topic=' + msg["topic"] + ', Command=' + msg["command"]);
 
         // TODO issue ship control commands from here (i.e. use command pattern)
         if (msg["command"] == 'ChangeCamera') {
             console.log('Taking some action (TODO finish this)');
+            // TODO probably enqueue a new message, with topic "GameCommand". The AI will also use this
         }
     }
 }
 
-GameLogic.prototype.update = function(dt_s) {
-    // TODO perform integration, collision detection, etc. See Falldown WebGL for a good mainloop example
+GameLogic.prototype.sendCmdToGameObj = function(msg) {
+    // NOTE: because we have only 1 parameter to this function (really, to all registered listeners of a message queue), a ref to the object to which to send the cmd is included as part of the msg
+    console.log("sendCmdToGameObj: ");
+    console.log(msg);
 }
+

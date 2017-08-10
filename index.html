@@ -24,8 +24,6 @@ var game = new GameApplication(512, 512);   // Global scope
 var frameID = null;
 var gameLogic = new GameLogic();
 
-var gameObjs = {};  // could also go in a GameLogic, which, itself, could go into a GameState, if time permits (i.e., GameLogic belongs in GameState)
-
 
 // Trap keyboard events and forward them to game logic
 function keyboardHandler(evt) {
@@ -39,14 +37,12 @@ function mainEntryPoint() {
 
 
     game.initialize();
-    gameLogic.initialize();
 
     var imgAsset_spaceship = new ImageAsset("assets/images/spaceship_03.png");
     game.imgMgr.addImgToMap("ship", imgAsset_spaceship);
 
-    gameObjs["ship"] = new Spaceship();
-    gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
-
+    // NOTE: all image loading must be done before initializing the gameLogic object
+    gameLogic.initialize();
 
     start();
 }
@@ -98,17 +94,8 @@ function mainloop(timestamp)
 
 function drawStuff()
 {
-    // TODO the mainloop will call into the active State's functions (callbacks? No.. probably not; instead, each state will be its own object, with its own internal logic)
-    var imgMap = game.imgMgr.imageMap;
-    for (key in imgMap) {
-        if (imgMap.hasOwnProperty(key)) {
-            var imgObj = imgMap[key].imgObj;
-            if (imgObj.loadedByGame) {
-                //game.context.drawImage(imgObj, 30, 100);    // TODO soon, we'll stop hard-coding render locations
-                gameObjs["ship"].components["render"].draw(game.context, 30, 100);
-            }
-        }
-    }
+    gameLogic.draw();   // No need to pass anything to the function, because the application class is global (so we already have access to all its members)
+    // TODO eventually, if time permits, rework it so the gameLogic object belongs to a State, and the call here can be state.draw(), which will draw that state's gameLogic object, which will draw all the game objects that belong to the state
 }
 
 </script>
