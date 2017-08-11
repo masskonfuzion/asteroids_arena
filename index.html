@@ -82,7 +82,7 @@ function mainloop(timestamp)
 
 	while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
 		gameLogic.processMessages(gameLogic.fixed_dt_s);
-		gameLogic.update();
+		gameLogic.update(gameLogic.fixed_dt_s);
 		gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
 	}
 

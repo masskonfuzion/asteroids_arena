@@ -34,11 +34,15 @@ GameLogic.prototype.setAngularVel = function(shipRef, angVel) {
 }
 
 GameLogic.prototype.draw = function() {
+    // Clear the canvas (note that the game application object is global)
+    game.context.fillStyle = 'black';
+    game.context.fillRect(0,0, game.canvas.width, game.canvas.height);
+
     // the game application obj is global
     for (var goKey in this.gameObjs) {
         if (this.gameObjs.hasOwnProperty(goKey)) {
             // For now, we're assuming that every game object in this.gameObjs has a render component (because we've cheated and set the game up that way). In general, that is not a safe assumption
-            this.gameObjs[goKey].components["render"].draw(game.context, 30, 100);  // TODO 
+            this.gameObjs[goKey].draw(game.context); 
 
         }
     }
@@ -90,24 +94,42 @@ GameLogic.prototype.handleKeyboardInput = function(evt) {
 GameLogic.prototype.handleKeyDownEvent = function(evt) {
     console.log(this);
     // NOTE: We don't define these function on the prototype it inherited from; we define the function at the object level
+    // Also note: Not relevant for this game, but this event-based approach can be used for many input schemes. e.g., for a fighting game, instead of directly enqueuing game commands, we could enqueue key presses with time stamps, to determine if a "special move combo" was entered
     console.log('Key code ' + evt.keyCode + ' down');
 
-    //if (evt.keyCode == 67) {
-    if (evt.code == this.keyCtrlMap["thrust"]["code"] && !this.keyCtrlMap["thrust"]["state"]) {
+    // NOTE: apparently, it is not possible to disable key repeat in HTML5/Canvas/JS..
+    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
         // User pressed thrust key
-        console.log('Engaging thruster');    // TODO enqueue a regular ol' dict object
-
-        this.keyCtrlMap["thrust"]["state"] = true;
+        this.keyCtrlMap["thrust"]["state"] = true;  // TODO figure out if we're using state here, and possibly get rid of it. We seem to not be processing the key states anywhere; instead, we enqueue commands immediately on state change
 
         // Note that the payload of messages in the queue can vary depending on context. At a minimum, the message MUST have a topic
+        // TODO keep a reference to the player-controlled obj, instead of hard-coding?
         var cmdMsg = { "topic": "GameCommand",
                        "command": "setThrustOn",
                        "objRef": this.gameObjs["ship"]
-                     };     // TODO keep a reference to the player-controlled obj, instead of hard-coding?
+                     };
         this.messageQueue.enqueue(cmdMsg);
-
     }
-    // TODO from here, set controller state variables that the ship will use to control direction, thrust, guns, etc.
+
+    if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
+        // User pressed turnLeft key
+        this.keyCtrlMap["turnLeft"]["state"] = true;
+        var cmdMsg = { "topic": "GameCommand",
+                       "command": "setTurnLeftOn",
+                       "objRef": this.gameObjs["ship"]
+                     };
+        this.messageQueue.enqueue(cmdMsg);
+    }
+
+    else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
+        // User pressed turnRight key
+        this.keyCtrlMap["turnRight"]["state"] = true;
+        var cmdMsg = { "topic": "GameCommand",
+                       "command": "setTurnRightOn",
+                       "objRef": this.gameObjs["ship"]
+                     };
+        this.messageQueue.enqueue(cmdMsg);
+    }
 };
 
 
@@ -115,9 +137,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     console.log('Key code ' + evt.keyCode + ' up');
 
     if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
-        // User pressed thrust key
-        console.log('Disengaging thruster');    // TODO enqueue a regular ol' dict object
-
+        // User released thrust key
         this.keyCtrlMap["thrust"]["state"] = false;
 
         var cmdMsg = { "topic": "GameCommand",
@@ -126,6 +146,27 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
                      };
         this.messageQueue.enqueue(cmdMsg);
     }
+
+    if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
+        // User pressed turnLeft key
+        this.keyCtrlMap["turnLeft"]["state"] = false;
+        var cmdMsg = { "topic": "GameCommand",
+                       "command": "setTurnOff",
+                       "objRef": this.gameObjs["ship"]
+                     };
+        this.messageQueue.enqueue(cmdMsg);
+    }
+
+    else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
+        // User pressed turnRight key
+        this.keyCtrlMap["turnRight"]["state"] = false;
+        var cmdMsg = { "topic": "GameCommand",
+                       "command": "setTurnOff",
+                       "objRef": this.gameObjs["ship"]
+                     };
+        this.messageQueue.enqueue(cmdMsg);
+    }
+
 };
 
 GameLogic.prototype.update = function(dt_s) {

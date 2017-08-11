@@ -2,6 +2,7 @@ function PhysicsComponentVerlet() {
     this.currPos = vec2.create();
     this.prevPos = vec2.create();
     this.acceleration = vec2.create();
+    this.angle = 0.0;
     this.angleVec = vec2.fromValues(1.0, 0.0);  // v[0] = cos(theta); v[1] = sin(theta)
     this.angularVel = 0.0;
 }
@@ -12,11 +13,16 @@ PhysicsComponentVerlet.prototype.update = function(dt_s) {
 
     var posTmp = vec2.clone(this.currPos);
 
-    var vel = vec2.create();
-    vec2.sub(vel, this.currPos, this.prevPos);
+    // currPos += (currPos - prevPos) + (acceleration * dt_s * dt_s)
 
-    vec2.scaleAndAdd(this.currPos, this.currPos, vel, dt_s * dt_s);
-    vec2.copy(this.currPos, posTmp);
+    var integrationTerm = vec2.create();
+    vec2.sub(integrationTerm, this.currPos, this.prevPos);                                  // currPos - prevPos
+    vec2.scaleAndAdd(integrationTerm, integrationTerm, this.acceleration, dt_s * dt_s);     // (currPos - prevPos) + (accel * dt_s * dt_s)
+    vec2.add(this.currPos, this.currPos, integrationTerm);
+
+    vec2.copy(this.prevPos, posTmp);
+
+    this.angle = (this.angle + glMatrix.toRadian(this.angularVel) * dt_s) % (2 * Math.PI);
 }
 
 PhysicsComponentVerlet.prototype.setPosition = function(x, y) {
