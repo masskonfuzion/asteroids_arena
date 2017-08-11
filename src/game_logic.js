@@ -35,18 +35,6 @@ GameLogic.prototype.setAngularVel = function(shipRef, angVel) {
 
 GameLogic.prototype.draw = function() {
     // the game application obj is global
-    // TODO pick up from here: iterate over game objects; draw whatever we have
-    //var imgMap = game.imgMgr.imageMap;
-    //for (key in imgMap) {
-    //    if (imgMap.hasOwnProperty(key)) {
-    //        var imgObj = imgMap[key].imgObj;
-    //        if (imgObj.loadedByGame) {
-    //            //game.context.drawImage(imgObj, 30, 100);    // TODO soon, we'll stop hard-coding render locations
-    //            gameObjs["ship"].components["render"].draw(game.context, 30, 100);
-    //        }
-    //    }
-    //}
-
     for (var goKey in this.gameObjs) {
         if (this.gameObjs.hasOwnProperty(goKey)) {
             // For now, we're assuming that every game object in this.gameObjs has a render component (because we've cheated and set the game up that way). In general, that is not a safe assumption
@@ -105,7 +93,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
     console.log('Key code ' + evt.keyCode + ' down');
 
     //if (evt.keyCode == 67) {
-    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
+    if (evt.code == this.keyCtrlMap["thrust"]["code"] && !this.keyCtrlMap["thrust"]["state"]) {
         // User pressed thrust key
         console.log('Engaging thruster');    // TODO enqueue a regular ol' dict object
 
@@ -142,6 +130,11 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
 
 GameLogic.prototype.update = function(dt_s) {
     // TODO perform integration, collision detection, etc. See Falldown WebGL for a good mainloop example
+    for (var goKey in this.gameObjs) {
+        if (this.gameObjs.hasOwnProperty(goKey)) {
+            this.gameObjs[goKey].update(dt_s);
+        }
+    }
 };
 
 GameLogic.prototype.actOnUserInputMessage = function(msg) {
@@ -162,5 +155,8 @@ GameLogic.prototype.sendCmdToGameObj = function(msg) {
     // NOTE: because we have only 1 parameter to this function (really, to all registered listeners of a message queue), a ref to the object to which to send the cmd is included as part of the msg
     console.log("sendCmdToGameObj: ");
     console.log(msg);
+
+    // Call the executeCommand() function with the given command (all GameObjs will have an executeCommand() function)
+    msg["objRef"].executeCommand(msg["command"]);
 }
 

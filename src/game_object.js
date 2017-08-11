@@ -1,5 +1,14 @@
 function GameObject () {
     this.components = {};
+    this.commandMap = {};   // Map of commands to functions to run, to execute those commands. e.g. { "doStuff": this.doMyThing }
+}
+
+GameObject.prototype.update = function(dt_s) {
+    console.assert(this !== GameObject);
+};
+
+GameObject.prototype.executeCommand = function(cmdMsg) {
+    console.assert(this !== GameObject);
 }
 
 GameObject.prototype.addComponent = function(compType, compObj) {
