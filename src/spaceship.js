@@ -53,7 +53,7 @@ Spaceship.prototype.enableThrust = function() {
     var myPhysComp = this.components["physics"];
     // TODO put spaceship parameters (thrust acceleration, etc) into an object
     vec2.set(myPhysComp.acceleration, Math.cos(myPhysComp.angle), Math.sin(myPhysComp.angle));
-    vec2.scale(myPhysComp.acceleration, myPhysComp.acceleration, 150);
+    vec2.scale(myPhysComp.acceleration, myPhysComp.acceleration, 210);
 
     console.log("Spaceship thrust");
     console.log(myPhysComp.acceleration);
@@ -70,13 +70,13 @@ Spaceship.prototype.disableThrust = function() {
 Spaceship.prototype.enableTurnLeft = function() {
     var myPhysComp = this.components["physics"];
 
-    myPhysComp.angularVel = -120;
+    myPhysComp.angularVel = -180;
 }
 
 Spaceship.prototype.enableTurnRight = function() {
     var myPhysComp = this.components["physics"];
 
-    myPhysComp.angularVel = 120;
+    myPhysComp.angularVel = 180;
 }
 
 Spaceship.prototype.disableTurn = function() {
