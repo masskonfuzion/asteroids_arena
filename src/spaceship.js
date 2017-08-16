@@ -4,7 +4,7 @@ function Spaceship() {
 
     this.addComponent("physics", new PhysicsComponentVerlet());
     this.addComponent("render", new RenderComponentSprite());
-    this.addComponent("thrustPS", new ParticleEmitter());   // Particle emitter for rockets
+    this.addComponent("thrustPE", new ParticleEmitter());   // Particle emitter for rockets
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;

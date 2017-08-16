@@ -19,8 +19,13 @@ GameLogic.prototype.initialize = function() {
 
     this.timer = new Timer();
 
+    this.gameObjs["thrustPS"] = new ParticleSystem();
+    this.gameObjs["thrustPS"].initialize(1000);
+
     this.gameObjs["ship"] = new Spaceship();
     this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
+    var spaceshipPE = this.gameObjs["ship"].components["thrustPE"];     // Get the spaceship's particle emitter
+    spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
 
 }
 
@@ -41,9 +46,9 @@ GameLogic.prototype.draw = function() {
     // the game application obj is global
     for (var goKey in this.gameObjs) {
         if (this.gameObjs.hasOwnProperty(goKey)) {
-            // For now, we're assuming that every game object in this.gameObjs has a render component (because we've cheated and set the game up that way). In general, that is not a safe assumption
-            this.gameObjs[goKey].draw(game.context); 
-
+            if ("render" in this.gameObjs[goKey].components) {      // Make sure the component has a render component
+                this.gameObjs[goKey].draw(game.context);    // Assume that the draw() function for a GameObject calls into the draw() function for its render component
+            }
         }
     }
 }

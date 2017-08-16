@@ -2,9 +2,14 @@
 */
 
 function ParticleSystem() {
+    GameObject.call(this);
+
     this.particles = [];
     this.lastUsedIndex = 0;
 }
+
+ParticleSystem.prototype = Object.create(GameObject.prototype);
+ParticleSystem.prototype.constructor = ParticleSystem;
 
 ParticleSystem.prototype.initialize = function(numParticles) {
     console.assert(this.particles.length == 0);
