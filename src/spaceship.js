@@ -4,6 +4,7 @@ function Spaceship() {
 
     this.addComponent("physics", new PhysicsComponentVerlet());
     this.addComponent("render", new RenderComponentSprite());
+    this.addComponent("thrustPS", new ParticleEmitter());   // Particle emitter for rockets
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
@@ -19,11 +20,13 @@ Spaceship.prototype.constructor = Spaceship;
 
 // Override the default update()
 Spaceship.prototype.update = function(dt_s) {
-    var myPhysComp = this.components["physics"];
 
-    // call the physics component's update
-    myPhysComp.update(dt_s);
-    // TODO update the physics component's angularVec and keep sync with the "angle"
+    // Iterate over all components and call their respective update() function
+    for (var compName in this.components) {
+        if (this.components.hasOwnProperty(compName)) {
+            this.components[compName].update(dt_s);
+        }
+    }
 }
 
 // Override the class default executeCommand()
