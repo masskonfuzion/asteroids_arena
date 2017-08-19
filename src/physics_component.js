@@ -16,7 +16,6 @@ PhysicsComponentVerlet.prototype.constructor = PhysicsComponentVerlet;
 // The timestep, dt_s, is in seconds
 PhysicsComponentVerlet.prototype.update = function(dt_s) {
 
-    // TODO update the physics component's angleVec and keep sync with the "angle" (or, otherwise, ditch the angleVec) (the angleVec is essentially the heading of the ship. In fact... Maybe rename it to that (if we don't delete it entirely))
     var posTmp = vec2.clone(this.currPos);
 
     // currPos += (currPos - prevPos) + (acceleration * dt_s * dt_s)
@@ -29,6 +28,8 @@ PhysicsComponentVerlet.prototype.update = function(dt_s) {
     vec2.copy(this.prevPos, posTmp);
 
     this.angle = (this.angle + glMatrix.toRadian(this.angularVel) * dt_s) % (2 * Math.PI);
+    this.angleVec[0] = Math.cos(this.angle);
+    this.angleVec[1] = Math.sin(this.angle);
 }
 
 PhysicsComponentVerlet.prototype.setPosition = function(x, y) {

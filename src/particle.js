@@ -5,13 +5,13 @@ function Particle() {
     GameObject.call(this);
 
     this.addComponent("physics", new PhysicsComponentVerlet());
-    this.addComponent("render", new RenderComponentSprite());
+    this.addComponent("render", new RenderComponentCircle());
 
     // NOTE: Particles will not have a "velocity" property because they'll be simulated using position Verlet integration. The Emitter will control initial position and velocity
 
     this.alive = false;
     this.ttl = 0.0;         // in seconds
-    this.color = [0, 0, 0]; // RGB components
+    this.color = [0, 0, 0]; // RGB components   // <-- make this a part of a render component that draws circles or whatever
 }
 
 

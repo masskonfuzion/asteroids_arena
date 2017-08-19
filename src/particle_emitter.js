@@ -18,17 +18,16 @@ function ParticleEmitter() {
     this.registeredPS = null;           // A reference to the particle system this emitter will write to
 
     this.launchDir = vec2.create();     // should be a normalized vector
-    this.minLaunchVel = vec2.create();
-    this.maxLaunchVel = vec2.create();
-    this.minLaunchAngle = 0.0;          // Minimum launch angle offset (relative to launchDir)
-    this.maxLaunchAngle = 0.0;          // Maximum launch angle offset (relative to launchDir)
+    this.minLaunchVelMult = 0.0;        // Minimum velocity magnitude multiplier
+    this.maxLaunchVelMult = 0.0;        // Maximum velocity magnitude multiplier
+    this.minLaunchAngle = 0.0;          // Minimum launch angle offset (relative to launchDir, in degrees)
+    this.maxLaunchAngle = 0.0;          // Maximum launch angle offset (relative to launchDir, in degrees)
     this.position = vec2.create();
 
-    this.color = [0.0, 0.0, 0.0];
+    this.color = [0.0, 0.0, 0.0];       // TODO make a color palette/something to base initial particle color on
 
+    this.minTTL = 0.0;  // seconds
     this.maxTTL = 0.0;
-
-    // TODO add some members/functions for, e.g. multiple emit points (e.g., dual thruster, multiple rocket launcher nozzles, etc)
 }
 
 ParticleEmitter.prototype = Object.create(GameObject.prototype);
@@ -42,14 +41,47 @@ ParticleEmitter.prototype.registerParticleSystem = function(particleSys) {
 
 // Get the "next available particle" in the system, and initialize it
 // If getNextUnusedParticle() fails, then this function should fail silently (at most, log to console)
-ParticleEmitter.prototype.emitParticle = function(emitterPos) {
+ParticleEmitter.prototype.emitParticle = function(dt_s) {
     var particle = this.registeredPS.getNextUsableParticle();
 
-    if (particle) {
+    if (particle) { // TODO possibly include some kind of time-based particle emission rate limiting here
+
+        // TODO randomize some values for velocity, angle, etc.. And put a particle with those properties into the particle engine
+
+        // Initialize the particle direction by copying from the emitter's direction property
+        var particleDir = vec2.create();
+        vec2.copy(particleDir, this.launchDir);
+
+        // Compute an angle offset by which to rotate the base particle direction
+        var angleOffset = Math.floor(Math.random() * (this.maxLaunchAngle - this.minLaunchAngle)) + this.minLaunchAngle;
+
+        // Compute the rotation matrix to apply the desired rotational offset to the launch dir
+        var angleOffsetMatrix = vec2.create();
+        angleOffsetMatrix.fromRotation( glMatrix.toRadian(angleOffset) );
+
+        // Apply the rotation
+        vec2.transformMat2d(particleDir, particleDir, angleOffsetMatrix);
+        vec2.normalize(particleDir, particleDir);   // normalize, just in case
+
+        // Compute a launch velocity (don't use Math.floor() because we want floating point results
+        var launchVelMag = Math.random() * (this.maxLaunchVelMult - this.minLaunchVelMult) + this.minLaunchVelMult;
+        var launchVel = vec2.create();
+        vec2.scale(launchVel, particleDir, launchVelMag);
+
+        // Compute a TTL
+        var ttl = Math.random() * (this.maxTTL - this.minTTL) + this.minTTL;
+
+        // TODO set color (use a color palette or something?)
+        var particleColor = [200, 200, 0];
+
+
+        // Now, set the properties of the particle
         var physComp = particle.components["physics"];
-        physComp.setPosAndVel(emitterPos[0], emitterPos[1]);
+        physComp.setPosAndVel(this.position[0], this.position[1], launchVel[0], launchVel[1], dt_s);
+        // NOTE: We're not using particle angles here (but we could if we wanted to)
 
         particle.alive = true;
+        particle.ttl = ttl;
     }
 }
 
@@ -58,9 +90,9 @@ ParticleEmitter.prototype.setPosition = function(posX, posY) {
     vec2.set(this.position, posX, posY);
 }
 
-ParticleEmitter.prototype.setVelocityRange = function(minVelX, minVelY, maxVelX, maxVelY) {
-    vec2.set(this.minLaunchVel, minVelX, minVelY);
-    vec2.set(this.maxLaunchVel, maxVelX, maxVelY);
+ParticleEmitter.prototype.setVelocityRange = function(minMagnitude, maxMagnitude) {
+    this.minLaunchVelMult = minMagnitude;
+    this.maxLaunchVelMult = maxMagnitude;
 }
 
 
@@ -71,14 +103,17 @@ ParticleEmitter.prototype.setLaunchDir = function(dirX, dirY) {
 
 
 ParticleEmitter.prototype.setAngleRange = function(minAng, maxAng) {
+    // Angles are in degrees
     // Not sure if I want to use negative angles (e.g. min angle -10, max 10); or only non-zero (e.g. "min" is 350, "max" is 10), or use vectors (interpolate from a left-ish vector to a right-ish vector
     this.minLaunchAngle = minAng;
     this.maxLaunchAngle = maxAng;
 }
 
 
-ParticleEmitter.prototype.setMaxTTL = function(mttl) {
-    this.maxTTL = mttl;
+ParticleEmitter.prototype.setTTLRange = function(minTTL, maxTTL) {
+    // in seconds
+    this.minTTL = minTTL;
+    this.maxTTL = maxTTL;
 }
 
 

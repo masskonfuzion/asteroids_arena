@@ -24,4 +24,27 @@ RenderComponentSprite.prototype.update = function(dt_s) {
 }
 
 
-// TODO add a RenderComponentSphere, and possibly also a RenderComponentBox (draw using canvas graphics primitives), and maybe even also a RenderComponentAnimSprite (for sprite animation?)
+// ----------------------------------------------------------------------------
+
+function RenderComponentCircle() {
+    GameObject.call(this);
+    this.color = [255, 255, 255];   // Default to white, because why not?
+    this.radius = 2;
+}
+
+RenderComponentCircle.prototype = Object.create(GameObject.prototype);
+RenderComponentCircle.prototype.constructor = RenderComponentCircle;
+
+
+RenderComponentCircle.prototype.draw = function(canvasContext, xCoord, yCoord) {
+    // xCoord,yCoord must be passed in (probably from the physics component's position?)
+    canvasContext.beginPath();
+    canvasContext.arc(xCoord, yCoord, this.radius, 0, Math.PI * 2, false);
+    canvasContext.fill();
+    // apparently stroke() or fill() end the path
+}
+
+RenderComponentCircle.prototype.update = function(dt_s) {
+    // Override base GameObject class update(), but do nothing in this func
+    // (unless we determine that something does need to be updated, in which case, update this comment :-D)
+}

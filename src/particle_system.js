@@ -42,3 +42,8 @@ ParticleSystem.prototype.getNextUsableParticle = function(maxLoops = 3) {
         }
     }
 };
+
+
+ParticleSystem.prototype.draw = function(canvasContext) {
+    // Draw each alive Particle
+};

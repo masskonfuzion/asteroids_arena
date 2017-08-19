@@ -6,6 +6,11 @@ function Spaceship() {
     this.addComponent("render", new RenderComponentSprite());
     this.addComponent("thrustPE", new ParticleEmitter());   // Particle emitter for rockets
 
+    var particleEmitter = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
+    particleEmitter.setVelocityRange(0.5, 2.0);
+    particleEmitter.setAngleRange(-30, 30);     // degrees
+    particleEmitter.setTTLRange(0.25, 0.75);    // seconds
+
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
     this.commandMap["setThrustOff"] = this.disableThrust;   // TODO evaluate: do we NEED the thrust functions to be defined on the prototype? Probably yes if anything will derive from Spaceship; but otherwise no
@@ -27,6 +32,27 @@ Spaceship.prototype.update = function(dt_s) {
             this.components[compName].update(dt_s);
         }
     }
+
+    var myRenderComp = this.components["render"];
+    var myPhysicsComp = this.components["physics"];
+    var myThrustPEComp = this.components["thrustPE"];
+
+    // Refresh the particle emitters' launch dir and position
+    vec2.copy(myThrustPEComp.launchDir, myPhysicsComp.angleVec);    // NOTE: could have called setLaunchDir() here
+    vec2.scale(myThrustPEComp.launchDir, myThrustPEComp.launchDir, -1);
+    vec2.normalize(myThrustPEComp.launchDir, myThrustPEComp.launchDir);   // Normalize, just to be sure..
+
+    // position the particle emitter at the back of the ship (use the ship's sprite dimensions for guidance)
+    var pePos = vec2.create();
+    vec2.set(pePos, -myRenderComp.imgObj.width / 2, 0);
+
+    var rotMat = mat2.create();
+    mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
+    vec2.transformMat2(pePos, pePos, rotMat);
+
+    myThrustPEComp.setPosition(pePos[0], pePos[1]);
+
+    myThrustPEComp.update(dt_s);
 }
 
 // Override the class default executeCommand()
