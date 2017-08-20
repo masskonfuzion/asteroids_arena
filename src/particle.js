@@ -20,9 +20,16 @@ Particle.prototype.constructor = Particle;
 
 Particle.prototype.draw = function(canvasContext) {
     // draw the render component
+    this.components["render"].draw(canvasContext);
 }
 
 
 Particle.prototype.update = function(dt_s) {
     // TODO update the stuff here; probably integrate verlet, fade color, decrease ttl, all that..
+    this.components["physics"].update(dt_s);
+
+    this.ttl -= dt_s;
+    if (this.ttl < 0.0) {
+        this.alive = false;
+    }
 }

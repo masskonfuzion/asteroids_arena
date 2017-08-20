@@ -44,4 +44,16 @@ ParticleSystem.prototype.getNextUsableParticle = function(maxLoops = 3) {
 
 ParticleSystem.prototype.draw = function(canvasContext) {
     // Draw each alive Particle
+    for (var particle of this.particles) {
+        if (particle.alive) {
+            particle.draw(canvasContext);
+        }
+    }
 };
+
+
+ParticleSystem.prototype.update = function(dt_s) {
+    for (particle of this.particles) {
+        particle.update(dt_s);
+    }
+}
