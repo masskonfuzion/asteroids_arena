@@ -52,6 +52,8 @@ Spaceship.prototype.update = function(dt_s) {
 
     myThrustPEComp.setPosition(pePos[0], pePos[1]);
 
+    // TODO possibly include some kind of time-based particle emission rate limiting here
+    // TODO make sure to emit particles only when actually thrusting
     myThrustPEComp.update(dt_s);
 }
 

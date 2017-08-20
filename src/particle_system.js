@@ -5,7 +5,7 @@ function ParticleSystem() {
     GameObject.call(this);
 
     this.particles = [];
-    this.lastUsedIndex = 0;
+    this.lastUsedIndex = -1;
 }
 
 ParticleSystem.prototype = Object.create(GameObject.prototype);
@@ -24,23 +24,21 @@ ParticleSystem.prototype.initialize = function(numParticles) {
 // Return null if you've looped through the particle array a certain number of times and not found a usable particle
 ParticleSystem.prototype.getNextUsableParticle = function(maxLoops = 3) {
     var loops = 0;
-    var i = this.lastUsedIndex;
+    var i = (this.lastUsedIndex + 1) % this.particles.length;
 
     while (this.particles[i].alive) {
-        i = (i + 1) % this.particles.length;
-
-        if (!this.particles[i].alive) {
-            return this.particles[i];
-        }
-
         if (i == this.lastUsedIndex) {
             loops += 1;
+            if (loops == maxLoops) {
+                return null;
+            }
         }
-
-        if (loops == maxLoops) {
-            return null;
-        }
+        i = (i + 1) % this.particles.length;
     }
+
+    this.lastUsedIndex = i;
+    return this.particles[i];
+
 };
 
 

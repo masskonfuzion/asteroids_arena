@@ -44,10 +44,7 @@ ParticleEmitter.prototype.registerParticleSystem = function(particleSys) {
 ParticleEmitter.prototype.emitParticle = function(dt_s) {
     var particle = this.registeredPS.getNextUsableParticle();
 
-    if (particle) { // TODO possibly include some kind of time-based particle emission rate limiting here
-
-        // TODO randomize some values for velocity, angle, etc.. And put a particle with those properties into the particle engine
-
+    if (particle) {
         // Initialize the particle direction by copying from the emitter's direction property
         var particleDir = vec2.create();
         vec2.copy(particleDir, this.launchDir);
@@ -56,8 +53,8 @@ ParticleEmitter.prototype.emitParticle = function(dt_s) {
         var angleOffset = Math.floor(Math.random() * (this.maxLaunchAngle - this.minLaunchAngle)) + this.minLaunchAngle;
 
         // Compute the rotation matrix to apply the desired rotational offset to the launch dir
-        var angleOffsetMatrix = vec2.create();
-        angleOffsetMatrix.fromRotation( glMatrix.toRadian(angleOffset) );
+        var angleOffsetMatrix = mat2.create();
+        mat2.fromRotation( angleOffsetMatrix, glMatrix.toRadian(angleOffset) );
 
         // Apply the rotation
         vec2.transformMat2d(particleDir, particleDir, angleOffsetMatrix);
@@ -123,5 +120,8 @@ ParticleEmitter.prototype.setColor = function(r, g, b) {
 
 
 ParticleEmitter.prototype.update = function(dt_s) {
-    // TODO do something. Probably put some particles into the particle system (hint: call emitParticle). And stuff
+    // update each alive particle
+    // not sure if update() will actually do anythin
+
+    this.emitParticle(dt_s);
 }
