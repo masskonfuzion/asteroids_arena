@@ -57,7 +57,7 @@ ParticleEmitter.prototype.emitParticle = function(dt_s) {
         mat2.fromRotation( angleOffsetMatrix, glMatrix.toRadian(angleOffset) );
 
         // Apply the rotation
-        vec2.transformMat2d(particleDir, particleDir, angleOffsetMatrix);
+        vec2.transformMat2(particleDir, particleDir, angleOffsetMatrix);
         vec2.normalize(particleDir, particleDir);   // normalize, just in case
 
         // Compute a launch velocity (don't use Math.floor() because we want floating point results
@@ -79,6 +79,11 @@ ParticleEmitter.prototype.emitParticle = function(dt_s) {
 
         particle.alive = true;
         particle.ttl = ttl;
+
+        // TODO make a "setColor" function somewhere -- either in the particle's render component, or directly in the particle itself. NOTE: right now, the particle object has a color object (remove it), and the render component defaults to [255,255,255] (fix that)
+        for (var colorComponent = 0; colorComponent < 3; colorComponent++) {
+            particle.color[colorComponent] = particleColor[colorComponent];
+        }
     }
 }
 

@@ -19,17 +19,22 @@ Particle.prototype = Object.create(GameObject.prototype);
 Particle.prototype.constructor = Particle;
 
 Particle.prototype.draw = function(canvasContext) {
+    // Get the particle's physics component
+    var physComp = this.components["physics"];
+
     // draw the render component
-    this.components["render"].draw(canvasContext);
+    this.components["render"].draw(canvasContext, physComp.currPos[0], physComp.currPos[1]);
 }
 
 
 Particle.prototype.update = function(dt_s) {
     // TODO update the stuff here; probably integrate verlet, fade color, decrease ttl, all that..
-    this.components["physics"].update(dt_s);
+    if (this.alive) {
+        this.components["physics"].update(dt_s);
 
-    this.ttl -= dt_s;
-    if (this.ttl < 0.0) {
-        this.alive = false;
+        this.ttl -= dt_s;
+        if (this.ttl < 0.0) {
+            this.alive = false;
+        }
     }
 }

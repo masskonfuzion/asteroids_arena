@@ -47,7 +47,7 @@ GameLogic.prototype.draw = function() {
     // the game application obj is global
     for (var goKey in this.gameObjs) {
         if (this.gameObjs.hasOwnProperty(goKey)) {
-            if ("render" in this.gameObjs[goKey].components) {  // Make sure the component has a render component
+            if ("render" in this.gameObjs[goKey].components || this.gameObjs[goKey].draw) {  // Make sure the component has a render component, or otherwise has a draw method
                 this.gameObjs[goKey].draw(game.context);        // Assume that the draw() function for a GameObject calls into the draw() function for its render component
             }
         }

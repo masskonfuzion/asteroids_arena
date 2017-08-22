@@ -42,8 +42,8 @@ PhysicsComponentVerlet.prototype.setPosition = function(x, y) {
 // Use vel to fabricate a prevPos
 PhysicsComponentVerlet.prototype.setPosAndVel = function(posX, posY, velX, velY, dt_s) {
     // We'll scale velocity by dt (should be a fixed dt)
-    vec2.set(this.currPos, this.posX, this.posY);
-    vec2.set(this.prevPos, this.posX - velX*dt_s, this.posY - velX*dt_s);
+    vec2.set(this.currPos, posX, posY);
+    vec2.set(this.prevPos, posX - velX*dt_s, posY - velY*dt_s);
 }
 
 // Set linear acceleration

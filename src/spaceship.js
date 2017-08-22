@@ -26,13 +26,7 @@ Spaceship.prototype.constructor = Spaceship;
 // Override the default update()
 Spaceship.prototype.update = function(dt_s) {
 
-    // Iterate over all components and call their respective update() function
-    for (var compName in this.components) {
-        if (this.components.hasOwnProperty(compName)) {
-            this.components[compName].update(dt_s);
-        }
-    }
-
+    // Do some setup before calling update functions.  TODO -- perhaps the spaceship should pass some object into the particle emitter update, so that the updating of particle emitter essentials is only calculated when the particle system needs it (not every frame)
     var myRenderComp = this.components["render"];
     var myPhysicsComp = this.components["physics"];
     var myThrustPEComp = this.components["thrustPE"];
@@ -44,7 +38,7 @@ Spaceship.prototype.update = function(dt_s) {
 
     // position the particle emitter at the back of the ship (use the ship's sprite dimensions for guidance)
     var pePos = vec2.create();
-    vec2.set(pePos, -myRenderComp.imgObj.width / 2, 0);
+    vec2.set(pePos, myPhysicsComp.currPos[0], myPhysicsComp.currPos[1]); // TODO figure out why the imgObj size dimensions are 0... Once you do that, then edit this line to properly place the emitter position at the back of the ship, using the image dimensions
 
     var rotMat = mat2.create();
     mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
@@ -52,9 +46,15 @@ Spaceship.prototype.update = function(dt_s) {
 
     myThrustPEComp.setPosition(pePos[0], pePos[1]);
 
-    // TODO possibly include some kind of time-based particle emission rate limiting here
-    // TODO make sure to emit particles only when actually thrusting
-    myThrustPEComp.update(dt_s);
+    // TODO for thrust PE, possibly include some kind of time-based particle emission rate limiting here
+    // TODO for thrust PE, make sure to emit particles only when actually thrusting
+    // Iterate over all components and call their respective update() function
+    for (var compName in this.components) {
+        if (this.components.hasOwnProperty(compName)) {
+            this.components[compName].update(dt_s);
+        }
+    }
+
 }
 
 // Override the class default executeCommand()

@@ -29,7 +29,7 @@ RenderComponentSprite.prototype.update = function(dt_s) {
 function RenderComponentCircle() {
     GameObject.call(this);
     this.color = [255, 255, 255];   // Default to white, because why not?
-    this.radius = 2;
+    this.radius = 3;
 }
 
 RenderComponentCircle.prototype = Object.create(GameObject.prototype);
@@ -40,7 +40,9 @@ RenderComponentCircle.prototype.draw = function(canvasContext, xCoord, yCoord) {
     // xCoord,yCoord must be passed in (probably from the physics component's position?)
     canvasContext.beginPath();
     canvasContext.arc(xCoord, yCoord, this.radius, 0, Math.PI * 2, false);
-    canvasContext.fill();
+    canvasContext.fillStyle = 'white';  // TODO change to use #RRGGBB hex codes
+    canvasContext.fill();   // You can also use stroke() here for a circle outline; to set color, use strokeStyle
+    //canvasContext.closePath();
     // apparently stroke() or fill() end the path
 }
 
