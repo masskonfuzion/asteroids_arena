@@ -28,6 +28,8 @@ function ParticleEmitter() {
 
     this.minTTL = 0.0;  // seconds
     this.maxTTL = 0.0;
+
+    this.enabled = false;
 }
 
 ParticleEmitter.prototype = Object.create(GameObject.prototype);
@@ -124,9 +126,22 @@ ParticleEmitter.prototype.setColor = function(r, g, b) {
 }
 
 
-ParticleEmitter.prototype.update = function(dt_s) {
-    // update each alive particle
-    // not sure if update() will actually do anythin
+ParticleEmitter.prototype.setEnabled = function() {
+    this.enabled = true;
+}
 
-    this.emitParticle(dt_s);
+
+ParticleEmitter.prototype.setDisabled = function() {
+    this.enabled = false;
+}
+
+
+ParticleEmitter.prototype.update = function(dt_s) {
+    // emit a particle
+    // NOTE: the particle emitter is only responsible for putting particles into a particle system
+    // the emitter is not responsible for updating the emitted particles; the particle system itself will handle that
+
+    if (this.enabled) {
+        this.emitParticle(dt_s);
+    }
 }

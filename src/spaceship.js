@@ -7,9 +7,9 @@ function Spaceship() {
     this.addComponent("thrustPE", new ParticleEmitter());   // Particle emitter for rockets
 
     var particleEmitter = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
-    particleEmitter.setVelocityRange(0.5, 2.0);
-    particleEmitter.setAngleRange(-30, 30);     // degrees
-    particleEmitter.setTTLRange(0.25, 0.75);    // seconds
+    particleEmitter.setVelocityRange(150.0, 300.0);
+    particleEmitter.setAngleRange(-20, 20);     // degrees
+    particleEmitter.setTTLRange(0.2, 0.4);    // seconds
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
@@ -87,13 +87,19 @@ Spaceship.prototype.enableThrust = function() {
     vec2.set(myPhysComp.acceleration, Math.cos( glMatrix.toRadian(myPhysComp.angle) ), Math.sin( glMatrix.toRadian(myPhysComp.angle) ));
     vec2.scale(myPhysComp.acceleration, myPhysComp.acceleration, 210);
 
+    var myThrustPE = this.components["thrustPE"];
+    myThrustPE.setEnabled();                       // Enable the emitter
+
     console.log("Spaceship thrust");
     console.log(myPhysComp.acceleration);
 };
 
 Spaceship.prototype.disableThrust = function() {
     var myPhysComp = this.components["physics"];
-    vec2.set(myPhysComp.acceleration, 0.0, 0.0);
+    vec2.set(myPhysComp.acceleration, 0.0, 0.0);    // Set the acceleration vector for the physics component
+
+    var myThrustPE = this.components["thrustPE"];
+    myThrustPE.setDisabled();                       // Disable the emitter
 
     console.log("Spaceship thrust");
     console.log(myPhysComp.acceleration);
@@ -102,13 +108,13 @@ Spaceship.prototype.disableThrust = function() {
 Spaceship.prototype.enableTurnLeft = function() {
     var myPhysComp = this.components["physics"];
 
-    myPhysComp.angularVel = -180;
+    myPhysComp.angularVel = -210;
 }
 
 Spaceship.prototype.enableTurnRight = function() {
     var myPhysComp = this.components["physics"];
 
-    myPhysComp.angularVel = 180;
+    myPhysComp.angularVel = 210;
 }
 
 Spaceship.prototype.disableTurn = function() {

@@ -20,7 +20,7 @@ GameLogic.prototype.initialize = function() {
     this.timer = new Timer();
 
     this.gameObjs["thrustPS"] = new ParticleSystem();
-    this.gameObjs["thrustPS"].initialize(1000);
+    this.gameObjs["thrustPS"].initialize(2000);
 
     // ----- Initialize spaceship
     this.gameObjs["ship"] = new Spaceship();
