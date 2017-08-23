@@ -23,6 +23,7 @@ GameLogic.prototype.initialize = function() {
     this.gameObjs["thrustPS"].initialize(2000);
 
     // ----- Initialize spaceship
+    // TODO possibly make a Saceship Manager or something similar - for when we add spaceship bots
     this.gameObjs["ship"] = new Spaceship();
     this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
 
@@ -175,7 +176,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
 
 };
 
-GameLogic.prototype.update = function(dt_s) {
+GameLogic.prototype.update = function(dt_s, config = null) {
     // TODO perform integration, collision detection, etc. See Falldown WebGL for a good mainloop example
     for (var goKey in this.gameObjs) {
         if (this.gameObjs.hasOwnProperty(goKey)) {

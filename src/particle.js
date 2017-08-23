@@ -27,7 +27,7 @@ Particle.prototype.draw = function(canvasContext) {
 }
 
 
-Particle.prototype.update = function(dt_s) {
+Particle.prototype.update = function(dt_s, config = null) {
     // TODO update the stuff here; probably integrate verlet, fade color, decrease ttl, all that..
     if (this.alive) {
         this.components["physics"].update(dt_s);

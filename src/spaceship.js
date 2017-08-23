@@ -24,7 +24,7 @@ Spaceship.prototype = Object.create(GameObject.prototype);
 Spaceship.prototype.constructor = Spaceship;
 
 // Override the default update()
-Spaceship.prototype.update = function(dt_s) {
+Spaceship.prototype.update = function(dt_s, config = null) {
 
     // Do some setup before calling update functions.  TODO -- perhaps the spaceship should pass some object into the particle emitter update, so that the updating of particle emitter essentials is only calculated when the particle system needs it (not every frame)
     var myRenderComp = this.components["render"];

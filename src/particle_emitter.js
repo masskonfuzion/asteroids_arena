@@ -44,6 +44,7 @@ ParticleEmitter.prototype.registerParticleSystem = function(particleSys) {
 // Get the "next available particle" in the system, and initialize it
 // If getNextUnusedParticle() fails, then this function should fail silently (at most, log to console)
 ParticleEmitter.prototype.emitParticle = function(dt_s) {
+    // TODO update emitParticle to take in the type of particle to emit (or, e.g., info about how to initialize the particle. Use the Transfer Object pattern -- the object will contain config info re: particles with sprite rendering vs other type of rendering)
     var particle = this.registeredPS.getNextUsableParticle();
 
     if (particle) {
@@ -136,7 +137,7 @@ ParticleEmitter.prototype.setDisabled = function() {
 }
 
 
-ParticleEmitter.prototype.update = function(dt_s) {
+ParticleEmitter.prototype.update = function(dt_s, config = null) {
     // emit a particle
     // NOTE: the particle emitter is only responsible for putting particles into a particle system
     // the emitter is not responsible for updating the emitted particles; the particle system itself will handle that

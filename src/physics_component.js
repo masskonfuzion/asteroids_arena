@@ -14,7 +14,7 @@ PhysicsComponentVerlet.prototype.constructor = PhysicsComponentVerlet;
 
 // Run verlet integration. Note that this does just enough for particle simulation (we're treating the spaceship as a particle)
 // The timestep, dt_s, is in seconds
-PhysicsComponentVerlet.prototype.update = function(dt_s) {
+PhysicsComponentVerlet.prototype.update = function(dt_s, config = null) {
 
     var posTmp = vec2.clone(this.currPos);
 

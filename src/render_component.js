@@ -18,7 +18,7 @@ RenderComponentSprite.prototype.draw = function(canvasContext, xCoord, yCoord) {
     canvasContext.drawImage(this.imgObj, xCoord, yCoord);
 }
 
-RenderComponentSprite.prototype.update = function(dt_s) {
+RenderComponentSprite.prototype.update = function(dt_s, config = null) {
     // Override base GameObject class update(), but do nothing in this func
     // (unless we determine that something does need to be updated, in which case, update this comment :-D)
 }
@@ -46,7 +46,7 @@ RenderComponentCircle.prototype.draw = function(canvasContext, xCoord, yCoord) {
     // apparently stroke() or fill() end the path
 }
 
-RenderComponentCircle.prototype.update = function(dt_s) {
+RenderComponentCircle.prototype.update = function(dt_s, config = null) {
     // Override base GameObject class update(), but do nothing in this func
     // (unless we determine that something does need to be updated, in which case, update this comment :-D)
 }

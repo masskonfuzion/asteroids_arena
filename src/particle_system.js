@@ -52,7 +52,7 @@ ParticleSystem.prototype.draw = function(canvasContext) {
 };
 
 
-ParticleSystem.prototype.update = function(dt_s) {
+ParticleSystem.prototype.update = function(dt_s, config = null) {
     for (particle of this.particles) {
         particle.update(dt_s);
     }
