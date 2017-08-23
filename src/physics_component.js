@@ -27,9 +27,9 @@ PhysicsComponentVerlet.prototype.update = function(dt_s) {
 
     vec2.copy(this.prevPos, posTmp);
 
-    this.angle = (this.angle + glMatrix.toRadian(this.angularVel) * dt_s) % (2 * Math.PI);
-    this.angleVec[0] = Math.cos(this.angle);
-    this.angleVec[1] = Math.sin(this.angle);
+    this.angle = (this.angle + this.angularVel * dt_s) % 360;       // We'll store angle in degrees
+    this.angleVec[0] = Math.cos( glMatrix.toRadian(this.angle) );
+    this.angleVec[1] = Math.sin( glMatrix.toRadian(this.angle) );
 }
 
 PhysicsComponentVerlet.prototype.setPosition = function(x, y) {
