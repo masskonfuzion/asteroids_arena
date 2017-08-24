@@ -26,33 +26,43 @@ Spaceship.prototype.constructor = Spaceship;
 // Override the default update()
 Spaceship.prototype.update = function(dt_s, config = null) {
 
-    // Do some setup before calling update functions.  TODO -- perhaps the spaceship should pass some object into the particle emitter update, so that the updating of particle emitter essentials is only calculated when the particle system needs it (not every frame)
-    var myRenderComp = this.components["render"];
-    var myPhysicsComp = this.components["physics"];
-    var myThrustPEComp = this.components["thrustPE"];
-
-    // Refresh the particle emitters' launch dir and position
-    vec2.copy(myThrustPEComp.launchDir, myPhysicsComp.angleVec);    // NOTE: could have called setLaunchDir() here
-    vec2.scale(myThrustPEComp.launchDir, myThrustPEComp.launchDir, -1);
-    vec2.normalize(myThrustPEComp.launchDir, myThrustPEComp.launchDir);   // Normalize, just to be sure..
-
-    // position the particle emitter at the back of the ship (use the ship's sprite dimensions for guidance)
-    var pePos = vec2.create();
-    vec2.set(pePos, myPhysicsComp.currPos[0], myPhysicsComp.currPos[1]); // TODO figure out why the imgObj size dimensions are 0... Once you do that, then edit this line to properly place the emitter position at the back of the ship, using the image dimensions
-
-    // TODO -- reinstate emiiter positioning when you figure out how to get the image dimensions from an object
-    //var rotMat = mat2.create();
-    //mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
-    //vec2.transformMat2(pePos, pePos, rotMat);
-
-    myThrustPEComp.setPosition(pePos[0], pePos[1]);
 
     // TODO for thrust PE, possibly include some kind of time-based particle emission rate limiting here
     // TODO for thrust PE, make sure to emit particles only when actually thrusting
     // Iterate over all components and call their respective update() function
     for (var compName in this.components) {
         if (this.components.hasOwnProperty(compName)) {
-            this.components[compName].update(dt_s);
+
+            // NOTE: I'm debating whether or not I need the ParticleEmitter class. Or, I'm debating whether I can possibly keep it simple or I'll need to create a base class/subclass hierarchy
+            // Determine the configuration object to send into update()
+            var updateConfigObj = null;
+            switch(compName) {
+                case "thrustPE":
+                    // Could wrap all this in a function
+                    var myRenderComp = this.components["render"];
+                    var myPhysicsComp = this.components["physics"];
+                    var myThrustPEComp = this.components["thrustPE"];
+
+                    // Compute the particle emitters' launch dir and position
+                    var launchDir = vec2.create()
+                    vec2.copy(launchDir, myPhysicsComp.angleVec);    // NOTE: could have called setLaunchDir() here
+                    vec2.scale(launchDir, launchDir, -1);
+                    vec2.normalize(launchDir, launchDir);   // Normalize, just to be sure..
+
+                    // position the particle emitter at the back of the ship (use the ship's sprite dimensions for guidance)
+                    var pePos = vec2.create();
+                    vec2.set(pePos, myPhysicsComp.currPos[0], myPhysicsComp.currPos[1]); // TODO figure out why the imgObj size dimensions are 0... Once you do that, then edit this line to properly place the emitter position at the back of the ship, using the image dimensions
+
+                    // TODO -- reinstate emiiter positioning when you figure out how to get the image dimensions from an object
+                    //var rotMat = mat2.create();
+                    //mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
+                    //vec2.transformMat2(pePos, pePos, rotMat);
+
+                    var emitterConfig = { "emitPoints": [ {"position": pePos, "direction": launchDir} ] }; // emitPoints is a list of emitter position/direction pairs. Used for having multiple emit points/dirs.
+                    updateConfigObj = emitterConfig;
+            }
+
+            this.components[compName].update(dt_s, updateConfigObj);
         }
     }
 

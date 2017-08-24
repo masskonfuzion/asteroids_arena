@@ -143,6 +143,18 @@ ParticleEmitter.prototype.update = function(dt_s, config = null) {
     // the emitter is not responsible for updating the emitted particles; the particle system itself will handle that
 
     if (this.enabled) {
-        this.emitParticle(dt_s);
+        // If config obj exists, emit particles based on its contents
+        if (config) {
+            // Note that with multiple emitPoints, the emitter emits them all simultaneously.
+            // I'm debating how to do round-robin emission (i.e., should the ParticleEmitter object be responsible for the logic of round-robin, or should the object that owns the emitter (e.g. the gun/thruster/etc)?
+            for (var emitPoint of config["emitPoints"]) {
+                this.setPosition(emitPoint["position"][0], emitPoint["position"][1]);
+                this.setLaunchDir(emitPoint["direction"][0], emitPoint["direction"][1]);
+                this.emitParticle(dt_s);
+            }
+        } else {
+            // else, simply emit a particle based on originally set parameters
+            this.emitParticle(dt_s);
+        }
     }
 }
