@@ -46,6 +46,10 @@ Spaceship.prototype.update = function(dt_s, config = null) {
                     // Compute the particle emitters' launch dir and position
                     var launchDir = vec2.create()
                     vec2.copy(launchDir, myPhysicsComp.angleVec);    // NOTE: could have called setLaunchDir() here
+
+                    //var instantaneousVel = vec2.create(); // TODO probably delete these lines
+                    //vec2.sub(instantaneousVel, myPhysicsComp.currPos, myPhysicsComp.prevPos);
+                    //vec2.add(launchDir, launchDir, instantaneousVel);
                     vec2.scale(launchDir, launchDir, -1);
                     vec2.normalize(launchDir, launchDir);   // Normalize, just to be sure..
 
@@ -58,7 +62,9 @@ Spaceship.prototype.update = function(dt_s, config = null) {
                     //mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
                     //vec2.transformMat2(pePos, pePos, rotMat);
 
-                    var emitterConfig = { "emitPoints": [ {"position": pePos, "direction": launchDir} ] }; // emitPoints is a list of emitter position/direction pairs. Used for having multiple emit points/dirs.
+                    // emitPoints is a list of emitter position/direction pairs. Used for having multiple emit points/dirs.
+                    //var emitterConfig = { "emitPoints": [ {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir} ] };   // emit 4 particles per update
+                    var emitterConfig = { "emitPoints": [ {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir} ] };   // emit 2 particles per update
                     updateConfigObj = emitterConfig;
             }
 

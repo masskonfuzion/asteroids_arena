@@ -21,6 +21,6 @@ function ImageManager() {
     // This should be run in window.onload() (can be in some sort of initialize() function called from window.onload())
     this.addImgToMap = function (key, imgObjRef) {
         this.imageMap[key] = imgObjRef;
-    }
+    };
 }
 

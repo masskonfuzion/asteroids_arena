@@ -37,7 +37,7 @@ ParticleEmitter.prototype.constructor = ParticleEmitter;
 
 ParticleEmitter.prototype.registerParticleSystem = function(particleSys) {
     this.registeredPS = particleSys;
-}
+};
 
 // We want to be able to emit from one or more "emit points", e.g. multiple thrusters or multiple guns/missile launchers -- should guns/missiles be treated as particles? (if so, should missiles have logic, e.g. homing missiles? Should this game even have missiles?)
 
@@ -88,23 +88,23 @@ ParticleEmitter.prototype.emitParticle = function(dt_s) {
             particle.color[colorComponent] = particleColor[colorComponent];
         }
     }
-}
+};
 
 
 ParticleEmitter.prototype.setPosition = function(posX, posY) {
     vec2.set(this.position, posX, posY);
-}
+};
 
 ParticleEmitter.prototype.setVelocityRange = function(minMagnitude, maxMagnitude) {
     this.minLaunchVelMult = minMagnitude;
     this.maxLaunchVelMult = maxMagnitude;
-}
+};
 
 
 ParticleEmitter.prototype.setLaunchDir = function(dirX, dirY) {
     vec2.set(this.launchDir, dirX, dirY);
     vec2.normalize(this.launchDir, this.launchDir);
-}
+};
 
 
 ParticleEmitter.prototype.setAngleRange = function(minAng, maxAng) {
@@ -112,29 +112,29 @@ ParticleEmitter.prototype.setAngleRange = function(minAng, maxAng) {
     // Not sure if I want to use negative angles (e.g. min angle -10, max 10); or only non-zero (e.g. "min" is 350, "max" is 10), or use vectors (interpolate from a left-ish vector to a right-ish vector
     this.minLaunchAngle = minAng;
     this.maxLaunchAngle = maxAng;
-}
+};
 
 
 ParticleEmitter.prototype.setTTLRange = function(minTTL, maxTTL) {
     // in seconds
     this.minTTL = minTTL;
     this.maxTTL = maxTTL;
-}
+};
 
 
 ParticleEmitter.prototype.setColor = function(r, g, b) {
     this.color = [r, g, b];
-}
+};
 
 
 ParticleEmitter.prototype.setEnabled = function() {
     this.enabled = true;
-}
+};
 
 
 ParticleEmitter.prototype.setDisabled = function() {
     this.enabled = false;
-}
+};
 
 
 ParticleEmitter.prototype.update = function(dt_s, config = null) {
@@ -157,4 +157,4 @@ ParticleEmitter.prototype.update = function(dt_s, config = null) {
             this.emitParticle(dt_s);
         }
     }
-}
+};

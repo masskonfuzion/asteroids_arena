@@ -10,7 +10,8 @@ function Particle() {
     // NOTE: Particles will not have a "velocity" property because they'll be simulated using position Verlet integration. The Emitter will control initial position and velocity
 
     this.alive = false;
-    this.ttl = 0.0;         // in seconds
+    this.autoExpire = true;     // By default, this particle "auto-expires" using TTL. Set to false to disable auto-expire, and force some other game logic to determine when to expire this particle
+    this.ttl = 0.0;         // in seconds.
     this.color = [0, 0, 0]; // RGB components   // <-- make this a part of a render component that draws circles or whatever
 }
 
@@ -24,7 +25,11 @@ Particle.prototype.draw = function(canvasContext) {
 
     // draw the render component
     this.components["render"].draw(canvasContext, physComp.currPos[0], physComp.currPos[1]);
-}
+};
+
+Particle.prototype.setAutoExpire = function(tf) {
+    this.autoExpire = tf;
+};
 
 
 Particle.prototype.update = function(dt_s, config = null) {
@@ -37,4 +42,4 @@ Particle.prototype.update = function(dt_s, config = null) {
             this.alive = false;
         }
     }
-}
+};

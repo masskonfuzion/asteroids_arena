@@ -29,16 +29,19 @@ GameLogic.prototype.initialize = function() {
 
     var spaceshipPE = this.gameObjs["ship"].components["thrustPE"];     // Get the spaceship's particle emitter
     spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
-}
+
+    // ----- Initialize Asteroid Manager
+    //this.gameObjs["astMgr"] = new AsteroidManager
+};
 
 
 GameLogic.prototype.setThrust = function(shipRef) {
     // TODO implement the command pattern for ship controls (thrust and turning). The command pattern will allow for AI
-}
+};
 
 GameLogic.prototype.setAngularVel = function(shipRef, angVel) {
     // 
-}
+};
 
 GameLogic.prototype.draw = function() {
     // Clear the canvas (note that the game application object is global)
@@ -53,7 +56,7 @@ GameLogic.prototype.draw = function() {
             }
         }
     }
-}
+};
 
 
 GameLogic.prototype.processMessages = function(dt_s) {
@@ -64,7 +67,7 @@ GameLogic.prototype.processMessages = function(dt_s) {
         // NOTE: If the queue is initialized with dummy values, then this loop will iterate over dummy values
         // It may be better to use a queue that is has an actual empty array when the queue is empty
         // That way, this loop will not run unless items actually exist in the queue
-        let msg = this.messageQueue.dequeue();
+        var msg = this.messageQueue.dequeue();
 
         for (var the_topic in this.messageQueue._registeredListeners)
         {
@@ -78,7 +81,7 @@ GameLogic.prototype.processMessages = function(dt_s) {
                     //fn_to_call(msg);
 
                     var fn_to_call = this.messageQueue._registeredListeners[the_topic][j];
-                    fn_to_call["func"].call(fn_to_call["obj"], msg)
+                    fn_to_call["func"].call(fn_to_call["obj"], msg);
                 }
             }
         }
@@ -105,13 +108,14 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
     console.log('Key code ' + evt.keyCode + ' down');
 
     // NOTE: apparently, it is not possible to disable key repeat in HTML5/Canvas/JS..
+    var cmdMsg = {};
     if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
         // User pressed thrust key
         this.keyCtrlMap["thrust"]["state"] = true;  // TODO figure out if we're using state here, and possibly get rid of it. We seem to not be processing the key states anywhere; instead, we enqueue commands immediately on state change
 
         // Note that the payload of messages in the queue can vary depending on context. At a minimum, the message MUST have a topic
         // TODO keep a reference to the player-controlled obj, instead of hard-coding?
-        var cmdMsg = { "topic": "GameCommand",
+        cmdMsg = { "topic": "GameCommand",
                        "command": "setThrustOn",
                        "objRef": this.gameObjs["ship"]
                      };
@@ -121,7 +125,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
     if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = true;
-        var cmdMsg = { "topic": "GameCommand",
+        cmdMsg = { "topic": "GameCommand",
                        "command": "setTurnLeftOn",
                        "objRef": this.gameObjs["ship"]
                      };
@@ -131,7 +135,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
     else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = true;
-        var cmdMsg = { "topic": "GameCommand",
+        cmdMsg = { "topic": "GameCommand",
                        "command": "setTurnRightOn",
                        "objRef": this.gameObjs["ship"]
                      };
@@ -147,7 +151,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         // User released thrust key
         this.keyCtrlMap["thrust"]["state"] = false;
 
-        var cmdMsg = { "topic": "GameCommand",
+        cmdMsg = { "topic": "GameCommand",
                        "command": "setThrustOff",
                        "objRef": this.gameObjs["ship"]
                      };
@@ -157,7 +161,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = false;
-        var cmdMsg = { "topic": "GameCommand",
+        cmdMsg = { "topic": "GameCommand",
                        "command": "setTurnOff",
                        "objRef": this.gameObjs["ship"]
                      };
@@ -167,7 +171,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = false;
-        var cmdMsg = { "topic": "GameCommand",
+        cmdMsg = { "topic": "GameCommand",
                        "command": "setTurnOff",
                        "objRef": this.gameObjs["ship"]
                      };
@@ -197,7 +201,7 @@ GameLogic.prototype.actOnUserInputMessage = function(msg) {
             // TODO probably enqueue a new message, with topic "GameCommand". The AI will also use this
         }
     }
-}
+};
 
 GameLogic.prototype.sendCmdToGameObj = function(msg) {
     // NOTE: because we have only 1 parameter to this function (really, to all registered listeners of a message queue), a ref to the object to which to send the cmd is included as part of the msg
@@ -206,5 +210,5 @@ GameLogic.prototype.sendCmdToGameObj = function(msg) {
 
     // Call the executeCommand() function with the given command (all GameObjs will have an executeCommand() function)
     msg["objRef"].executeCommand(msg["command"]);
-}
+};
 
