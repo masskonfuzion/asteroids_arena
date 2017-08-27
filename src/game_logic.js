@@ -31,7 +31,8 @@ GameLogic.prototype.initialize = function() {
     spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
 
     // ----- Initialize Asteroid Manager
-    //this.gameObjs["astMgr"] = new AsteroidManager
+    this.gameObjs["astMgr"] = new AsteroidManager
+    this.gameObjs["astMgr"].initialize(1, 4);
 };
 
 
