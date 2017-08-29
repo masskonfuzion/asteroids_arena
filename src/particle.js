@@ -37,9 +37,11 @@ Particle.prototype.update = function(dt_s, config = null) {
     if (this.alive) {
         this.components["physics"].update(dt_s);
 
-        this.ttl -= dt_s;
-        if (this.ttl < 0.0) {
-            this.alive = false;
+        if (this.autoExpire) {
+            this.ttl -= dt_s;
+            if (this.ttl < 0.0) {
+                this.alive = false;
+            }
         }
     }
 };

@@ -43,7 +43,7 @@ ParticleEmitter.prototype.registerParticleSystem = function(particleSys) {
 
 // Get the "next available particle" in the system, and initialize it
 // If getNextUnusedParticle() fails, then this function should fail silently (at most, log to console)
-ParticleEmitter.prototype.emitParticle = function(dt_s) {
+ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
     // TODO update emitParticle to take in the type of particle to emit (or, e.g., info about how to initialize the particle. Use the Transfer Object pattern -- the object will contain config info re: particles with sprite rendering vs other type of rendering)
     var particle = this.registeredPS.getNextUsableParticle();
 
@@ -68,24 +68,39 @@ ParticleEmitter.prototype.emitParticle = function(dt_s) {
         var launchVel = vec2.create();
         vec2.scale(launchVel, particleDir, launchVelMag);
 
-        // Compute a TTL
-        var ttl = Math.random() * (this.maxTTL - this.minTTL) + this.minTTL;
-
-        // TODO set color (use a color palette or something?)
-        var particleColor = [200, 200, 0];
-
-
         // Now, set the properties of the particle
         var physComp = particle.components["physics"];
         physComp.setPosAndVel(this.position[0], this.position[1], launchVel[0], launchVel[1], dt_s);
         // NOTE: We're not using particle angles here (but we could if we wanted to)
 
         particle.alive = true;
-        particle.ttl = ttl;
+        
+        // Compute a TTL
+        if (particle.autoExpire) {
+            var ttl = Math.random() * (this.maxTTL - this.minTTL) + this.minTTL;
+            particle.ttl = ttl;
+        }
 
         // TODO make a "setColor" function somewhere -- either in the particle's render component, or directly in the particle itself. NOTE: right now, the particle object has a color object (remove it), and the render component defaults to [255,255,255] (fix that)
-        for (var colorComponent = 0; colorComponent < 3; colorComponent++) {
-            particle.color[colorComponent] = particleColor[colorComponent];
+        // TODO use the config object to control whether to use "colors" here or "image/sprites"
+        // TODO set color (use a color palette or something?) - Set min & max components in each color channel; pick an initial "position" between min & max; fade from there to the min over the TTL time
+        if (config) 
+        {
+            if (config.hasOwnProperty("renderCompType")) {
+                if (config["renderCompType"] == "image") {
+                    // For now, we're only using static sprites
+                    particle.components["render"].imgObj = config["imageRef"];
+                }
+                // TODO handle other render comp types (maybe animated sprite?)
+            }
+        } else {
+            // Default, if no config object, is to use colors.
+            // TODO finish making color palette thingymajig
+            var particleColor = [200, 200, 0];
+
+            for (var colorComponent = 0; colorComponent < 3; colorComponent++) {
+                particle.color[colorComponent] = particleColor[colorComponent];
+            }
         }
     }
 };
@@ -147,13 +162,22 @@ ParticleEmitter.prototype.update = function(dt_s, config = null) {
         if (config) {
             // Note that with multiple emitPoints, the emitter emits them all simultaneously.
             // I'm debating how to do round-robin emission (i.e., should the ParticleEmitter object be responsible for the logic of round-robin, or should the object that owns the emitter (e.g. the gun/thruster/etc)?
-            for (var emitPoint of config["emitPoints"]) {
-                this.setPosition(emitPoint["position"][0], emitPoint["position"][1]);
-                this.setLaunchDir(emitPoint["direction"][0], emitPoint["direction"][1]);
+            // TODO or.. maybe make emitPoints optional, also with a flag: "has multiple emit points", or something. Or, maybe no flag. just, if you use emitPoints, then you get multiple points; else, you'll use the already-configured emitter position
+
+            // use single or multiple emit points
+            if (config.hasOwnProperty("emitPoints")) {
+                for (var emitPoint of config["emitPoints"]) {
+                    this.setPosition(emitPoint["position"][0], emitPoint["position"][1]);
+                    this.setLaunchDir(emitPoint["direction"][0], emitPoint["direction"][1]);
+                    this.emitParticle(dt_s);
+                }
+            } else {
                 this.emitParticle(dt_s);
             }
+
+            // TODO any other params to add to the config obj for the particle emitter?
         } else {
-            // else, simply emit a particle based on originally set parameters
+            // if there's no config obj, simply emit a particle based on originally set parameters
             this.emitParticle(dt_s);
         }
     }

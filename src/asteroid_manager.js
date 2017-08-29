@@ -26,16 +26,26 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
     myEmitter.setPosition(256, 256);    // TODO randomize emitter positions throughout the arena/space
     myEmitter.registerParticleSystem(mySystem);
 
-    // TODO initialize initAsteroids-many Asteroids into the arena
-    // TODO consider NOT emitting a particle/asteroid in initialize()
+    // TODO consider NOT emitting a particle/asteroid in initialize() (i.e. move this fn elsewhere)
     for (var i = 0; i < initAsteroids; i++) {
-        myEmitter.emitParticle(gameLogic.fixed_dt_s);   // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
+        // TODO add an emitPoints list -- otherwise, this emitter won't know where to emit from
+        var configObj = { "renderCompType": "image",
+                          "imageRef": game.imgMgr.imageMap["astLarge"].imgObj
+                        };
+        // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
+        // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
+        // Also note: this approach requires the ParticleSystem to be configured to create Particles with an image/sprite render component
+        myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
+        // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
     }
 };
 
 AsteroidManager.prototype.update = function(dt_s, config = null) {
-    // ==== TEST/DEBUG stuff (TODO remove when finished testing ====
-
+    for (var compName in this.components) {
+        if (this.components.hasOwnProperty(compName)) {
+            this.components[compName].update(dt_s);
+        }
+    }
 };
 
 
@@ -59,3 +69,15 @@ AsteroidManager.prototype.resetAsteroidField = function() {
     this.numFreeSlots = this.maxAsteroids;
 
 };
+
+AsteroidManager.prototype.draw = function(canvasContext) {
+    // Draw each alive Particle
+    var myPS = this.components["asteroidPS"];
+    for (var particle of myPS.particles) {
+        if (particle.alive) {
+            particle.draw(canvasContext);
+        }
+    }
+};
+
+
