@@ -24,7 +24,11 @@ function ParticleEmitter() {
     this.maxLaunchAngle = 0.0;          // Maximum launch angle offset (relative to launchDir, in degrees)
     this.position = vec2.create();
 
-    this.color = [0.0, 0.0, 0.0];       // TODO make a color palette/something to base initial particle color on
+    // If configured to use colors for particles (instead of images), particle emitter will
+    // select a color in between min and max (if autoExpire is true, then the Particle's starting
+    // color will be based on how far between minTTL and maxTTL its starting TTL is)
+    this.minColor = [0, 0, 0];          // "Minimum" color values
+    this.maxColor = [0, 0, 0];          // "Maximum" color values
 
     this.minTTL = 0.0;  // seconds
     this.maxTTL = 0.0;
@@ -81,8 +85,6 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
             particle.ttl = ttl;
         }
 
-        // TODO make a "setColor" function somewhere -- either in the particle's render component, or directly in the particle itself. NOTE: right now, the particle object has a color object (remove it), and the render component defaults to [255,255,255] (fix that)
-        // TODO use the config object to control whether to use "colors" here or "image/sprites"
         // TODO set color (use a color palette or something?) - Set min & max components in each color channel; pick an initial "position" between min & max; fade from there to the min over the TTL time
         if (config) 
         {
@@ -92,15 +94,21 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
                     particle.components["render"].imgObj = config["imageRef"];
                 }
                 // TODO handle other render comp types (maybe animated sprite?)
+                // TODO also add a case to allow the config obj to specify a color, rather than image? Or should color & image be mutually exclusive? So many design considerations...
             }
         } else {
             // Default, if no config object, is to use colors.
-            // TODO finish making color palette thingymajig
-            var particleColor = [200, 200, 0];
-
-            for (var colorComponent = 0; colorComponent < 3; colorComponent++) {
-                particle.color[colorComponent] = particleColor[colorComponent];
+            var pct = 0.0;
+            if (particle.autoExpire) {
+                pct = (ttl - this.minTTL) / (this.maxTTL - this.minTTL);
+            } else {
+                pct = Math.random();
             }
+            var r = this.minColor[0] + (this.maxColor[0] - this.minColor[0]) * pct;
+            var g = this.minColor[1] + (this.maxColor[1] - this.minColor[1]) * pct;
+            var b = this.minColor[2] + (this.maxColor[2] - this.minColor[2]) * pct;
+
+            particle.components["render"].setColor(r, g, b);
         }
     }
 };
@@ -137,8 +145,13 @@ ParticleEmitter.prototype.setTTLRange = function(minTTL, maxTTL) {
 };
 
 
-ParticleEmitter.prototype.setColor = function(r, g, b) {
-    this.color = [r, g, b];
+ParticleEmitter.prototype.setMinColor = function(r, g, b) {
+    this.minColor = [r, g, b];
+};
+
+
+ParticleEmitter.prototype.setMaxColor = function(r, g, b) {
+    this.maxColor = [r, g, b];
 };
 
 

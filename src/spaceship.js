@@ -10,6 +10,8 @@ function Spaceship() {
     particleEmitter.setVelocityRange(150.0, 300.0);
     particleEmitter.setAngleRange(-20, 20);     // degrees
     particleEmitter.setTTLRange(0.2, 0.4);    // seconds
+    particleEmitter.setMinColor(20, 4, 4);
+    particleEmitter.setMaxColor(252, 140, 32);
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
@@ -56,7 +58,6 @@ Spaceship.prototype.update = function(dt_s, config = null) {
                     // position the particle emitter at the back of the ship (use the ship's sprite dimensions for guidance)
                     var pePos = vec2.create();
                     vec2.set(pePos, myPhysicsComp.currPos[0], myPhysicsComp.currPos[1]); // TODO figure out why the imgObj size dimensions are 0... Once you do that, then edit this line to properly place the emitter position at the back of the ship, using the image dimensions
-
                     // TODO -- reinstate emiiter positioning when you figure out how to get the image dimensions from an object
                     //var rotMat = mat2.create();
                     //mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );

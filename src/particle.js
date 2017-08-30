@@ -12,7 +12,6 @@ function Particle() {
     this.alive = false;
     this.autoExpire = true;     // By default, this particle "auto-expires" using TTL. Set to false to disable auto-expire, and force some other game logic to determine when to expire this particle
     this.ttl = 0.0;         // in seconds.
-    this.color = [0, 0, 0]; // RGB components   // <-- make this a part of a render component that draws circles or whatever
 }
 
 
