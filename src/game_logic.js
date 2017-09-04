@@ -31,8 +31,10 @@ GameLogic.prototype.initialize = function() {
     spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
 
     // ----- Initialize Asteroid Manager
-    this.gameObjs["astMgr"] = new AsteroidManager
+    this.gameObjs["astMgr"] = new AsteroidManager()
     this.gameObjs["astMgr"].initialize(1, 4);
+
+    this.quadTree = new QuadTree(5, {"x":0, "y":0, "width":512, "height":512}); // width/height should match canvas width/height (maybe just use the canvas object?)
 };
 
 
