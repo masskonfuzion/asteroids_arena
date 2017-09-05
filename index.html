@@ -48,8 +48,12 @@ function mainEntryPoint() {
 
     var imgAsset_spaceship = new ImageAsset("assets/images/spaceship_03.png");
     var imgAsset_astLarge = new ImageAsset("assets/images/asteroid_32x32.png");
+    var imgAsset_astMedium = new ImageAsset("assets/images/asteroid_16x16.png");
+    var imgAsset_astSmall = new ImageAsset("assets/images/asteroid_8x8.png");
     game.imgMgr.addImgToMap("ship", imgAsset_spaceship);
     game.imgMgr.addImgToMap("astLarge", imgAsset_astLarge);
+    game.imgMgr.addImgToMap("astMedium", imgAsset_astMedium);
+    game.imgMgr.addImgToMap("astSmall", imgAsset_astSmall);
 
     // NOTE: all image loading must be done before initializing the gameLogic object
     gameLogic.initialize();

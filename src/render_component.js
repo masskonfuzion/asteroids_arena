@@ -1,11 +1,11 @@
 function RenderComponentSprite() {
-    GameObject.call(this);
+    GameObjectComponent.call(this);
 
     // NOTE: We'll need to load all the images on the document.onload() -- so we might need an image manager (long-term), or to just simply has a list/array of image components we plan to draw, so we can check that they all loaded, and throw an error if any didn't
     this.imgObj = null;
 }
 
-RenderComponentSprite.prototype = Object.create(GameObject.prototype);
+RenderComponentSprite.prototype = Object.create(GameObjectComponent.prototype);
 RenderComponentSprite.prototype.constructor = RenderComponentSprite;
 
 
@@ -27,12 +27,12 @@ RenderComponentSprite.prototype.update = function(dt_s, config = null) {
 // ----------------------------------------------------------------------------
 
 function RenderComponentCircle() {
-    GameObject.call(this);
+    GameObjectComponent.call(this);
     this.color = [255, 255, 255];   // Default to white, because why not?
     this.radius = 3;
 }
 
-RenderComponentCircle.prototype = Object.create(GameObject.prototype);
+RenderComponentCircle.prototype = Object.create(GameObjectComponent.prototype);
 RenderComponentCircle.prototype.constructor = RenderComponentCircle;
 
 

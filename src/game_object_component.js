@@ -1,4 +1,9 @@
 function GameObjectComponent() {
+    GameObject.call(this);
     this.parentObj = null;
-    //this.components = {};   // It might make sense to enable Game Object Components to have subcomponents.. Uncomment if needed
 }
+
+GameObjectComponent.prototype = Object.create(GameObject.prototype);
+GameObjectComponent.prototype.constructor = GameObjectComponent;
+
+

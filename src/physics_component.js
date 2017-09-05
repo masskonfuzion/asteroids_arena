@@ -1,5 +1,5 @@
 function PhysicsComponentVerlet() {
-    GameObject.call(this);
+    GameObjectComponent.call(this);
 
     this.currPos = vec2.create();
     this.prevPos = vec2.create();
@@ -9,7 +9,7 @@ function PhysicsComponentVerlet() {
     this.angularVel = 0.0;
 }
 
-PhysicsComponentVerlet.prototype = Object.create(GameObject.prototype);
+PhysicsComponentVerlet.prototype = Object.create(GameObjectComponent.prototype);
 PhysicsComponentVerlet.prototype.constructor = PhysicsComponentVerlet;
 
 // Run verlet integration. Note that this does just enough for particle simulation (we're treating the spaceship as a particle)

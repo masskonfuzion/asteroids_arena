@@ -3,7 +3,8 @@ function Asteroid () {
     Particle.call(this);
 
     this.addComponent("physics", new PhysicsComponentVerlet());
-    this.addComponent("render", new RenderComponentSprite());   // Each asteroid can be a particular size (e.g. small, medium, or large). The AsteroidManager will control all asteroids
+    this.addComponent("render", new RenderComponentSprite());       // Each asteroid can be a particular size (e.g. small, medium, or large). The AsteroidManager will control all asteroids
+    this.addComponent("collision", new CollisionComponentAABB());
 
     this.hitPoints = 1;
     this.autoExpire = false;    // override the Particle's autoExpire property
