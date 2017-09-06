@@ -29,8 +29,22 @@ CollisionComponentAABB.prototype.setMaxPt = function(x, y) {
 }
 
 
+// Recompute the boundaries of the AABB
 CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
-    // AABB probably doesn't need dt_s, but we pass it through so that the signature for this fn matches all other update() functions in the engine
-    // The obj will contain a reference to the render geometry, so the AABB can recompute its boundaries. (Or, should obj be null? and instead, we give the the AABB a render geometry reference, so the AABB always has its render geometry?)
+    var renderComp = this.parentObj.components["render"];
+    console.assert(renderComp !== null);
+    console.assert(renderComp.imgObj !== null);
 
+    // We get the physics component because it has the object's position. The render component does not store position
+    var physicsComp = this.parentObj.components["physics"];
+    console.assert(physicsComp !== null);
+
+    // TODO re-work AABB update to be able to handle any render component of any type
+
+    // Image/sprite case
+    var imgObj = renderComp.imgObj;
+    var pos = physicsComp.currPos;
+
+    this.setMinPt(pos[0] - imgObj.width/2, pos[1] - imgObj.height/2)
+    this.setMaxPt(pos[0] + imgObj.width/2, pos[1] + imgObj.height/2)
 }

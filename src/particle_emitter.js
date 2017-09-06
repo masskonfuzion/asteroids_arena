@@ -80,8 +80,9 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
         particle.alive = true;
         
         // Compute a TTL
+        var ttl = 0.0;
         if (particle.autoExpire) {
-            var ttl = Math.random() * (this.maxTTL - this.minTTL) + this.minTTL;
+            ttl = Math.random() * (this.maxTTL - this.minTTL) + this.minTTL;
             particle.ttl = ttl;
         }
 

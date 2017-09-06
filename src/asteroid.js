@@ -15,9 +15,11 @@ Asteroid.prototype.constructor = Asteroid;
 
 Asteroid.prototype.update = function(dt_s, config = null) {
     // TODO In the Asteroids Arena, asteroids will bounce off walls (or something like that), instead of wrapping from minimum to maximum coordinate (or vice versa) on whatever axis it exceeded the boundary of
-    for (var compName in this.components) {
-        if (this.components.hasOwnProperty(compName)) {
-            this.components[compName].update(dt_s);
+    if (this.alive) {
+        for (var compName in this.components) {
+            if (this.components.hasOwnProperty(compName)) {
+                this.components[compName].update(dt_s);
+            }
         }
     }
 }
