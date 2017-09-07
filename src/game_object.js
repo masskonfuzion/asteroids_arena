@@ -1,6 +1,8 @@
 function GameObject () {
     this.components = {};
     this.commandMap = {};   // Map of commands to functions to run, to execute those commands. e.g. { "doStuff": this.doMyThing }
+    this.parentObj = null;  // TODO replace all GameObjectComponent subclass calls with GameObject (now that GameObject has a parentObj property)
+    this.objectID = -1;
 }
 
 GameObject.prototype.update = function(dt_s, config = null) {

@@ -1,4 +1,6 @@
 function GameLogic() {
+// TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
+    this.objectIDToAssign = -1;  // probably belongs in the base class.
     this.gameObjs = {};
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
@@ -19,22 +21,34 @@ GameLogic.prototype.initialize = function() {
 
     this.timer = new Timer();
 
-    this.gameObjs["thrustPS"] = new ParticleSystem();
+    // ----- Initialize collision manager
+    // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
+    this.addGameObject("collisionMgr", new CollisionManager());
+    this.gameObjs["collisionMgr"].initialize(5, {"x":0, "y":0, "width":512, "height":512});     // width/height should match canvas width/height (maybe just use the canvas object?)
+
+    this.addGameObject("thrustPS", new ParticleSystem());
     this.gameObjs["thrustPS"].initialize(2000);
 
     // ----- Initialize spaceship
     // TODO possibly make a Saceship Manager or something similar - for when we add spaceship bots
-    this.gameObjs["ship"] = new Spaceship();
+    this.addGameObject("ship", new Spaceship());
     this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
 
     var spaceshipPE = this.gameObjs["ship"].components["thrustPE"];     // Get the spaceship's particle emitter
     spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
 
     // ----- Initialize Asteroid Manager
-    this.gameObjs["astMgr"] = new AsteroidManager()
+    this.addGameObject("astMgr", new AsteroidManager());
     this.gameObjs["astMgr"].initialize(1, 4);
 
-    this.quadTree = new QuadTree(5, {"x":0, "y":0, "width":512, "height":512}); // width/height should match canvas width/height (maybe just use the canvas object?)
+};
+
+GameLogic.prototype.addGameObject = function(objName, obj) {
+    // TODO assign the current GameLogic.objectIDToAssign to the object (probably add to the GameObject prototype); increment the GameLogic object's objectIDToAssign
+    this.objectIDToAssign++;
+
+    this.gameObjs[objName] = obj;
+    this.gameObjs[objName].objectID = this.objectIDToAssign;
 };
 
 

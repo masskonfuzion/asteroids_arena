@@ -5,6 +5,7 @@ function Spaceship() {
     this.addComponent("physics", new PhysicsComponentVerlet());
     this.addComponent("render", new RenderComponentSprite());
     this.addComponent("thrustPE", new ParticleEmitter());   // Particle emitter for rockets
+    this.addComponent("collision", new CollisionComponentAABB());
 
     var particleEmitter = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
     particleEmitter.setVelocityRange(150.0, 300.0);
