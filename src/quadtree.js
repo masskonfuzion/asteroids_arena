@@ -55,10 +55,16 @@ QuadTree.prototype.getIndex = function(obj) {
     var midPointX = this.bounds.x + (this.bounds.width / 2);
     var midPointY = this.bounds.y + (this.bounds.height / 2);
 
-    var fullyInLeftHalf = obj.x + obj.width < midPointX;
-    var fullyInRightHalf = obj.x > midPointx;
-    var fullyInTopHalf = obj.y + obj.height < midPointY;
-    var fullyInBottomHalf = obj.y > midPointY;
+    var objWidth = obj.maxPt[0] - obj.minPt[0];             // The code I copied this from had obj.width; but my objects don't have a width property, so I'm hacking one in
+    var objHeight = obj.maxPt[1] - obj.minPt[1];
+
+    var objX = obj.minPt[0] + Math.floor(objWidth / 2);
+    var objY = obj.minPt[1] + Math.floor(objHeight / 2);
+
+    var fullyInLeftHalf = objX + objWidth < midPointX;
+    var fullyInRightHalf = objX > midPointX;
+    var fullyInTopHalf = objY + objHeight < midPointY;
+    var fullyInBottomHalf = objY > midPointY;
 
     if (fullyInLeftHalf) {
         if (fullyInTopHalf) {
@@ -94,7 +100,7 @@ QuadTree.prototype.insert = function(obj) {
     this.gameObjs.push(obj);
 
     if (this.gameObjs.length > QUADTREE_MAX_OBJECTS) {
-        if (this.level < QUADTREE_MAX_LEVELS - 1)  {
+        if (this.level < QUADTREE_MAX_LEVELS)  {
             if (this.nodes[0] === null) {
                 this.split();
             }
@@ -131,7 +137,9 @@ QuadTree.prototype.retrieve = function(returnObjs, queryObj) {
 
     // If the object does not fit cleanly into this node's children, or if this node is a leaf, then add objects from this node to the return list
     for (var obj of this.gameObjs) {
-        returnObjs.push(obj);
+        if (obj !== queryObj) {
+            returnObjs.push(obj);
+        }
     }
     return returnObjs;
 };

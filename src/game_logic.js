@@ -1,11 +1,11 @@
 function GameLogic() {
 // TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
-    this.objectIDToAssign = -1;  // probably belongs in the base class.
     this.gameObjs = {};
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
     this.timer = null;
     this.fixed_dt_s = 0.015;
+    this.objectIDToAssign = -1;  // probably belongs in the base class.
 }
 
 GameLogic.prototype.initialize = function() {
@@ -33,6 +33,8 @@ GameLogic.prototype.initialize = function() {
     // TODO possibly make a Saceship Manager or something similar - for when we add spaceship bots
     this.addGameObject("ship", new Spaceship());
     this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
+    this.gameObjs["ship"].components["collision"].update(0);    // Do an update to force the collision to compute its boundaries
+    this.gameObjs["collisionMgr"].addCollider(this.gameObjs["ship"].components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
 
     var spaceshipPE = this.gameObjs["ship"].components["thrustPE"];     // Get the spaceship's particle emitter
     spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
@@ -45,10 +47,11 @@ GameLogic.prototype.initialize = function() {
 
 GameLogic.prototype.addGameObject = function(objName, obj) {
     // TODO assign the current GameLogic.objectIDToAssign to the object (probably add to the GameObject prototype); increment the GameLogic object's objectIDToAssign
-    this.objectIDToAssign++;
+    this.objectIDToAssign += 1;
 
     this.gameObjs[objName] = obj;
     this.gameObjs[objName].objectID = this.objectIDToAssign;
+    this.gameObjs[objName].parentObj = this;
 };
 
 

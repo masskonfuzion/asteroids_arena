@@ -5,7 +5,8 @@
 function CollisionManager() {
     GameObject.call(this);
     // The collision manager has a pool of collision objects.
-    this.collisionObjs = [];
+    this.colliders = {};    // The key of the dict will be the object ID of the object this collision component belongs to
+    this.objectIDToAssign = -1;  // probably belongs in the base class.
 
     this.quadTree = null;
 }
@@ -17,8 +18,49 @@ CollisionManager.prototype.initialize = function(maxLevels, initialRect) {
     this.quadTree = new QuadTree(maxLevels, initialRect); // width/height should match canvas width/height (maybe just use the canvas object?)
 }
 
+CollisionManager.prototype.addCollider = function(collider) {
+    this.objectIDToAssign += 1;
+    collider.objectID = this.objectIDToAssign;
+    this.colliders[this.objectIDToAssign] = collider;
+}
+
+CollisionManager.prototype.removeCollider = function(id) {
+    if (id in this.collders && this.colliders.hasOwnProperty(id)) {
+        delete(this.colliders[id]);
+    } else {
+        console.alert("Attempted to remove from CollisionManager.colliders an item that does not exist");
+    }
+}
+
 CollisionManager.prototype.update = function(dt_s, configObj) {
     // TODO implement -- the update function should call into a quadtree update (broad phase), and then individual collision tests possibly
+
+    this.quadTree.clear();
+
+    // Populate the quadtree
+    for (var collKey in this.colliders) {
+        if (this.colliders.hasOwnProperty(collKey)) {
+            var collObj = this.colliders[collKey];
+            this.quadTree.insert(collObj);
+        }
+    }
+
+    // For each collider, query the quadtree to determine which other objects it could be colliding with
+    for (var collKey in this.colliders) {
+        if (this.colliders.hasOwnProperty(collKey)) {
+            var collObj = this.colliders[collKey];
+            var candidates = [];
+            this.quadTree.retrieve(candidates, collObj);
+
+            for (var candidate of candidates) {
+                if (this.isColliding(collObj, candidate)) {
+                    console.log("Collision detected!");
+                }
+            }
+        }
+    }
+
+
 };
 
 // Return true if objA and objB are colliding with each other.
