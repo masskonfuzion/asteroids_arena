@@ -33,6 +33,9 @@ function ParticleEmitter() {
     this.minTTL = 0.0;  // seconds
     this.maxTTL = 0.0;
 
+    this.rateLimit = 0.0;           // In seconds
+    this.lastEmitTS = 0.0;;         // Last emit timestamp, in seconds
+
     this.enabled = false;
 }
 
@@ -175,12 +178,35 @@ ParticleEmitter.prototype.setDisabled = function() {
 };
 
 
+// Set the rate limit in seconds (e.g. 0.2 means there will be a 0.2 second interval between particle emissions)
+ParticleEmitter.prototype.setRateLimit = function(limit) {
+    this.rateLimit = limit;
+};
+
+
+// Return the current time in seconds elapsed since Jan 1, 1970
+ParticleEmitter.prototype.getCurrentTime = function() {
+    // Divide by 1000 because Date.now() returns milliseconds)
+    return Date.now() * 0.001;
+};
+
+
+ParticleEmitter.prototype.recordLastEmitTS = function() {
+    this.lastEmitTS = this.getCurrentTime();
+};
+
+
+ParticleEmitter.prototype.withinRateLimit = function() {
+    return this.getCurrentTime() - this.lastEmitTS >= this.rateLimit;
+};
+
+
 ParticleEmitter.prototype.update = function(dt_s, config = null) {
     // emit a particle
     // NOTE: the particle emitter is only responsible for putting particles into a particle system
     // the emitter is not responsible for updating the emitted particles; the particle system itself will handle that
 
-    if (this.enabled) {
+    if (this.enabled && this.withinRateLimit()) {
         // If config obj exists, emit particles based on its contents
         if (config) {
             // Note that with multiple emitPoints, the emitter emits them all simultaneously.
@@ -204,5 +230,7 @@ ParticleEmitter.prototype.update = function(dt_s, config = null) {
             // TODO -- fix this particle emission in the case where no config obj is given.  Currently, particles launched in this case have no velocity
             this.emitParticle(dt_s);
         }
+
+        this.recordLastEmitTS();
     }
 };

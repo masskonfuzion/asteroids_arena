@@ -22,6 +22,7 @@ function Spaceship() {
     gunPE.setAngleRange(0, 0);     // degrees
     gunPE.setMinColor(200, 200, 200);
     gunPE.setMaxColor(200, 200, 200);
+    gunPE.setRateLimit(0.1);
     // NOTE: we don't set TTLRange here because the particles were already created and initialized (in an object pool); the autoExpire/TTL stuff is done there
 
 
