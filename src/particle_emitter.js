@@ -201,6 +201,7 @@ ParticleEmitter.prototype.update = function(dt_s, config = null) {
             // TODO any other params to add to the config obj for the particle emitter?
         } else {
             // if there's no config obj, simply emit a particle based on originally set parameters
+            // TODO -- fix this particle emission in the case where no config obj is given.  Currently, particles launched in this case have no velocity
             this.emitParticle(dt_s);
         }
     }

@@ -1,6 +1,7 @@
 /** Particle System
 */
 
+// TODO rename this to something like factory -- this can be a generic "entity array"
 function ParticleSystem(ctorFunc=null) {
     GameObject.call(this);
 

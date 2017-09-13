@@ -13,6 +13,7 @@ GameLogic.prototype.initialize = function() {
     this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
     this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
     this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
+    this.keyCtrlMap["fireA"] = { "code": "ShiftLeft", "state": false };
 
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(64);
@@ -24,24 +25,36 @@ GameLogic.prototype.initialize = function() {
     // ----- Initialize collision manager
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
     this.addGameObject("collisionMgr", new CollisionManager());
-    this.gameObjs["collisionMgr"].initialize(5, {"x":0, "y":0, "width":512, "height":512});     // width/height should match canvas width/height (maybe just use the canvas object?)
+    this.gameObjs["collisionMgr"].initialize(5, {"x":0, "y":0, "width":512, "height":512});     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
 
     this.addGameObject("thrustPS", new ParticleSystem());
-    this.gameObjs["thrustPS"].initialize(2000);
+    this.gameObjs["thrustPS"].initialize(1000);
+
+    this.addGameObject("gunPS", new ParticleSystem());
+    this.gameObjs["gunPS"].initialize(1000);
+    for (var bullet of this.gameObjs["gunPS"].particles) {
+        bullet.autoExpire = false;  // this is admittedly a janky loop... Could be better, but this is easy & lazy
+    }
 
     // ----- Initialize spaceship
-    // TODO possibly make a Saceship Manager or something similar - for when we add spaceship bots
+    // TODO possibly make a Saceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
     this.addGameObject("ship", new Spaceship());
     this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
     this.gameObjs["ship"].components["collision"].update(0);    // Do an update to force the collision to compute its boundaries
     this.gameObjs["collisionMgr"].addCollider(this.gameObjs["ship"].components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
 
-    var spaceshipPE = this.gameObjs["ship"].components["thrustPE"];     // Get the spaceship's particle emitter
-    spaceshipPE.registerParticleSystem(this.gameObjs["thrustPS"]);
+    var spaceshipThrustPE = this.gameObjs["ship"].components["thrustPE"];       // Get the spaceship's thrust particle emitter
+    spaceshipThrustPE.registerParticleSystem(this.gameObjs["thrustPS"]);
+
+    var spaceshipGunPE = this.gameObjs["ship"].components["gunPE"];             // Get the spaceship's gun particle emitter
+    spaceshipGunPE.registerParticleSystem(this.gameObjs["gunPS"]);
 
     // ----- Initialize Asteroid Manager
     this.addGameObject("astMgr", new AsteroidManager());
     this.gameObjs["astMgr"].initialize(1, 4);
+
+    // ----- Initialize Arena
+    // TODO -- make arena. Simplest is rectangle obj {x, y, width, height}; but can also make a class, with arbitrary arena shape, and the ability to test for containment of objs within itself.  Can use this test to determine when to expire bullet objects
 
 };
 
@@ -136,9 +149,18 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         // Note that the payload of messages in the queue can vary depending on context. At a minimum, the message MUST have a topic
         // TODO keep a reference to the player-controlled obj, instead of hard-coding?
         cmdMsg = { "topic": "GameCommand",
-                       "command": "setThrustOn",
-                       "objRef": this.gameObjs["ship"]
-                     };
+                   "command": "setThrustOn",
+                   "objRef": this.gameObjs["ship"]
+                 };
+        this.messageQueue.enqueue(cmdMsg);
+    }
+
+    if (evt.code == this.keyCtrlMap["fireA"]["code"]) {
+        // User pressed the fire A key (e.g. primary weapon)
+        cmdMsg = { "topic": "GameCommand",
+                   "command": "setFireAOn",
+                   "objRef": this.gameObjs["ship"]
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 
@@ -151,7 +173,6 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
                      };
         this.messageQueue.enqueue(cmdMsg);
     }
-
     else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = true;
@@ -175,6 +196,15 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
                        "command": "setThrustOff",
                        "objRef": this.gameObjs["ship"]
                      };
+        this.messageQueue.enqueue(cmdMsg);
+    }
+
+    if (evt.code == this.keyCtrlMap["fireA"]["code"]) {
+        // User pressed the fire A key (e.g. primary weapon)
+        cmdMsg = { "topic": "GameCommand",
+                   "command": "setFireAOff",
+                   "objRef": this.gameObjs["ship"]
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 
