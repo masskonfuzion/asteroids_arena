@@ -27,12 +27,16 @@ GameLogic.prototype.initialize = function() {
     this.addGameObject("collisionMgr", new CollisionManager());
     this.gameObjs["collisionMgr"].initialize(5, {"x":0, "y":0, "width":512, "height":512});     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
 
+    // ----- Initialize thrust/rocket particle system
     this.addGameObject("thrustPS", new ParticleSystem());
     this.gameObjs["thrustPS"].initialize(1024);
 
-    this.addGameObject("gunPS", new ParticleSystem());
-    this.gameObjs["gunPS"].initialize(256);
-    for (var bullet of this.gameObjs["gunPS"].particles) {
+    // ----- Initialize Bullet Manager system
+    // Note: bullet mgr has to come before spaceship so that spaceship can register as a bullet emitter
+    this.addGameObject("bulletMgr", new BulletManager());
+    this.gameObjs["bulletMgr"].initialize(256);
+
+    for (var bullet of this.gameObjs["bulletMgr"].components["gunPS"].particles) {
         bullet.autoExpire = false;  // this is admittedly a janky loop... Could be better, but this is easy & lazy
     }
 
@@ -47,7 +51,7 @@ GameLogic.prototype.initialize = function() {
     spaceshipThrustPE.registerParticleSystem(this.gameObjs["thrustPS"]);
 
     var spaceshipGunPE = this.gameObjs["ship"].components["gunPE"];             // Get the spaceship's gun particle emitter
-    spaceshipGunPE.registerParticleSystem(this.gameObjs["gunPS"]);
+    spaceshipGunPE.registerParticleSystem(this.gameObjs["bulletMgr"].components["gunPS"]);
 
     // ----- Initialize Asteroid Manager
     this.addGameObject("astMgr", new AsteroidManager());
