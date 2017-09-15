@@ -115,12 +115,12 @@ Spaceship.prototype.update = function(dt_s, config = null) {
 }
 
 // Override the class default executeCommand()
-Spaceship.prototype.executeCommand = function(cmdMsg) {
+Spaceship.prototype.executeCommand = function(cmdMsg, params) {
     console.log("Spaceship executing command");
     console.log(cmdMsg);
 
     // Call function
-    this.commandMap[cmdMsg].call(this); // use call() because without it, we're losing our "this" reference (going from Spaceship to Object)
+    this.commandMap[cmdMsg].call(this, params); // use call() because without it, we're losing our "this" reference (going from Spaceship to Object)
 }
 
 Spaceship.prototype.draw = function(canvasContext) {

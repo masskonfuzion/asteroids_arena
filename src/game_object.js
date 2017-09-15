@@ -9,7 +9,7 @@ GameObject.prototype.update = function(dt_s, config = null) {
     console.assert(this !== GameObject.prototype);
 };
 
-GameObject.prototype.executeCommand = function(cmdMsg) {
+GameObject.prototype.executeCommand = function(cmdMsg, params) {
     console.assert(this !== GameObject.prototype);
 };
 

@@ -154,7 +154,8 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         // TODO keep a reference to the player-controlled obj, instead of hard-coding?
         cmdMsg = { "topic": "GameCommand",
                    "command": "setThrustOn",
-                   "objRef": this.gameObjs["ship"]
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
     }
@@ -163,7 +164,8 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOn",
-                   "objRef": this.gameObjs["ship"]
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
     }
@@ -172,18 +174,20 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
-                       "command": "setTurnLeftOn",
-                       "objRef": this.gameObjs["ship"]
-                     };
+                   "command": "setTurnLeftOn",
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
     else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
-                       "command": "setTurnRightOn",
-                       "objRef": this.gameObjs["ship"]
-                     };
+                   "command": "setTurnRightOn",
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 };
@@ -197,9 +201,10 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.keyCtrlMap["thrust"]["state"] = false;
 
         cmdMsg = { "topic": "GameCommand",
-                       "command": "setThrustOff",
-                       "objRef": this.gameObjs["ship"]
-                     };
+                   "command": "setThrustOff",
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 
@@ -207,7 +212,8 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOff",
-                   "objRef": this.gameObjs["ship"]
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
     }
@@ -216,9 +222,10 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
-                       "command": "setTurnOff",
-                       "objRef": this.gameObjs["ship"]
-                     };
+                   "command": "setTurnOff",
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 
@@ -226,9 +233,10 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
-                       "command": "setTurnOff",
-                       "objRef": this.gameObjs["ship"]
-                     };
+                   "command": "setTurnOff",
+                   "objRef": this.gameObjs["ship"],
+                   "params": null
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 
@@ -263,6 +271,6 @@ GameLogic.prototype.sendCmdToGameObj = function(msg) {
     console.log(msg);
 
     // Call the executeCommand() function with the given command (all GameObjs will have an executeCommand() function)
-    msg["objRef"].executeCommand(msg["command"]);
+    msg["objRef"].executeCommand(msg["command"], msg["params"]);
 };
 
