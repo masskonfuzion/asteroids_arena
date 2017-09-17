@@ -14,8 +14,10 @@ function CollisionManager() {
 CollisionManager.prototype = Object.create(GameObject.prototype);
 CollisionManager.prototype.constructor = CollisionManager;
 
-CollisionManager.prototype.initialize = function(maxLevels, initialRect) {
-    this.quadTree = new QuadTree(maxLevels, initialRect); // width/height should match canvas width/height (maybe just use the canvas object?)
+CollisionManager.prototype.initialize = function(initialRect) {
+    // Initialize a QuadTree, starting at level/depth 0
+    // NOTE: The max # of levels in the quadtree is defined in quadtree.js
+    this.quadTree = new QuadTree(0, initialRect); // width/height should match canvas width/height (maybe just use the canvas object?)
 }
 
 CollisionManager.prototype.addCollider = function(collider) {
@@ -25,10 +27,11 @@ CollisionManager.prototype.addCollider = function(collider) {
 }
 
 CollisionManager.prototype.removeCollider = function(id) {
-    if (id in this.collders && this.colliders.hasOwnProperty(id)) {
+    if (id in this.colliders && this.colliders.hasOwnProperty(id)) {
         delete(this.colliders[id]);
     } else {
-        console.alert("Attempted to remove from CollisionManager.colliders an item that does not exist");
+        // NOTE: might not want to keep this log message long-term, but during development/testing, it's ok
+        console.log("Attempted to remove from CollisionManager.colliders an item that does not exist");
     }
 }
 
@@ -46,6 +49,7 @@ CollisionManager.prototype.update = function(dt_s, configObj) {
     }
 
     // For each collider, query the quadtree to determine which other objects it could be colliding with
+    // TODO improve this loop; currently, this would test, e.g. obj 0 against obj 1; then later, obj 1 against obj 0
     for (var collKey in this.colliders) {
         if (this.colliders.hasOwnProperty(collKey)) {
             var collObj = this.colliders[collKey];

@@ -39,8 +39,25 @@ Particle.prototype.update = function(dt_s, config = null) {
         if (this.autoExpire) {
             this.ttl -= dt_s;
             if (this.ttl < 0.0) {
-                this.alive = false;
+                this.disable();
             }
         }
     }
 };
+
+
+// Disable particle
+Particle.prototype.disable = function() {
+    this.alive = false;
+
+    // Check if this particle has a collision component, and if so, if the collision component has an objectID > -1.
+    if("collision" in this.components && this.components.hasOwnProperty("collision")) {
+        var myCollider = this.components["collision"];
+        // If so, then also check if the GameLogic object has a collision manager that is managing the particle's collision component
+        if ("collisionMgr" in gameLogic.gameObjs && gameLogic.gameObjs.hasOwnProperty("collisionMgr")) {
+            // remember, gameLogic is a global-scope var set in index.html
+            var collMgr = gameLogic.gameObjs["collisionMgr"];
+            collMgr.removeCollider(myCollider.objectID);
+        }
+    }
+}

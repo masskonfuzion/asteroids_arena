@@ -33,7 +33,6 @@ CollisionComponentAABB.prototype.setMaxPt = function(x, y) {
 CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
     var renderComp = this.parentObj.components["render"];
     console.assert(renderComp !== null);
-    console.assert(renderComp.imgObj !== null);
 
     // We get the physics component because it has the object's position. The render component does not store position
     var physicsComp = this.parentObj.components["physics"];
@@ -42,9 +41,8 @@ CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
     // TODO re-work AABB update to be able to handle any render component of any type
 
     // Image/sprite case
-    var imgObj = renderComp.imgObj;
     var pos = physicsComp.currPos;
 
-    this.setMinPt(pos[0] - imgObj.width/2, pos[1] - imgObj.height/2)
-    this.setMaxPt(pos[0] + imgObj.width/2, pos[1] + imgObj.height/2)
+    this.setMinPt(pos[0] - renderComp.getWidth() / 2, pos[1] - renderComp.getHeight() / 2)
+    this.setMaxPt(pos[0] + renderComp.getWidth() / 2, pos[1] + renderComp.getHeight() / 2)
 }

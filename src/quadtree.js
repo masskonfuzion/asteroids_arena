@@ -21,7 +21,7 @@ function QuadTree(depthLevel, bounds) {
 QuadTree.prototype.clear = function() {
     // JS arrays don't have a clear(), so we'll roll our own
     var i;
-    for (i = 0; i < this.gameObjs.length; i++) {
+    for (i = this.gameObjs.length; i > 0; i--) {
         this.gameObjs.pop();
     }
 
@@ -110,15 +110,15 @@ QuadTree.prototype.insert = function(obj) {
                 index = this.getIndex(this.gameObjs[i]);
                 if (index != -1) {
                     // If we can find a subnode in which to put the given object, then put it in the subnode
-                    this.nodes[index].insert(this.gameObjs[i].pop());   // pop() removes from the end of the array
-                    i = this.gameObjs.length;
+                    this.nodes[index].insert(this.gameObjs.pop());   // pop() removes from the end of the array
+                    i = this.gameObjs.length - 1;
                 } else {
                     i--;
                 }
             }
         } else {
             var msg = "QuadTree is at maximum depth -- can't subdivide any further! Consider tweaking tree parameters or making your game generate fewer objects, hah";
-            console.alert(msg);     // TODO remove if the alert becomes too annoying
+            //alert(msg);     // TODO remove if the alert becomes too annoying
             console.log(msg);
         }
     } 

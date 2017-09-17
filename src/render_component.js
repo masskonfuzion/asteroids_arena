@@ -23,6 +23,14 @@ RenderComponentSprite.prototype.update = function(dt_s, config = null) {
     // (unless we determine that something does need to be updated, in which case, update this comment :-D)
 }
 
+RenderComponentSprite.prototype.getWidth = function() {
+    return this.imgObj.width / 2;
+}
+
+RenderComponentSprite.prototype.getHeight = function() {
+    return this.imgObj.height / 2;
+}
+
 
 // ----------------------------------------------------------------------------
 
@@ -58,4 +66,10 @@ RenderComponentCircle.prototype.setColor = function(r, g, b) {
     this.color[2] = b;
 }
 
+RenderComponentCircle.prototype.getWidth = function() {
+    return this.radius;
+}
 
+RenderComponentCircle.prototype.getHeight = function() {
+    return this.radius;
+}

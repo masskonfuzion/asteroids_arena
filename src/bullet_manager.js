@@ -4,7 +4,7 @@
 function BulletManager () {
     GameObject.call(this);
     // The Bullet particle system is an object pool
-    this.addComponent("gunPS", new ParticleSystem());   // TODO possibly make a Bullet class that can be instantiated with one of many types of Bullet object (or maybe only one Bullet
+    this.addComponent("gunPS", new ParticleSystem(Bullet));   // TODO possibly make a Bullet class that can be instantiated with one of many types of Bullet object (or maybe only one Bullet
 
     this.maxBullets = 0;
     this.initialBullets = 0;
@@ -101,6 +101,8 @@ BulletManager.prototype.disableBullet = function(dictObj) {
     
     var bullet = dictObj["bulletToDisable"];
     bullet.alive = false;
+    bullet.disable();   // call into the bullet's parent class (i.e., Particle's) disable function
+                        // TODO - move this to Trello: Possibly move collider disable logic from base Particle class into specific Bullet & Asteroid classes? Maybe?
 }
 
 
