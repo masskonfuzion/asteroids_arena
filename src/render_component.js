@@ -15,7 +15,8 @@ RenderComponentSprite.prototype.setImgObj = function(imgObj) {
 
 RenderComponentSprite.prototype.draw = function(canvasContext, xCoord, yCoord) {
     // xCoord,yCoord must be passed in (probably from the physics component's position?)
-    canvasContext.drawImage(this.imgObj, xCoord, yCoord);
+    // Offset by width/2 and height/2 in order to make xCoord,yCoord the center of the image, instead of top-left corner
+    canvasContext.drawImage(this.imgObj, xCoord - this.imgObj.width / 2, yCoord - this.imgObj.height / 2);
 }
 
 RenderComponentSprite.prototype.update = function(dt_s, config = null) {
@@ -24,11 +25,11 @@ RenderComponentSprite.prototype.update = function(dt_s, config = null) {
 }
 
 RenderComponentSprite.prototype.getWidth = function() {
-    return this.imgObj.width / 2;
+    return this.imgObj.width;
 }
 
 RenderComponentSprite.prototype.getHeight = function() {
-    return this.imgObj.height / 2;
+    return this.imgObj.height;
 }
 
 
@@ -38,6 +39,7 @@ function RenderComponentCircle() {
     GameObjectComponent.call(this);
     this.color = [255, 255, 255];   // Default to white, because why not?
     this.radius = 3;
+    // TODO add option for filled or not
 }
 
 RenderComponentCircle.prototype = Object.create(GameObjectComponent.prototype);
@@ -73,3 +75,44 @@ RenderComponentCircle.prototype.getWidth = function() {
 RenderComponentCircle.prototype.getHeight = function() {
     return this.radius;
 }
+
+// ----------------------------------------------------------------------------
+
+function RenderComponentRect() {
+    GameObjectComponent.call(this);
+    this.color = [255, 255, 255];   // Default to white, because why not?
+    this.width = 1;
+    this.height = 1;
+    // TODO add option for filled or not
+};
+
+RenderComponentRect.prototype = Object.create(GameObjectComponent.prototype);
+RenderComponentRect.prototype.constructor = RenderComponentRect;
+
+
+RenderComponentRect.prototype.draw = function(canvasContext, xCoord, yCoord) {
+    // PICK UP FROM HER -- draw a rect instead of a circle; then add a Rect render component to the aabb and draw the aabb's for the spaceship and asteroids.. Debug that ish
+    // xCoord,yCoord must be passed in (probably from the physics component's position?)
+    // For rectangles, the positions are given as the top-left corner
+    canvasContext.strokeRect(xCoord, yCoord, width, height)
+};
+
+RenderComponentRect.prototype.update = function(dt_s, config = null) {
+    // Override base GameObject class update(), but do nothing in this func
+    // (unless we determine that something does need to be updated, in which case, update this comment :-D)
+};
+
+RenderComponentRect.prototype.setColor = function(r, g, b) {
+    this.color[0] = r;
+    this.color[1] = g;
+    this.color[2] = b;
+};
+
+RenderComponentRect.prototype.getWidth = function() {
+    return this.width;
+};
+
+RenderComponentRect.prototype.getHeight = function() {
+    return this.height;
+};
+

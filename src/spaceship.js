@@ -131,9 +131,19 @@ Spaceship.prototype.draw = function(canvasContext) {
 
     canvasContext.translate(myPhysicsComp.currPos[0], myPhysicsComp.currPos[1]);
     canvasContext.rotate( glMatrix.toRadian(myPhysicsComp.angle) );
-    myRenderComp.draw(canvasContext, -myRenderComp.imgObj.width/2, -myRenderComp.imgObj.height/2);
-
+    // Draw the sprite -- offset by half the width/height so that the x/y coords of the ship's position represent the center of the image, instead of the top-left corner
+    //myRenderComp.draw(canvasContext, -myRenderComp.imgObj.width/2, -myRenderComp.imgObj.height/2);    // TODO delete?
+    myRenderComp.draw(canvasContext, 0, 0);
     canvasContext.restore(); // similar to glPopMatrix
+
+    // TODO what we really need to do here is give the AABBs a render component, and then draw that. That way, we can draw the spaceship's and the asteroids' render components
+    // ----- DEBUGGING stuff
+    var myCollisionComp = this.components["collision"];
+    var topleft = vec2.clone(myCollisionComp.center);
+    vec2.set(topleft, topleft[0] - myCollisionComp.getWidth() / 2, topleft[1] - myCollisionComp.getHeight() / 2);
+    myCollisionComp.draw(canvasContext);
+    // -----
+
 };
 
 Spaceship.prototype.enableThrust = function() {
