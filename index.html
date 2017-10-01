@@ -102,7 +102,6 @@ function mainloop(timestamp)
 		gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
 	}
 
-    // TODO replace/modify mainloop to support the State pattern
     drawStuff();
     frameID = requestAnimationFrame(mainloop);
 
@@ -111,7 +110,6 @@ function mainloop(timestamp)
 function drawStuff()
 {
     gameLogic.draw();   // No need to pass anything to the function, because the application class is global (so we already have access to all its members)
-    // TODO eventually, if time permits, rework it so the gameLogic object belongs to a State, and the call here can be state.draw(), which will draw that state's gameLogic object, which will draw all the game objects that belong to the state
 }
 
 </script>

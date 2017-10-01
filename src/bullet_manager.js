@@ -69,6 +69,7 @@ BulletManager.prototype.postUpdate = function(dt_s, config=null) {
         }
 
         var physComp = bullet.components["physics"];
+        // TODO remove hardcoding of level dimensions here; use an arena object or something similar
         if (physComp.currPos[0] < 0 || physComp.currPos[0] > 512 ||
             physComp.currPos[1] < 0 || physComp.currPos[1] > 512 ) {
                 cmdMsg = { "topic": "GameCommand",

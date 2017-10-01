@@ -36,7 +36,6 @@ CollisionManager.prototype.removeCollider = function(id) {
 }
 
 CollisionManager.prototype.update = function(dt_s, configObj) {
-    // TODO implement -- the update function should call into a quadtree update (broad phase), and then individual collision tests possibly
 
     this.quadTree.clear();
 
@@ -49,7 +48,7 @@ CollisionManager.prototype.update = function(dt_s, configObj) {
     }
 
     // For each collider, query the quadtree to determine which other objects it could be colliding with
-    // TODO improve this loop; currently, this would test, e.g. obj 0 against obj 1; then later, obj 1 against obj 0
+    // TODO improve this loop; currently, this would test, e.g. obj 0 against obj 1; then later, obj 1 against obj 0. As a result, we're also getting multiple collision events for the same collision.  Maybe the approach is to build a set of all possible collision pairings (the pairings themselves can be key/value pairs: key is some uniqe ID based on name & object ID; value is a reference to the collider -- , i.e. make sure there are no duplicates. Then iterate over the set
     for (var collKey in this.colliders) {
         if (this.colliders.hasOwnProperty(collKey)) {
             var collObj = this.colliders[collKey];
@@ -59,6 +58,12 @@ CollisionManager.prototype.update = function(dt_s, configObj) {
             for (var candidate of candidates) {
                 if (this.isColliding(collObj, candidate)) {
                     console.log("Collision detected!");
+                    // Enqueue a message to the gameLogic object with information about the collision, for the gameLogic to decide how to respond
+                    var collisionMsg = { "topic": "CollisionEvent",
+                                         "colliderA": collObj,
+                                         "colliderB": candidate
+                                       };
+                    gameLogic.messageQueue.enqueue(collisionMsg);
                 }
             }
         }

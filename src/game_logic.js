@@ -19,6 +19,7 @@ GameLogic.prototype.initialize = function() {
     this.messageQueue.initialize(64);
     this.messageQueue.registerListener('UserInput', this, this.actOnUserInputMessage);  // TODO - clean this up; the "UserInput" topic appears to be unused. The original idea was to first handle keyboard input (topic = UserInput), and then in the registered input listener function, enqueue messages with "GameCommand" (on both keyup and keydown events). But I don't think the 2-layer approach is necessary. I think we can go directly from the separate handleKeyDown and handleKeyUp functions to enqueueing the appropriate game actions
     this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
+    this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
 
     this.timer = new Timer();
 
@@ -102,21 +103,15 @@ GameLogic.prototype.processMessages = function(dt_s) {
         // That way, this loop will not run unless items actually exist in the queue
         var msg = this.messageQueue.dequeue();
 
-        for (var the_topic in this.messageQueue._registeredListeners)
-        {
-            console.log('Iterating over topic: ' + the_topic);
+        console.log('Iterating over topic: ' + msg.topic);
 
-            for (var j = 0, lj = this.messageQueue._registeredListeners[the_topic].length; j < lj; j++) {
-                // Call the handler if the msg.topic matches the_topic
-                if (msg.topic == the_topic) {
-                    // TODO evaluate why we're storing the listeners as dicts {id: ref}; why not just use a list?
-                    //fn_to_call = this.messageQueue._registeredListeners[the_topic][j];
-                    //fn_to_call(msg);
+        for (var j = 0, lj = this.messageQueue._registeredListeners[msg.topic].length; j < lj; j++) {
+            // TODO evaluate why we're storing the listeners as dicts {id: ref}; why not just use a list?
+            //fn_to_call = this.messageQueue._registeredListeners[msg.topic][j];
+            //fn_to_call(msg);
 
-                    var fn_to_call = this.messageQueue._registeredListeners[the_topic][j];
-                    fn_to_call["func"].call(fn_to_call["obj"], msg);
-                }
-            }
+            var fn_to_call = this.messageQueue._registeredListeners[msg.topic][j];
+            fn_to_call["func"].call(fn_to_call["obj"], msg);
         }
     }
 };
@@ -268,5 +263,42 @@ GameLogic.prototype.sendCmdToGameObj = function(msg) {
 
     // Call the executeCommand() function with the given command (all GameObjs will have an executeCommand() function)
     msg["objRef"].executeCommand(msg["command"], msg["params"]);
+};
+
+GameLogic.prototype.processCollisionEvent = function(msg) {
+    // TODO possibly add to the Particle/ParticleEmitter an identifier of which emitter emitted a particle? That way, we can avoid self-collisions (e.g. bullets fired by my own guns hitting my hitbox/AABB)
+    console.log("Processing collision event message ");
+    console.log(msg);
+    console.log("Probably also enqueue a message to an explosion manager to trigger an explosion. Also, play a sound");
+
+    var gameObjAType = msg.colliderA.parentObj.constructor.name;
+    var gameObjBType = msg.colliderB.parentObj.constructor.name;
+
+    // Spaceship vs Asteroid
+    if (gameObjAType == "Spaceship" && gameObjBType == "Asteroid" || gameObjBType == "Spaceship" && gameObjAType == "Asteroid") {
+        console.log("We have a collision between a spaceship and an asteroid")
+
+        // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
+        var asteroidRef = null;
+        if (gameObjAType == "Asteroid") {
+            asteroidRef = msg.colliderA.parentObj;
+        } else {
+            asteroidRef = msg.colliderB.parentObj;
+        }
+
+        // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
+        cmdMsg = { "topic": "GameCommand",
+                   "command": "disableAndSpawnAsteroids",
+                   "objRef": this.gameObjs["astMgr"],
+                   "params": { "disableList": [ asteroidRef ],
+                               "numToSpawn": 2 }
+                 };
+
+        this.messageQueue.enqueue(cmdMsg);
+    }
+
+    // Determine what type of collision we have here, e.g. bullet/asteroid, bullet/ship, ship/asteroid, ship/ship, etc.
+    // Possibly (probably?) enqueue a message to call another function to actually handle the events (just splitting up function calls to allow the game to update/draw frames, etc.
+
 };
 

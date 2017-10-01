@@ -118,7 +118,6 @@ QuadTree.prototype.insert = function(obj) {
             }
         } else {
             var msg = "QuadTree is at maximum depth -- can't subdivide any further! Consider tweaking tree parameters or making your game generate fewer objects, hah";
-            //alert(msg);     // TODO remove if the alert becomes too annoying
             console.log(msg);
         }
     } 

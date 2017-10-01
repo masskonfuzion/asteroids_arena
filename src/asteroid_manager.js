@@ -7,6 +7,9 @@ function AsteroidManager () {
     this.maxAsteroids = 0;
     this.initialAsteroids = 0;
     this.numFreeSlots = 0;  // Track the # of free Asteroid slots in the particle system
+
+    // Populate the command map (this.commandMap is part of the GameObject base class, which this Asteroid Manager derives from)
+    this.commandMap["disableAndSpawnAsteroids"] = this.disableAndSpawnAsteroids;
 }
 
 
@@ -91,3 +94,65 @@ AsteroidManager.prototype.draw = function(canvasContext) {
 };
 
 
+// Disable passed-in asteroid(s), and spawn new ones
+AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
+    // params is a dict object
+
+    for (var astToDisable of params.disableList) {
+        var myEmitter = this.components["asteroidPE"];
+
+        var spawnPoint = vec2.clone(astToDisable.components["physics"].currPos);
+
+        // Get velocity from asteroid
+        var astVel = vec2.create();
+        var astVelDir = vec2.create();
+        vec2.sub(astVel, astToDisable.components["physics"].currPos, astToDisable.components["physics"].prevPos);
+        vec2.normalize(astVelDir, astVel);
+
+        // Note: there should be as many launchData items as params.numToSpawn
+        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "mul": 2 },
+                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "mul": 2 } ];
+
+        for (var i = 0; i < params.numToSpawn; i++) {
+            // TODO Compute what size of asteroid to spawn
+            var configObj = { "renderCompType": "image",
+                              "imageRef": game.imgMgr.imageMap["astLarge"].imgObj
+                            };
+            // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
+            // Also note: this approach requires the ParticleSystem to be configured to create Particles with an image/sprite render component
+
+            // Compute launch data based on asteroid velocity
+            var rotMat = mat2.create();
+            mat2.fromRotation(rotMat, launchData[i]["ang"]);
+            vec2.transformMat2(launchData[i]["dir"], astVelDir, rotMat);
+
+            var offsetVec = vec2.create();
+            //vec2.scale(offsetVec, launchData[i]["dir"], launchData[i]["mul"]);
+            vec2.scale(offsetVec, launchData[i]["dir"], 40);      // DEBUG TESTING - delete this line and replace with the previous line
+
+            var fragmentPos = vec2.create();
+            vec2.add(fragmentPos, spawnPoint, offsetVec);
+
+            myEmitter.setPosition(fragmentPos[0], fragmentPos[1]);
+            myEmitter.setVelocityRange(vec2.length(astVel) * launchData[i]["mul"], vec2.length(astVel) * launchData[i]["mul"]);
+            myEmitter.setLaunchDir(launchData[i]["dir"][0], launchData[i]["dir"][1]);
+            myEmitter.setAngleRange(0, 0);  // i.e., launch in exactly the direction of launchDir
+
+            // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
+            myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
+            // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
+        }
+
+        astToDisable.alive = false;
+    }
+};
+
+
+AsteroidManager.prototype.executeCommand = function(cmdMsg, params) {
+    console.log("AsteroidManager executing command");
+    console.log(cmdMsg);
+
+    // Call function
+    // Note that this command passes a "params" arg in the cmdMsg payload, where other executeCommand functions (elsewhere in this codebase) do not..
+    this.commandMap[cmdMsg].call(this, params); // use call() because without it, we're losing our "this" reference (going from AsteroidManager to Object)
+}
