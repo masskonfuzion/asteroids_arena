@@ -274,10 +274,34 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
     var gameObjAType = msg.colliderA.parentObj.constructor.name;
     var gameObjBType = msg.colliderB.parentObj.constructor.name;
 
+    // TODO Possibly restructure collision event if/then cases into their own individual function calls
+
+    var cmdMsg;
+
     // Spaceship vs Asteroid
     if (gameObjAType == "Spaceship" && gameObjBType == "Asteroid" || gameObjBType == "Spaceship" && gameObjAType == "Asteroid") {
         console.log("We have a collision between a spaceship and an asteroid")
 
+        // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
+        var asteroidRef = null;
+        if (gameObjAType == "Asteroid") {
+            asteroidRef = msg.colliderA.parentObj;
+        } else {
+            asteroidRef = msg.colliderB.parentObj;
+        }
+
+        // TODO also destroy the ship
+
+        // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
+        cmdMsg = { "topic": "GameCommand",
+                   "command": "disableAndSpawnAsteroids",
+                   "objRef": this.gameObjs["astMgr"],
+                   "params": { "disableList": [ asteroidRef ],
+                               "numToSpawn": 2 }
+                 };
+        this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
+    }
+    else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
         if (gameObjAType == "Asteroid") {
@@ -294,11 +318,8 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                "numToSpawn": 2 }
                  };
 
-        this.messageQueue.enqueue(cmdMsg);
+        // TODO also destroyt eh bullet
+        this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
     }
-
-    // Determine what type of collision we have here, e.g. bullet/asteroid, bullet/ship, ship/asteroid, ship/ship, etc.
-    // Possibly (probably?) enqueue a message to call another function to actually handle the events (just splitting up function calls to allow the game to update/draw frames, etc.
-
 };
 
