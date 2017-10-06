@@ -38,10 +38,11 @@ GameLogic.prototype.initialize = function() {
     this.gameObjs["bulletMgr"].initialize(256);
 
     // ----- Initialize spaceship
-    // TODO possibly make a Saceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
+    // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
     this.addGameObject("ship", new Spaceship());
-    this.gameObjs["ship"].components["render"].setImgObj(game.imgMgr.imageMap["ship"].imgObj);    // <-- hmm.. not super clean-looking...
-    this.gameObjs["ship"].components["collision"].update(0);    // Do an update to force the collision to compute its boundaries
+    var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship"].imgObj };
+    this.gameObjs["ship"].initialize(shipConfigObj);
+
     this.gameObjs["collisionMgr"].addCollider(this.gameObjs["ship"].components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
 
     var spaceshipThrustPE = this.gameObjs["ship"].components["thrustPE"];       // Get the spaceship's thrust particle emitter
@@ -300,14 +301,16 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                "numToSpawn": 2 }
                  };
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
-    }
-    else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
+    } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
+        var bulletRef = null;
         if (gameObjAType == "Asteroid") {
             asteroidRef = msg.colliderA.parentObj;
+            bulletRef = msg.colliderB.parentObj;
         } else {
             asteroidRef = msg.colliderB.parentObj;
+            bulletRef = msg.colliderA.parentObj;
         }
 
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
@@ -318,8 +321,27 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                "numToSpawn": 2 }
                  };
 
-        // TODO also destroyt eh bullet
+        // TODO also destroy the bullet
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
+    } else if (gameObjAType == "Bullet" && gameObjBType == "Spaceship" || gameObjBType == "Bullet" && gameObjAType == "Spaceship") {
+        var bulletRef = null;
+        var spaceshipRef = null;
+
+        if (gameObjAType == "Bullet") {
+            bulletRef = msg.colliderA.parentObj;
+            spaceshipRef = msg.colliderB.parentObj;
+        } else {
+            bulletRef = msg.colliderB.parentObj;
+            spaceshipRef = msg.colliderA.parentObj;
+        }
+
+        // Make sure we're not processing the moment when a bullet fired by a spaceship is intersecting with the hitbox for the ship
+
+        // Compute the spaceship's gun/emitter ID
+        if (bulletRef.emitterID == spaceshipRef.components["gunPE"].emitterID) {
+            console.log("Skipping " + gameObjAType + "/" + gameObjBType + " collision because of self-shot prevention");
+        }
+
     }
 };
 

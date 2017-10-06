@@ -13,7 +13,7 @@ ParticleEmitter should be thought of as a Particle System Controller. A spaceshi
 TODO decide: Should the ParticleEmitter actually be a ParticleManager, i.e., also responsible for destroying Particles?
 **/
 
-function ParticleEmitter() {
+function ParticleEmitter(myID = "") {
     // Inherit GameObject properties, includinga components dict
     GameObject.call(this);
 
@@ -25,6 +25,7 @@ function ParticleEmitter() {
     this.minLaunchAngle = 0.0;          // Minimum launch angle offset (relative to launchDir, in degrees)
     this.maxLaunchAngle = 0.0;          // Maximum launch angle offset (relative to launchDir, in degrees)
     this.position = vec2.create();
+    this.emitterID = myID;              // a unique identifier for this emitter
 
     // If configured to use colors for particles (instead of images), particle emitter will
     // select a color in between min and max (if autoExpire is true, then the Particle's starting
@@ -83,6 +84,7 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
         // NOTE: We're not using particle angles here (but we could if we wanted to)
 
         particle.alive = true;
+        particle.emitterID = this.emitterID;
         
         // Compute a TTL
         var ttl = 0.0;
@@ -102,6 +104,7 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
                 // TODO handle other render comp types (maybe animated sprite?)
                 // TODO also add a case to allow the config obj to specify a color, rather than image? Or should color & image be mutually exclusive? So many design considerations...
             }
+
         } else {
             // Default, if no config object, is to use colors.
             var pct = 0.0;
@@ -128,6 +131,10 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
     }
 };
 
+
+ParticleEmitter.prototype.setEmitterID = function(myID) {
+    this.emitterID = myID;
+};
 
 ParticleEmitter.prototype.setPosition = function(posX, posY) {
     vec2.set(this.position, posX, posY);
@@ -220,10 +227,10 @@ ParticleEmitter.prototype.update = function(dt_s, config = null) {
                 for (var emitPoint of config["emitPoints"]) {
                     this.setPosition(emitPoint["position"][0], emitPoint["position"][1]);
                     this.setLaunchDir(emitPoint["direction"][0], emitPoint["direction"][1]);
-                    this.emitParticle(dt_s);
+                    this.emitParticle(dt_s, config);
                 }
             } else {
-                this.emitParticle(dt_s);
+                this.emitParticle(dt_s, config);
             }
 
             // TODO any other params to add to the config obj for the particle emitter?

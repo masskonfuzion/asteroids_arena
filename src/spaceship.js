@@ -9,13 +9,12 @@ function Spaceship() {
     this.addComponent("gunPE", new ParticleEmitter());              // Particle emitter for bullet/guns particle system
     this.addComponent("collision", new CollisionComponentAABB());
 
-    var particleEmitter = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
-    particleEmitter.setVelocityRange(150.0, 300.0);
-    particleEmitter.setAngleRange(-20, 20);     // degrees
-    particleEmitter.setTTLRange(0.2, 0.4);    // seconds
-    particleEmitter.setMinColor(20, 4, 4);
-    particleEmitter.setMaxColor(252, 140, 32);
-    // TODO add rate limiter for particle emitters
+    var thrustPE = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
+    thrustPE.setVelocityRange(150.0, 300.0);
+    thrustPE.setAngleRange(-20, 20);     // degrees
+    thrustPE.setTTLRange(0.2, 0.4);    // seconds
+    thrustPE.setMinColor(20, 4, 4);
+    thrustPE.setMaxColor(252, 140, 32);
 
     var gunPE = this.components["gunPE"];
     gunPE.setVelocityRange(300.0, 300.0);
@@ -30,7 +29,7 @@ function Spaceship() {
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
-    this.commandMap["setThrustOff"] = this.disableThrust;   // TODO evaluate: do we NEED the thrust functions to be defined on the prototype? Probably yes if anything will derive from Spaceship; but otherwise no
+    this.commandMap["setThrustOff"] = this.disableThrust;
     this.commandMap["setTurnLeftOn"] = this.enableTurnLeft;
     this.commandMap["setTurnRightOn"] = this.enableTurnRight;
     this.commandMap["setTurnOff"] = this.disableTurn;
@@ -42,12 +41,18 @@ function Spaceship() {
 Spaceship.prototype = Object.create(GameObject.prototype);
 Spaceship.prototype.constructor = Spaceship;
 
+Spaceship.prototype.initialize = function(configObj) {
+    // configObj is a dict object 
+    this.components["render"].setImgObj(configObj["imgObj"]);
+    this.components["collision"].update(0);    // Do an update to force the collision component to compute its boundaries
+
+    // NOTE: can't set particle emitter IDs in the constructor because the objectID for this object has not been set at that point
+    this.components["gunPE"].setEmitterID(this.constructor.name + this.objectID.toString() + "." + "gunPE");
+};
+
 // Override the default update()
 Spaceship.prototype.update = function(dt_s, config = null) {
 
-
-    // TODO for thrust PE, possibly include some kind of time-based particle emission rate limiting here
-    // TODO for thrust PE, make sure to emit particles only when actually thrusting
     // Iterate over all components and call their respective update() function
     for (var compName in this.components) {
         if (this.components.hasOwnProperty(compName)) {
@@ -66,19 +71,16 @@ Spaceship.prototype.update = function(dt_s, config = null) {
                     var launchDir = vec2.create()
                     vec2.copy(launchDir, myPhysicsComp.angleVec);    // NOTE: could have called setLaunchDir() here
 
-                    //var instantaneousVel = vec2.create(); // TODO probably delete these lines
-                    //vec2.sub(instantaneousVel, myPhysicsComp.currPos, myPhysicsComp.prevPos);
-                    //vec2.add(launchDir, launchDir, instantaneousVel);
                     vec2.scale(launchDir, launchDir, -1);
                     vec2.normalize(launchDir, launchDir);   // Normalize, just to be sure..
 
                     // position the particle emitter at the back of the ship (use the ship's sprite dimensions for guidance)
                     var pePos = vec2.create();
-                    vec2.set(pePos, -16, 0);    // TODO un-hardcode this; use spaceship render component's img object width/height
+                    vec2.set(pePos, -16, 0);
                     var rotMat = mat2.create();
                     mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
                     vec2.transformMat2(pePos, pePos, rotMat);
-                    vec2.add(pePos, pePos, myPhysicsComp.currPos); // TODO figure out why the imgObj size dimensions are 0... Once you do that, then edit this line to properly place the emitter position at the back of the ship, using the image dimensions
+                    vec2.add(pePos, pePos, myPhysicsComp.currPos);
 
                     // emitPoints is a list of emitter position/direction pairs. Used for having multiple emit points/dirs.
                     //var emitterConfig = { "emitPoints": [ {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir}, {"position": pePos, "direction": launchDir} ] };   // emit 4 particles per update
@@ -97,14 +99,15 @@ Spaceship.prototype.update = function(dt_s, config = null) {
 
                     // position the particle emitter at the front of the ship (use the ship's sprite dimensions for guidance)
                     var pePos = vec2.create();
-                    vec2.set(pePos, 16, 0);    // TODO un-hardcode this; use spaceship render component's img object width/height
+                    vec2.set(pePos, 16, 0);
                     var rotMat = mat2.create();
                     mat2.fromRotation(rotMat, glMatrix.toRadian(myPhysicsComp.angle) );
                     vec2.transformMat2(pePos, pePos, rotMat);
                     vec2.add(pePos, pePos, myPhysicsComp.currPos);
 
                     myGunPEComp.setPosition(pePos[0], pePos[1]);
-                    updateConfigObj = { "emitPoints": [ {"position": pePos, "direction": launchDir} ] };   // emit 1 particle per update
+                    // NOTE: we emit 1 particle per update, but as we add different types of weapons, that can change
+                    updateConfigObj = { "emitPoints": [ {"position": pePos, "direction": launchDir} ] };
                     break;
             }
 
@@ -132,11 +135,9 @@ Spaceship.prototype.draw = function(canvasContext) {
     canvasContext.translate(myPhysicsComp.currPos[0], myPhysicsComp.currPos[1]);
     canvasContext.rotate( glMatrix.toRadian(myPhysicsComp.angle) );
     // Draw the sprite -- offset by half the width/height so that the x/y coords of the ship's position represent the center of the image, instead of the top-left corner
-    //myRenderComp.draw(canvasContext, -myRenderComp.imgObj.width/2, -myRenderComp.imgObj.height/2);    // TODO delete?
     myRenderComp.draw(canvasContext, 0, 0);
     canvasContext.restore(); // similar to glPopMatrix
 
-    // TODO what we really need to do here is give the AABBs a render component, and then draw that. That way, we can draw the spaceship's and the asteroids' render components
     // ----- DEBUGGING stuff
     var myCollisionComp = this.components["collision"];
     var topleft = vec2.clone(myCollisionComp.center);
@@ -149,7 +150,6 @@ Spaceship.prototype.draw = function(canvasContext) {
 Spaceship.prototype.enableThrust = function() {
     // Set acceleration vector
     var myPhysComp = this.components["physics"];
-    // TODO put spaceship parameters (thrust acceleration, etc) into an object
     vec2.set(myPhysComp.acceleration, Math.cos( glMatrix.toRadian(myPhysComp.angle) ), Math.sin( glMatrix.toRadian(myPhysComp.angle) ));
     vec2.scale(myPhysComp.acceleration, myPhysComp.acceleration, 210);
 

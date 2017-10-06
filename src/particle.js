@@ -9,6 +9,7 @@ function Particle() {
 
     // NOTE: Particles will not have a "velocity" property because they'll be simulated using position Verlet integration. The Emitter will control initial position and velocity
 
+    this.emitterID = "";        // ID of object that fired this particle (optional)
     this.alive = false;
     this.autoExpire = true;     // By default, this particle "auto-expires" using TTL. Set to false to disable auto-expire, and force some other game logic to determine when to expire this particle
     this.ttl = 0.0;         // in seconds.
@@ -32,7 +33,6 @@ Particle.prototype.setAutoExpire = function(tf) {
 
 
 Particle.prototype.update = function(dt_s, config = null) {
-    // TODO update the stuff here; probably integrate verlet, fade color, decrease ttl, all that..
     if (this.alive) {
         this.components["physics"].update(dt_s);
 

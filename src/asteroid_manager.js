@@ -19,19 +19,16 @@ AsteroidManager.prototype.constructor = AsteroidManager;
 AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
     // maxAsteroids is the maximum number of Asteroids that could be in play
     var mySystem = this.components["asteroidPS"];
-    mySystem.initialize(maxAsteroids);  // TODO make it possible to set the class (maybe give the specific constructor to call?)
+    mySystem.initialize(maxAsteroids);
 
-    // TODO make it possible to configure the emitter using a config object (i.e. an object with the params to set for the emitter, to enable difficulty levels, etc)
     var myEmitter = this.components["asteroidPE"];
     myEmitter.setVelocityRange(1.0, 5.0);
     myEmitter.setAngleRange(-180, 180);     // degrees
     myEmitter.setLaunchDir(1.0, 0.0);   // Direction doesn't matter.. the angle range will be a full 360 degrees
-    myEmitter.setPosition(256, 256);    // TODO randomize emitter positions throughout the arena/space
+    myEmitter.setPosition(256, 256);
     myEmitter.registerParticleSystem(mySystem);
 
-    // TODO consider NOT emitting a particle/asteroid in initialize() (i.e. move this fn elsewhere)
     for (var i = 0; i < initAsteroids; i++) {
-        // TODO add an emitPoints list -- otherwise, this emitter won't know where to emit from
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj
                         };
