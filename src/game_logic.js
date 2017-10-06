@@ -267,7 +267,6 @@ GameLogic.prototype.sendCmdToGameObj = function(msg) {
 };
 
 GameLogic.prototype.processCollisionEvent = function(msg) {
-    // TODO possibly add to the Particle/ParticleEmitter an identifier of which emitter emitted a particle? That way, we can avoid self-collisions (e.g. bullets fired by my own guns hitting my hitbox/AABB)
     console.log("Processing collision event message ");
     console.log(msg);
     console.log("Probably also enqueue a message to an explosion manager to trigger an explosion. Also, play a sound");
@@ -321,8 +320,17 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                "numToSpawn": 2 }
                  };
 
+        this.messageQueue.enqueue(cmdMsg);  // NOTE: we enqueue here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
+
+        cmdMsg = { "topic": "GameCommand",
+                   "command": "disableBullet",
+                   "objRef": this.gameObjs["bulletMgr"],
+                   "params": { "bulletToDisable": bulletRef }
+                 };
+
         // TODO also destroy the bullet
-        this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
+        this.messageQueue.enqueue(cmdMsg);
+
     } else if (gameObjAType == "Bullet" && gameObjBType == "Spaceship" || gameObjBType == "Bullet" && gameObjAType == "Spaceship") {
         var bulletRef = null;
         var spaceshipRef = null;
