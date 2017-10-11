@@ -93,7 +93,6 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
             particle.ttl = ttl;
         }
 
-        // TODO set color (use a color palette or something?) - Set min & max components in each color channel; pick an initial "position" between min & max; fade from there to the min over the TTL time
         if (config) 
         {
             if (config.hasOwnProperty("renderCompType")) {
@@ -103,21 +102,13 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
                 }
                 // TODO handle other render comp types (maybe animated sprite?)
                 // TODO also add a case to allow the config obj to specify a color, rather than image? Or should color & image be mutually exclusive? So many design considerations...
+            } else {
+                this.setRandomParticleColor(particle);
             }
 
         } else {
             // Default, if no config object, is to use colors.
-            var pct = 0.0;
-            if (particle.autoExpire) {
-                pct = (ttl - this.minTTL) / (this.maxTTL - this.minTTL);
-            } else {
-                pct = Math.random();
-            }
-            var r = this.minColor[0] + (this.maxColor[0] - this.minColor[0]) * pct;
-            var g = this.minColor[1] + (this.maxColor[1] - this.minColor[1]) * pct;
-            var b = this.minColor[2] + (this.maxColor[2] - this.minColor[2]) * pct;
-
-            particle.components["render"].setColor(r, g, b);
+            this.setRandomParticleColor(particle);
         }
 
         // Note: we are able to add collision objects to the collision manager at this point, because the particles being managed by this emitter are already fully formed objects
@@ -129,6 +120,30 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
             collMgr.addCollider(particle.components["collision"]);
         }
     }
+};
+
+// Set the color of the Particle's render component
+// (this only works if the render component is something we can set the color of, e.g., circle, square -- primitive shapes
+ParticleEmitter.prototype.setRandomParticleColor = function(particle) {
+    var pct = 0.0;
+    if (particle.autoExpire) {
+        pct = (particle.ttl - this.minTTL) / (this.maxTTL - this.minTTL);
+    } else {
+        pct = Math.random();
+    }
+    var r = this.minColor[0] + (this.maxColor[0] - this.minColor[0]) * pct;
+    var g = this.minColor[1] + (this.maxColor[1] - this.minColor[1]) * pct;
+    var b = this.minColor[2] + (this.maxColor[2] - this.minColor[2]) * pct;
+
+    particle.components["render"].setColor(r, g, b);
+    
+};
+
+// Set the color of the Particle's render component
+// (this only works if the render component is something we can set the color of, e.g., circle, square -- primitive shapes
+ParticleEmitter.prototype.setParticleColor = function(particle, r, g, b) {
+    
+    particle.components["render"].setColor(r, g, b);
 };
 
 
