@@ -96,8 +96,10 @@ function mainloop(timestamp)
     // NOTE requestAnimationFrame passes in a timestamp into the function being called
     gameLogic.timer.doFrameTimer(timestamp);
 
+
 	while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
-		gameLogic.processMessages(gameLogic.fixed_dt_s);
+	    gameLogic.processMessages(gameLogic.fixed_dt_s);
+        // Note: lurking in the gameLogic update() is a collisionMgr update that will attempt (but be blocked) to enqueue multiple collision events.
 		gameLogic.update(gameLogic.fixed_dt_s);
 		gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
 	}

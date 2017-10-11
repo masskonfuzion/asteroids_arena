@@ -54,9 +54,9 @@ Particle.prototype.disable = function() {
     if("collision" in this.components && this.components.hasOwnProperty("collision")) {
         var myCollider = this.components["collision"];
         // If so, then also check if the GameLogic object has a collision manager that is managing the particle's collision component
-        if ("collisionMgr" in gameLogic.gameObjs && gameLogic.gameObjs.hasOwnProperty("collisionMgr")) {
+        if (gameLogic.collisionMgr) {
             // remember, gameLogic is a global-scope var set in index.html
-            var collMgr = gameLogic.gameObjs["collisionMgr"];
+            var collMgr = gameLogic.collisionMgr;
             collMgr.removeCollider(myCollider.objectID);
         }
     }

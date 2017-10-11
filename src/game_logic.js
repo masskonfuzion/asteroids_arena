@@ -1,5 +1,6 @@
 function GameLogic() {
 // TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
+    this.collisionMgr = null;   // Placeholder for a collision manager (definition probably belongs in base/interface class)
     this.gameObjs = {};
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
@@ -25,35 +26,39 @@ GameLogic.prototype.initialize = function() {
 
     // ----- Initialize collision manager
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
-    this.addGameObject("collisionMgr", new CollisionManager());
-    this.gameObjs["collisionMgr"].initialize( {"x":0, "y":0, "width":512, "height":512} );     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
+    this.collisionMgr = new CollisionManager();
+    this.collisionMgr.initialize( {"x":0, "y":0, "width":512, "height":512} );     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
 
     // ----- Initialize thrust/rocket particle system
     this.addGameObject("thrustPS", new ParticleSystem());
-    this.gameObjs["thrustPS"].initialize(1024);
+    var thrustPSRef = this.gameObjs["thrustPS"];
+    thrustPSRef.initialize(1024);
 
     // ----- Initialize Bullet Manager system
     // Note: bullet mgr has to come before spaceship so that spaceship can register as a bullet emitter
     this.addGameObject("bulletMgr", new BulletManager());
-    this.gameObjs["bulletMgr"].initialize(256);
+    var bulletMgrRef = this.gameObjs["bulletMgr"];
+    bulletMgrRef.initialize(256);
 
     // ----- Initialize spaceship
     // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
     this.addGameObject("ship", new Spaceship());
+    var shipRef = this.gameObjs["ship"];
     var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship"].imgObj };
-    this.gameObjs["ship"].initialize(shipConfigObj);
+    shipRef.initialize(shipConfigObj);
 
-    this.gameObjs["collisionMgr"].addCollider(this.gameObjs["ship"].components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
+    this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
 
-    var spaceshipThrustPE = this.gameObjs["ship"].components["thrustPE"];       // Get the spaceship's thrust particle emitter
+    var spaceshipThrustPE = shipRef.components["thrustPE"];       // Get the spaceship's thrust particle emitter
     spaceshipThrustPE.registerParticleSystem(this.gameObjs["thrustPS"]);
 
-    var spaceshipGunPE = this.gameObjs["ship"].components["gunPE"];             // Get the spaceship's gun particle emitter
+    var spaceshipGunPE = shipRef.components["gunPE"];             // Get the spaceship's gun particle emitter
     spaceshipGunPE.registerParticleSystem(this.gameObjs["bulletMgr"].components["gunPS"]);
 
     // ----- Initialize Asteroid Manager
     this.addGameObject("astMgr", new AsteroidManager());
-    this.gameObjs["astMgr"].initialize(1, 16);
+    var astMgrRef = this.gameObjs["astMgr"];
+    astMgrRef.initialize(1, 16);
 
     // ----- Initialize Arena
     // TODO -- make arena. Simplest is rectangle obj {x, y, width, height}; but can also make a class, with arbitrary arena shape, and the ability to test for containment of objs within itself.  Can use this test to determine when to expire bullet objects
@@ -68,7 +73,6 @@ GameLogic.prototype.addGameObject = function(objName, obj) {
     this.gameObjs[objName].objectID = this.objectIDToAssign;
     this.gameObjs[objName].parentObj = this;
 };
-
 
 GameLogic.prototype.setThrust = function(shipRef) {
     // TODO implement the command pattern for ship controls (thrust and turning). The command pattern will allow for AI
@@ -235,12 +239,21 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
 };
 
 GameLogic.prototype.update = function(dt_s, config = null) {
-    // TODO perform integration, collision detection, etc. See Falldown WebGL for a good mainloop example
-    for (var goKey in this.gameObjs) {
-        if (this.gameObjs.hasOwnProperty(goKey)) {
-            this.gameObjs[goKey].update(dt_s);
-        }
+
+    // Do physics/integration
+    for (var gameObjName of Object.getOwnPropertyNames(this.gameObjs)) {
+        this.gameObjs[gameObjName].update(dt_s);
     }
+
+    // Process collisions
+    if (this.collisionMgr) {
+        this.collisionMgr.update(dt_s);
+    }
+
+    // Play sound effects
+
+    // Process AI (if any/still TODO)
+    // NOTE that user input is handled via event handler in the web browser
 };
 
 GameLogic.prototype.actOnUserInputMessage = function(msg) {
