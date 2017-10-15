@@ -101,7 +101,8 @@ GameLogic.prototype.draw = function() {
 GameLogic.prototype.processMessages = function(dt_s) {
     // dt_s is not used specifically by processMessages, but is passed in in case functions called by processMessages need it
     //console.log('MessageQueue has ' + this.messageQueue.numItems() + ' items in it');
-    for (var i = 0, l = this.messageQueue.numItems(); i < l; i++) {
+
+    while (!this.messageQueue._empty) {
         console.log('Processing message');
         // NOTE: If the queue is initialized with dummy values, then this loop will iterate over dummy values
         // It may be better to use a queue that is has an actual empty array when the queue is empty
@@ -110,13 +111,9 @@ GameLogic.prototype.processMessages = function(dt_s) {
 
         console.log('Iterating over topic: ' + msg.topic);
 
-        for (var j = 0, lj = this.messageQueue._registeredListeners[msg.topic].length; j < lj; j++) {
+        for (var handler of this.messageQueue._registeredListeners[msg.topic]) {
             // TODO evaluate why we're storing the listeners as dicts {id: ref}; why not just use a list?
-            //fn_to_call = this.messageQueue._registeredListeners[msg.topic][j];
-            //fn_to_call(msg);
-
-            var fn_to_call = this.messageQueue._registeredListeners[msg.topic][j];
-            fn_to_call["func"].call(fn_to_call["obj"], msg);
+            handler["func"].call(handler["obj"], msg);
         }
     }
 };

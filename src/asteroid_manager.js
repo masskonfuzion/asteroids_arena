@@ -106,7 +106,7 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         vec2.sub(astVel, astToDisable.components["physics"].currPos, astToDisable.components["physics"].prevPos);
         vec2.normalize(astVelDir, astVel);
 
-        // Note: there should be as many launchData items as params.numToSpawn
+        // Note: there should be as many launchData items as params.numToSpawn  // TODO maybe launchData should be passed in?
         var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "mul": 2 },
                            { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "mul": 2 } ];
 
@@ -140,7 +140,16 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
             // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
         }
 
+        // Remove my collider from the GameLogic object's CollisionManager
+        // NOTE: Should I enqueue a message to request for the CollisionManager to do this, or just do it here?
+        // NOTE: the way this is coded, it assumes the gameLogic has a collisionMgr set (as it should, because otherwise, what would we be doing here?)
+        var idToRemove = astToDisable.components["collision"].objectID;
+        gameLogic.collisionMgr.removeCollider(idToRemove);
+
+        // Disable asteroid in particle system
         astToDisable.alive = false;
+
+
     }
 };
 
