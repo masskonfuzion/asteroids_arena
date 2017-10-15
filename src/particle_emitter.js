@@ -59,8 +59,7 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
 
     if (particle) {
         // Initialize the particle direction by copying from the emitter's direction property
-        var particleDir = vec2.create();
-        vec2.copy(particleDir, this.launchDir);
+        var particleDir = vec2.clone(this.launchDir);
 
         // Compute an angle offset by which to rotate the base particle direction
         var angleOffset = Math.floor(Math.random() * (this.maxLaunchAngle - this.minLaunchAngle)) + this.minLaunchAngle;
