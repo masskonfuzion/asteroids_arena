@@ -302,12 +302,15 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // TODO also destroy the ship
 
+        var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
+
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
         cmdMsg = { "topic": "GameCommand",
                    "command": "disableAndSpawnAsteroids",
                    "objRef": this.gameObjs["astMgr"],
                    "params": { "disableList": [ asteroidRef ],
-                               "numToSpawn": 2 }
+                               "numToSpawn": 2,
+                               "fragRefDir": fragRefDir }
                  };
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
@@ -322,12 +325,17 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             bulletRef = msg.colliderA.parentObj;
         }
 
+        var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
+        vec2.sub(fragRefDir, bulletRef.components["physics"].currPos, bulletRef.components["physics"].prevPos);         // make the fragment ref dir the bullet's velocity dir
+        vec2.normalize(fragRefDir, fragRefDir);
+
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
         cmdMsg = { "topic": "GameCommand",
                    "command": "disableAndSpawnAsteroids",
                    "objRef": this.gameObjs["astMgr"],
                    "params": { "disableList": [ asteroidRef ],
-                               "numToSpawn": 2 }
+                               "numToSpawn": 2,
+                               "fragRefDir": fragRefDir }
                  };
 
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we enqueue here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred

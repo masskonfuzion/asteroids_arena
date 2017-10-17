@@ -34,6 +34,7 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
     myEmitter.registerParticleSystem(mySystem);
 
     for (var i = 0; i < initAsteroids; i++) {
+        // Note the "funcCalls" property - "params" is a list that, when passed into a function.apply() call, is "splatted" into individual parameters, similar to Python *args
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
                           "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ]
@@ -114,19 +115,14 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
 
         // Note: there should be as many launchData items as params.numToSpawn  // TODO maybe launchData should be passed in?
         // NOTE: we/re dividing the velocity multiplier by gameLogic.fixed_dt_s because in this computation, we're dealing with velocity over 1 frame; the physicsComponent's setPosAndVel function assumes we're working with velocity over a full second, so we're dividing by dt, to compensate
-        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "mul": 2 / gameLogic.fixed_dt_s},
-                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "mul": 2 / gameLogic.fixed_dt_s} ];
+        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / gameLogic.fixed_dt_s, "posMult": 40},
+                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "velMult": 2 / gameLogic.fixed_dt_s, "posMult": 40} ];
 
         if (astToDisable.size > 0) {
             for (var i = 0; i < params.numToSpawn; i++) {
-                // TODO Compute what size of asteroid to spawn
-
                 var newSize = astToDisable.size - 1;
                 var newSizeStr = this.asteroidSizeMap[astToDisable.size - 1];
 
-                // TODO figure out how to take params from a list/dict and supply them to the func, without actually passing the dict/list in as the function param
-                // Or.. maybe just require that any function that supports funcCalls take in params as a dict Object
-                // Or.... mmaybe make all functions with no parameters? (But that's not very extensible)
                 var configObj = { "renderCompType": "image",
                                   "imageRef": game.imgMgr.imageMap[ newSizeStr ].imgObj,
                                   "funcCalls": [ { "func": Asteroid.prototype.setSize, "params": [newSize] } ]
@@ -137,17 +133,16 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
                 // Compute launch data based on asteroid velocity
                 var rotMat = mat2.create();
                 mat2.fromRotation(rotMat, launchData[i]["ang"]);
-                vec2.transformMat2(launchData[i]["dir"], astVelDir, rotMat);
+                vec2.transformMat2(launchData[i]["dir"], params.fragRefDir, rotMat);    // Rotate the asteroid/bullet fragment reference dir
 
                 var offsetVec = vec2.create();
-                //vec2.scale(offsetVec, launchData[i]["dir"], launchData[i]["mul"]);
-                vec2.scale(offsetVec, launchData[i]["dir"], 40);      // DEBUG TESTING - delete this line and replace with the previous line
+                vec2.scale(offsetVec, launchData[i]["dir"], launchData[i]["posMult"]);
 
                 var fragmentPos = vec2.create();
                 vec2.add(fragmentPos, spawnPoint, offsetVec);
 
                 myEmitter.setPosition(fragmentPos[0], fragmentPos[1]);
-                myEmitter.setVelocityRange(vec2.length(astVel) * launchData[i]["mul"], vec2.length(astVel) * launchData[i]["mul"]);
+                myEmitter.setVelocityRange(vec2.length(astVel) * launchData[i]["velMult"], vec2.length(astVel) * launchData[i]["velMult"]);
                 myEmitter.setLaunchDir(launchData[i]["dir"][0], launchData[i]["dir"][1]);
                 myEmitter.setAngleRange(0, 0);  // i.e., launch in exactly the direction of launchDir
 
@@ -159,8 +154,6 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
 
         // Disable asteroid
         astToDisable.disable();
-
-
     }
 };
 
