@@ -105,6 +105,15 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
                 this.setRandomParticleColor(particle);
             }
 
+            // Do any "post-processing" using any funcCalls defined in the config object
+            if (config.hasOwnProperty("funcCalls")) {
+                for (funcCallDef of config["funcCalls"]) {
+                    // apply() takes in a list and applies the items as params to the function (similar to *args in Python)
+                    // Passing null into params is equivalent to calling func()
+                    funcCallDef["func"].apply(particle, funcCallDef["params"]);
+                }
+            }
+
         } else {
             // Default, if no config object, is to use colors.
             this.setRandomParticleColor(particle);
@@ -118,6 +127,7 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
             particle.components["collision"].update(0);     // Do a trivial update to make the collider compute its size and such
             collMgr.addCollider(particle.components["collision"]);
         }
+
     }
 };
 

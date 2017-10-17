@@ -7,6 +7,7 @@ function Asteroid () {
     this.addComponent("collision", new CollisionComponentAABB());
 
     this.hitPoints = 1;
+    this.size = 2;  // Sizes are: 2=large, 1=medium, 0=small
     this.autoExpire = false;    // override the Particle's autoExpire property
 }
 
@@ -23,3 +24,7 @@ Asteroid.prototype.update = function(dt_s, config = null) {
         }
     }
 }
+
+Asteroid.prototype.setSize = function(size) {
+    this.size = size;
+};
