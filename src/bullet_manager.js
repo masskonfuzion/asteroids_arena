@@ -60,6 +60,7 @@ BulletManager.prototype.postUpdate = function(dt_s, config=null) {
         }
 
         var physComp = bullet.components["physics"];
+        // TODO replace 512's here with the arena's dimensions
         if (physComp.currPos[0] < 0 || physComp.currPos[0] > 512 ||
             physComp.currPos[1] < 0 || physComp.currPos[1] > 512 ) {
                 cmdMsg = { "topic": "GameCommand",

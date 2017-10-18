@@ -27,7 +27,7 @@ GameLogic.prototype.initialize = function() {
     // ----- Initialize collision manager
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
     this.collisionMgr = new CollisionManager();
-    this.collisionMgr.initialize( {"x":0, "y":0, "width":512, "height":512} );     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
+    this.collisionMgr.initialize( {"x":0, "y":0, "width": game.canvas.width, "height": game.canvas.height} );     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
 
     // ----- Initialize thrust/rocket particle system
     this.addGameObject("thrustPS", new ParticleSystem());
