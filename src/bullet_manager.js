@@ -39,13 +39,8 @@ BulletManager.prototype.update = function(dt_s, config = null) {
 
 
 BulletManager.prototype.draw = function(canvasContext) {
-    // Draw each alive Particle
     var myPS = this.components["gunPS"];
-    for (var particle of myPS.particles) {
-        if (particle.alive) {
-            particle.draw(canvasContext);
-        }
-    }
+    myPS.draw(canvasContext);
 };
 
 
