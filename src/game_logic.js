@@ -61,7 +61,9 @@ GameLogic.prototype.initialize = function() {
     astMgrRef.initialize(1, 16);
 
     // ----- Initialize Arena
-    // TODO -- make arena. Simplest is rectangle obj {x, y, width, height}; but can also make a class, with arbitrary arena shape, and the ability to test for containment of objs within itself.  Can use this test to determine when to expire bullet objects
+    this.addGameObject("arena", new Arena());
+    var arenaRef = this.gameObjs["arena"];
+    arenaRef.initialize();
 
 };
 

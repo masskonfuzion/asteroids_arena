@@ -162,7 +162,7 @@ RenderComponentLine.prototype.draw = function(canvasContext) {
     canvasContext.moveTo(this.startPt[0], this.startPt[1]);
     canvasContext.lineTo(this.endPt[0], this.endPt[1]);
     canvasContext.strokeStyle = 'rgb(' + Math.floor(this.color[0]) + ', ' + Math.floor(this.color[1]) + ', ' + Math.floor(this.color[2]) + ')';
-    canvasContext.fill();   // You can also use stroke() here for a circle outline; to set color, use strokeStyle
+    canvasContext.stroke();   // You can also use stroke() here for a circle outline; to set color, use strokeStyle
     //canvasContext.closePath();
     // apparently stroke() or fill() end the path
 };
@@ -184,28 +184,41 @@ RenderComponentLine.prototype.setLineWidth = function(lineWidth) {
     this.lineWidth = lineWidth;
 };
 
+RenderComponentLine.prototype.setColor = function(r, g, b) {
+    this.color[0] = r;
+    this.color[1] = g;
+    this.color[2] = b;
+};
+
 // ----------------------------------------------------------------------------
 // RenderComponentGroup
 // ----------------------------------------------------------------------------
 function RenderComponentGroup() {
+    // Inherit components array, as well as functions addComponent(), etc.
     GameObjectComponent.call(this);
+    this.groupItems = [];
 
-    this.components = [];
 }
 
 RenderComponentGroup.prototype = Object.create(GameObjectComponent.prototype);
 RenderComponentGroup.prototype.constructor = RenderComponentGroup;
 
-RenderComponentLine.prototype.draw = function(canvasContext) {
-    for (var component of this.components) {
-        component.draw(dt_s, config);
+RenderComponentGroup.prototype.draw = function(canvasContext) {
+    for (var groupItem of this.groupItems) {
+        groupItem.draw(canvasContext);
     }
 };
 
-RenderComponentLine.prototype.update = function(dt_s, config = null) {
+RenderComponentGroup.prototype.update = function(dt_s, config = null) {
     // Override base GameObject class update(), but do nothing in this func
     // (unless we determine that something does need to be updated, in which case, update this comment :-D)
-    for (var component of this.components) {
-        component.update(dt_s, config);
+    for (var groupItem of this.groupItems) {
+        groupItem.update(dt_s, config);
     }
 };
+
+RenderComponentGroup.prototype.addGroupItem = function(item) {
+    this.groupItems.push(item);
+}
+
+// TODO probably also implement a delGroupItem() or something similar
