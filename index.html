@@ -97,7 +97,6 @@ function mainloop(timestamp)
     // NOTE requestAnimationFrame passes in a timestamp into the function being called
     gameLogic.timer.doFrameTimer(timestamp);
 
-
 	while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
 	    gameLogic.processMessages(gameLogic.fixed_dt_s);
         // Note: lurking in the gameLogic update() is a collisionMgr update that will attempt (but be blocked) to enqueue multiple collision events.
@@ -105,14 +104,14 @@ function mainloop(timestamp)
 		gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
 	}
 
-    drawStuff();
+    drawStuff(game.context);    // game is global, so technically, we don't HAVE to pass the canvas context, but eh whatever. Could pass in the canvas here (you can get the context from the canvas obj). But SHOULD we?
     frameID = requestAnimationFrame(mainloop);
 
 }
 
-function drawStuff()
+function drawStuff(canvasContext)
 {
-    gameLogic.draw();   // No need to pass anything to the function, because the application class is global (so we already have access to all its members)
+    gameLogic.draw(canvasContext);
 }
 
 </script>
