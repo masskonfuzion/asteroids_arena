@@ -5,7 +5,7 @@ function AsteroidManager () {
     this.addComponent("asteroidPE", new ParticleEmitter());     // The Asteroid manager will control the particle emitter to put particles into the system
 
     this.maxAsteroids = 0;
-    this.activeAsteroids = 0;
+    this.activeAsteroids = { 2: 0, 1: 0, 0: 0};     // Dict of # of asteroids of each size
     this.initialAsteroids = 0;
     this.numFreeSlots = 0;  // Track the # of free Asteroid slots in the particle system    // TODO -- check, are we using this var?
 
@@ -45,14 +45,16 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
         // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
         // Also note: this approach requires the ParticleSystem to be configured to create Particles with an image/sprite render component
         myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
-        this.activeAsteroids += 1;  // Track # of active asteroids
+        this.activeAsteroids[2] += 1;  // Track # of active asteroids (when an asteroid is initialized, it is size 2 (large))
         // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
     }
 };
 
 AsteroidManager.prototype.update = function(dt_s, config = null) {
     // 4 is a magic number -- the # of asteroids that can possibly result from shooting 1 large asteroid
-    if (this.activeAsteroids < this.maxAsteroids - 4) {
+    var freeSpacesNeeded = this.activeAsteroids[2] * 4 + this.activeAsteroids[1] * 2;
+    var totalAsteroids = this.activeAsteroids[2] + this.activeAsteroids[1] + this.activeAsteroids[0];
+    if (this.maxAsteroids - totalAsteroids > freeSpacesNeeded) {
         var myEmitter = this.components["asteroidPE"];
 
         // TODO make a more robust random # generator for emitter position (e.g., use arena's dimensions, etc)
@@ -69,7 +71,7 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
                           "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ]
                         };
         myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
-        this.activeAsteroids += 1;  // Track # of active asteroids
+        this.activeAsteroids[2] += 1;  // Track # of active asteroids
     }
 
     for (var compName in this.components) {
@@ -158,20 +160,20 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
                 // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
                 myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
                 // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
-                this.activeAsteroids += 1;
+                this.activeAsteroids[newSize] += 1;
             }
         }
 
         // Disable asteroid
         astToDisable.disable();
-        this.activeAsteroids -= 1;
+        this.activeAsteroids[astToDisable.size] -= 1;
     }
 };
 
 
 AsteroidManager.prototype.executeCommand = function(cmdMsg, params) {
-    console.log("AsteroidManager executing command");
-    console.log(cmdMsg);
+    //console.log("AsteroidManager executing command");
+    //console.log(cmdMsg);
 
     // Call function
     // Note that this command passes a "params" arg in the cmdMsg payload, where other executeCommand functions (elsewhere in this codebase) do not..
