@@ -11,6 +11,7 @@ function AsteroidManager () {
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Asteroid Manager derives from)
     this.commandMap["disableAndSpawnAsteroids"] = this.disableAndSpawnAsteroids;
+    this.commandMap["disableAsteroids"] = this.disableAsteroids;
 
     this.asteroidSizeMap = { 0: "astSmall",
                              1: "astMedium",
@@ -65,6 +66,7 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
             vec2.set(spawnPos, Math.floor(Math.random() * 600 + 100), Math.floor(Math.random() * 250 + 100));
         }
         myEmitter.setPosition(spawnPos[0], spawnPos[1]);
+        myEmitter.setVelocityRange(1.0, 5.0);   // TODO Confirm.. do I really need this here? I thought I only needed to set the velocity range one time, in the initialize function
 
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
@@ -108,11 +110,23 @@ AsteroidManager.prototype.draw = function(canvasContext) {
     myPS.draw(canvasContext);
 };
 
+// Note: Though disableAsteroids appears before disableAndSpawnAsteroids in the code, disableAndSpawnAsteroids was written before
+// disableAsteroids, chronologically. disableAsteroids takes in a list of asteroids to disable, to stay consistent with disableAndSpawnAsteroids, 
+// but looking back on it, I'm not sure why I pass in a list, and not just a single asteroid..
+AsteroidManager.prototype.disableAsteroids = function(params) {
+    for (var astToDisable of params.disableList) {
+        // Disable asteroid
+        astToDisable.disable();
+        this.activeAsteroids[astToDisable.size] -= 1;
+        // TODO trigger a particle explosion
+    }
+};
 
 // Disable passed-in asteroid(s), and spawn new ones
 AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
     // params is a dict object
 
+    // TODO figure out why I designed this function to work on a list of asteroids (when I'm passing in only 1 asteroid to disable)
     for (var astToDisable of params.disableList) {
         var myEmitter = this.components["asteroidPE"];
 
@@ -167,6 +181,7 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         // Disable asteroid
         astToDisable.disable();
         this.activeAsteroids[astToDisable.size] -= 1;
+        // TODO trigger a particle explosion
     }
 };
 

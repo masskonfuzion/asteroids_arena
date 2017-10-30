@@ -317,6 +317,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
 
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
+        // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the gameLogic obj, so the caller can simply put the GameCommand out
         cmdMsg = { "topic": "GameCommand",
                    "command": "disableAndSpawnAsteroids",
                    "objRef": this.gameObjs["astMgr"],
