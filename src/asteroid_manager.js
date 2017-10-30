@@ -59,10 +59,10 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
 
         // TODO make a more robust random # generator for emitter position (e.g., use arena's dimensions, etc)
         var spawnPos = vec2.create();
-        vec2.set(spawnPos, Math.floor(Math.random() * 1080 + 100), Math.floor(Math.random() * 520 + 100));
+        vec2.set(spawnPos, Math.floor(Math.random() * 600 + 100), Math.floor(Math.random() * 250 + 100));
 
         while(!gameLogic.gameObjs["arena"].containsPt(spawnPos)) {
-            vec2.set(spawnPos, Math.floor(Math.random() * 1080 + 100), Math.floor(Math.random() * 520 + 100));
+            vec2.set(spawnPos, Math.floor(Math.random() * 600 + 100), Math.floor(Math.random() * 250 + 100));
         }
         myEmitter.setPosition(spawnPos[0], spawnPos[1]);
 
