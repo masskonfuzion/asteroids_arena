@@ -146,6 +146,11 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / gameLogic.fixed_dt_s, "posMult": 40},
                            { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "velMult": 2 / gameLogic.fixed_dt_s, "posMult": 40} ];
 
+        // Disable asteroid
+        astToDisable.disable();
+        this.activeAsteroids[astToDisable.size] -= 1;
+
+        // TODO trigger a particle explosion
         if (astToDisable.size > 0) {
             for (var i = 0; i < params.numToSpawn; i++) {
                 var newSize = astToDisable.size - 1;
@@ -181,10 +186,6 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
             }
         }
 
-        // Disable asteroid
-        astToDisable.disable();
-        this.activeAsteroids[astToDisable.size] -= 1;
-        // TODO trigger a particle explosion
     }
 };
 
