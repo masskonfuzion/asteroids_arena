@@ -65,6 +65,8 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
         while(!gameLogic.gameObjs["arena"].containsPt(spawnPos)) {
             vec2.set(spawnPos, Math.floor(Math.random() * 600 + 100), Math.floor(Math.random() * 250 + 100));
         }
+        // NOTE: the asteroid spawning in this function will occur when asteroids are destroyed because they left the arena
+        // TODO add some kind of level manager? (i.e. max # of asteroids that will be spawned in this level? Or, otherwise make this game a pure deathmatch, ending when ships are destroyed? Or, just play for time? I don't know what this game should be)
         myEmitter.setPosition(spawnPos[0], spawnPos[1]);
         myEmitter.setVelocityRange(1.0, 5.0);   // TODO Confirm.. do I really need this here? I thought I only needed to set the velocity range one time, in the initialize function
 
@@ -123,6 +125,7 @@ AsteroidManager.prototype.disableAsteroids = function(params) {
 };
 
 // Disable passed-in asteroid(s), and spawn new ones
+// TODO consider splitting into separate disable() and spawn() functions? (requires enqueueing 2 messages, instead of 1, when an asteroid is destroyed and a new one needs to be spawned)
 AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
     // params is a dict object
 

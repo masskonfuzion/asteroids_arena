@@ -77,11 +77,11 @@ GameLogic.prototype.addGameObject = function(objName, obj) {
 };
 
 GameLogic.prototype.setThrust = function(shipRef) {
-    // TODO implement the command pattern for ship controls (thrust and turning). The command pattern will allow for AI
+    // TODO implement the command pattern for ship controls (thrust and turning). The command pattern will allow for AI.  Or... should this go into a SpaceshipManager (see above)
 };
 
 GameLogic.prototype.setAngularVel = function(shipRef, angVel) {
-    // 
+    // TODO implement the command pattern for ship controls (thrust and turning). The command pattern will allow for AI.  Or... should this go into a SpaceshipManager (see above)
 };
 
 GameLogic.prototype.draw = function(canvasContext) {
