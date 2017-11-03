@@ -113,9 +113,8 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
                 
                 var emitterPosIsValid = false;
                 for (var bannedLoc of config["bannedLocations"]) {
-                    emitterPosIsValid = vec2.squaredDistance(this.position, bannedLoc["position"]) <= bannedLoc["radius"]*bannedLoc["radius"];
+                    emitterPosIsValid = vec2.squaredDistance(this.position, bannedLoc["position"]) > bannedLoc["radius"]*bannedLoc["radius"];
                     if (!emitterPosIsValid) {
-                        offsetAngle += 45;
                         break;
                     }
                 }
@@ -130,7 +129,7 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
                     vec2.set(offsetVec, Math.cos(glMatrix.toRadian(offsetAngle)), Math.sin(glMatrix.toRadian(offsetAngle)));
 
                     vec2.copy(correctedPos, this.position);
-                    vec2.scaleAndAdd(correctedPos, correctedPos, offsetVec, 40);    // TODO don't hardcode the scale amount -- include an "offset" amount, maybe in the config object; i.e. we should set the correctedPos one time, and test it against all bannedLocations
+                    vec2.scaleAndAdd(correctedPos, correctedPos, offsetVec, 36);    // TODO don't hardcode the scale amount -- include an "offset" amount, maybe in the config object; i.e. we should set the correctedPos one time, and test it against all bannedLocations
 
                     for (var bannedLoc of config["bannedLocations"]) {
                         emitterPosIsValid = vec2.squaredDistance(correctedPos, bannedLoc["position"]) <= bannedLoc["radius"]*bannedLoc["radius"];
