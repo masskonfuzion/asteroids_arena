@@ -42,9 +42,12 @@ GameLogic.prototype.initialize = function() {
 
     // ----- Initialize spaceship
     // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
+    // TODO don't hardcode the initial position -- use arena test for containment
     this.addGameObject("ship", new Spaceship());
     var shipRef = this.gameObjs["ship"];
-    var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship"].imgObj };
+    var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship"].imgObj,
+                          "initialPos": [400, 225],
+                        };
     shipRef.initialize(shipConfigObj);
 
     this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
