@@ -36,11 +36,16 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
     myEmitter.setPosition(256, 256);
     myEmitter.registerParticleSystem(mySystem);
 
+    // Notes on bannedLocations:
+    //  - We're probably taking references to the ship's (or ships') position(s), which is what we want
+    //  - the 32 in the "radius" field is hard-coded // TODO don't hardcode; get radius from render component properties
+    var bannedLocations = [ {"position": gameLogic.gameObjs["ship"].components["physics"].currPos, "radius": 50 } ];
     for (var i = 0; i < initAsteroids; i++) {
         // Note the "funcCalls" property - "params" is a list that, when passed into a function.apply() call, is "splatted" into individual parameters, similar to Python *args
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
-                          "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ]
+                          "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ],
+                          "bannedLocations": bannedLocations
                         };
         // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
         // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
@@ -70,9 +75,11 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
         myEmitter.setPosition(spawnPos[0], spawnPos[1]);
         myEmitter.setVelocityRange(1.0, 5.0);   // TODO Confirm.. do I really need this here? I thought I only needed to set the velocity range one time, in the initialize function
 
+        var bannedLocations = [ {"position": gameLogic.gameObjs["ship"].components["physics"].currPos, "radius": 50 } ];
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
-                          "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ]
+                          "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ],
+                          "bannedLocations": bannedLocations
                         };
         myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
         this.activeAsteroids[2] += 1;  // Track # of active asteroids
@@ -150,6 +157,7 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         astToDisable.disable();
         this.activeAsteroids[astToDisable.size] -= 1;
 
+        var bannedLocations = [ {"position": gameLogic.gameObjs["ship"].components["physics"].currPos, "radius": 50 } ];
         // TODO trigger a particle explosion
         if (astToDisable.size > 0) {
             for (var i = 0; i < params.numToSpawn; i++) {
@@ -158,7 +166,8 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
 
                 var configObj = { "renderCompType": "image",
                                   "imageRef": game.imgMgr.imageMap[ newSizeStr ].imgObj,
-                                  "funcCalls": [ { "func": Asteroid.prototype.setSize, "params": [newSize] } ]
+                                  "funcCalls": [ { "func": Asteroid.prototype.setSize, "params": [newSize] } ],
+                                  "bannedLocations": bannedLocations
                                 };
                 // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
                 // Also note: this approach requires the ParticleSystem to be configured to create Particles with an image/sprite render component
