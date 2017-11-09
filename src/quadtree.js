@@ -55,11 +55,13 @@ QuadTree.prototype.getIndex = function(obj) {
     var midPointX = this.bounds.x + (this.bounds.width / 2);
     var midPointY = this.bounds.y + (this.bounds.height / 2);
 
-    var objWidth = obj.maxPt[0] - obj.minPt[0];             // The code I copied this from had obj.width; but my objects don't have a width property, so I'm hacking one in
-    var objHeight = obj.maxPt[1] - obj.minPt[1];
+    var objWidth = obj.getWidth();      // The code I copied this from had obj.width; but my objects don't have a width property, so I'm hacking one in
+    var objHeight = obj.getHeight();
 
-    var objX = obj.minPt[0] + Math.floor(objWidth / 2);
-    var objY = obj.minPt[1] + Math.floor(objHeight / 2);
+    // TODO smarten up this objX and objY calculation. Use center points if we have them; else compute them
+    var minPt = obj.getMinPt();
+    var objX = minPt[0] + Math.floor(objWidth / 2);
+    var objY = minPt[1] + Math.floor(objHeight / 2);
 
     var fullyInLeftHalf = objX + objWidth < midPointX;
     var fullyInRightHalf = objX > midPointX;

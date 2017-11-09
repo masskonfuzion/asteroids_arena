@@ -8,6 +8,8 @@ function CollisionManager() {
     this.colliders = {};    // The key of the dict will be the object ID of the object this collision component belongs to
     this.objectIDToAssign = -1;  // probably belongs in the base class.
 
+    // The CollisionManager owns the quadtree. It also holds references to registered collision components,
+    // so that in each frame, the CollisionManager can pass colliders into the quadtree
     this.quadTree = null;
 }
 

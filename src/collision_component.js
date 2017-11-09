@@ -34,6 +34,14 @@ CollisionComponentAABB.prototype.setMaxPt = function(x, y) {
     this.maxPt[1] = y;
 };
 
+CollisionComponentAABB.prototype.getMinPt = function() {
+    return this.minPt;  // Should i return a clone of the minPt vector?
+};
+
+CollisionComponentAABB.prototype.getMaxPt = function() {
+    return this.maxPt;
+};
+
 CollisionComponentAABB.prototype.getWidth = function() {
     return this.maxPt[0] - this.minPt[0];
 };
