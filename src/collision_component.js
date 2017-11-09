@@ -164,3 +164,22 @@ CollisionComponentLineSeg.prototype.setEndPoints = function(sx, sy, ex, ey) {
     vec2.set(this.sPt, sx, sy);
     vec2.set(this.ePt, ex, ey);
 };
+
+// Some helper functions that are probably more useful in the context of inserting line segments into a quadtree (or other spatial subdivision object) than anything else
+// These are candidates for incorporation into a base class for colliders
+CollisionComponentLineSeg.prototype.getMaxPt = function() {
+    return vec2.fromValues( Math.max(this.sPt[0], this.ePt[0]), Math.max(this.sPt[1], this.ePt[1]) );
+};
+
+CollisionComponentLineSeg.prototype.getMinPt = function() {
+    return vec2.fromValues( Math.min(this.sPt[0], this.ePt[0]), Math.min(this.sPt[1], this.ePt[1]) );
+};
+
+CollisionComponentLineSeg.prototype.getWidth = function() {
+    return Math.abs(this.ePt[0] - this.sPt[0]);
+};
+
+CollisionComponentLineSeg.prototype.getHeight = function() {
+    return Math.abs(this.ePt[1] - this.sPt[1]);
+};
+
