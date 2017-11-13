@@ -2,7 +2,8 @@
 var CollisionComponentTypeEnum = { "circle": 0,
                                    "aabb": 1,
                                    "obb": 2,
-                                   "lineseg": 3
+                                   "lineseg": 3,
+                                   "group": 4
                                  };
 
 
@@ -108,6 +109,8 @@ CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
 
     this.setMinPt(minPt[0], minPt[1]);
     this.setMaxPt(maxPt[0], maxPt[1]);
+
+    this.setExtents((maxPt[0] - minPt[0]) * 0.5, (maxPt[1] - minPt[1]) * 0.5);
 };
 
 CollisionComponentAABB.prototype.setCenter = function(x, y) {
@@ -183,3 +186,50 @@ CollisionComponentLineSeg.prototype.getHeight = function() {
     return Math.abs(this.ePt[1] - this.sPt[1]);
 };
 
+
+//================================================================================
+//Collision component group
+//================================================================================
+
+function CollisionComponentGroup() {
+    GameObjectComponent.call(this);
+    this.type = CollisionComponentTypeEnum.group;
+    this.groupItems = [];
+}
+
+CollisionComponentGroup.prototype = Object.create(GameObjectComponent.prototype);
+CollisionComponentGroup.prototype.constructor = CollisionComponentGroup;
+
+CollisionComponentGroup.prototype.getMinPt = function() {
+    var i = 0;
+    if (this.groupItems) {
+        var minPt = this.groupItems[i].getMinPt();
+
+        for (i = 1; i < this.groupItems.length; i++) {
+            var cmp = this.groupItems[i].getMinPt();
+            minPt[0] = Math.min(minPt[0], cmp[0]);
+            minPt[1] = Math.min(minPt[1], cmp[1]);
+        }
+        return minPt;
+        
+    } else {
+        return vec2.create();
+    }
+};
+
+CollisionComponentGroup.prototype.getMaxPt = function() {
+    var i = 0;
+    if (this.groupItems) {
+        var maxPt = this.groupItems[i].getMaxPt();
+
+        for (i = 1; i < this.groupItems.length; i++) {
+            var cmp = this.groupItems[i].getMaxPt();
+            maxPt[0] = Math.max(maxPt[0], cmp[0]);
+            maxPt[1] = Math.max(maxPt[1], cmp[1]);
+        }
+        return maxPt;
+        
+    } else {
+        return vec2.create();
+    }
+};
