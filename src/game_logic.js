@@ -382,10 +382,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         if (bulletRef.emitterID == spaceshipRef.components["gunPE"].emitterID) {
             //console.log("Skipping " + gameObjAType + "/" + gameObjBType + " collision because of self-shot prevention");
         }
-    } else if (gameObjAType == "Arena" && gameObjBType == "Bullet" || gameObjBType == "Bullet" && gameObjAType == "Arena") {
+    } else if (gameObjAType == "Arena" && gameObjBType == "Bullet" || gameObjBType == "Arena" && gameObjAType == "Bullet") {
         // PSYCH!!! We don't test for bullet/arena collision.
         // See BulletManager; we test for containment of the bullet within the arena. If it leaves, then we destroy it
-    } else if (gameObjAType == "Arena" && gameObjBType == "Asteroid" || gameObjBType == "Asteroid" && gameObjAType == "Arena") {
+    } else if (gameObjAType == "Arena" && gameObjBType == "Asteroid" || gameObjBType == "Arena" && gameObjAType == "Asteroid") {
         var arenaRef = null;
         var asteroidRef = null;
 
@@ -403,7 +403,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                        "params": { "disableList": [ asteroidRef ] }
                      };
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
-    } else if (gameObjAType == "Arena" && gameObjBType == "Spaceship" || gameObjBType == "Spaceship" && gameObjAType == "Arena") {
+    } else if (gameObjAType == "Arena" && gameObjBType == "Spaceship" || gameObjBType == "Arena" && gameObjAType == "Spaceship") {
         var arenaRef = null;
         var spaceshipRef = null;
 
