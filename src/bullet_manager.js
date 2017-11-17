@@ -56,21 +56,11 @@ BulletManager.prototype.postUpdate = function(dt_s, config=null) {
         }
 
         var physComp = bullet.components["physics"];
-        // TODO replace game.xSize and game.ySize (which are the viewport dimensions) with the arena's dimensions. There should be a test for containment
-        // TODO Also, rename game.[xy]Size to something more descriptive? Like, window/viewport size?
-
         if (!gameLogic.gameObjs["arena"].containsPt(physComp.currPos)) {
-                cmdMsg = { "topic": "GameCommand",
-                           "command": "disableBullet",
-                           "objRef": this,
-                           "params": { "bulletToDisable": bullet }
-                         };
-                // Remember, gameLogic is accessible globally
-                gameLogic.messageQueue.enqueue(cmdMsg);
+                this.disableBullet({ "bulletToDisable": bullet });
             }
 
-
-        // NOTE: Look to the collision manager for another case: bullet collides with object. It will enqueue a message from there
+        // NOTE: This postUpdate routine handles only bullets leaving the arena. Look to the collision manager for another case: bullet collides with object. 
     }
 };
 
