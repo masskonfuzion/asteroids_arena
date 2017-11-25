@@ -4,8 +4,6 @@ function GameLogic() {
     this.gameObjs = {};
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
-    this.timer = null;
-    this.fixed_dt_s = 0.015;
     this.objectIDToAssign = -1;  // probably belongs in the base class.
 }
 
@@ -22,7 +20,6 @@ GameLogic.prototype.initialize = function() {
     this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
     this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
 
-    this.timer = new Timer();
 
     // ----- Initialize collision manager
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it

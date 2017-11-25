@@ -50,7 +50,7 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
         // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
         // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
         // Also note: this approach requires the ParticleSystem to be configured to create Particles with an image/sprite render component
-        myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
+        myEmitter.emitParticle(game.fixed_dt_s, configObj);
         this.activeAsteroids[2] += 1;  // Track # of active asteroids (when an asteroid is initialized, it is size 2 (large))
         // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
     }
@@ -81,7 +81,7 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
                           "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ],
                           "bannedLocations": bannedLocations
                         };
-        myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
+        myEmitter.emitParticle(game.fixed_dt_s, configObj);
         this.activeAsteroids[2] += 1;  // Track # of active asteroids
     }
 
@@ -149,9 +149,9 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         vec2.normalize(astVelDir, astVel);
 
         // Note: there should be as many launchData items as params.numToSpawn  // TODO maybe launchData should be passed in?
-        // NOTE: we/re dividing the velocity multiplier by gameLogic.fixed_dt_s because in this computation, we're dealing with velocity over 1 frame; the physicsComponent's setPosAndVel function assumes we're working with velocity over a full second, so we're dividing by dt, to compensate
-        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / gameLogic.fixed_dt_s, "posMult": 40},
-                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "velMult": 2 / gameLogic.fixed_dt_s, "posMult": 40} ];
+        // NOTE: we/re dividing the velocity multiplier by game.fixed_dt_s because in this computation, we're dealing with velocity over 1 frame; the physicsComponent's setPosAndVel function assumes we're working with velocity over a full second, so we're dividing by dt, to compensate
+        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 40},
+                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 40} ];
 
         // Disable asteroid
         astToDisable.disable();
@@ -189,7 +189,7 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
                 myEmitter.setAngleRange(0, 0);  // i.e., launch in exactly the direction of launchDir
 
                 // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
-                myEmitter.emitParticle(gameLogic.fixed_dt_s, configObj);
+                myEmitter.emitParticle(game.fixed_dt_s, configObj);
                 // NOTE: I don't like accessing gameLogic directly, but then again, we made it to simplify the handling of situations like this one (we need fixed_dt_s and no more elegant way than this to get it)
                 this.activeAsteroids[newSize] += 1;
             }

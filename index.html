@@ -16,6 +16,7 @@
 <script src="src/game_object_component.js" type="text/javascript"></script>
 <script src="src/game_state_base.js" type="text/javascript"></script>
 <script src="src/game_state_manager.js" type="text/javascript"></script>
+<script src="src/game_state_playing.js" type="text/javascript"></script>
 <script src="src/game_logic.js" type="text/javascript"></script>
 <script src="src/physics_component.js" type="text/javascript"></script>
 <script src="src/render_component.js" type="text/javascript"></script>
@@ -40,6 +41,7 @@ var gameLogic = new GameLogic();
 
 // Trap keyboard events and forward them to game logic
 function keyboardHandler(evt) {
+    // TODO replace with state manager's current state
     gameLogic.handleKeyboardInput(evt);
 }
 
@@ -97,13 +99,13 @@ function stop()
 function mainloop(timestamp)
 {
     // NOTE requestAnimationFrame passes in a timestamp into the function being called
-    gameLogic.timer.doFrameTimer(timestamp);
+    game.timer.doFrameTimer(timestamp);
 
-	while (gameLogic.timer.elapsed >= gameLogic.fixed_dt_s) {
-	    gameLogic.processMessages(gameLogic.fixed_dt_s);
+	while (game.timer.elapsed >= game.fixed_dt_s) {
+	    gameLogic.processMessages(game.fixed_dt_s);
         // Note: lurking in the gameLogic update() is a collisionMgr update that will attempt (but be blocked) to enqueue multiple collision events.
-		gameLogic.update(gameLogic.fixed_dt_s);
-		gameLogic.timer.elapsed -= gameLogic.fixed_dt_s;
+		gameLogic.update(game.fixed_dt_s);
+		game.timer.elapsed -= game.fixed_dt_s;
 	}
 
     drawStuff(game.context);    // game is global, so technically, we don't HAVE to pass the canvas context, but eh whatever. Could pass in the canvas here (you can get the context from the canvas obj). But SHOULD we?
