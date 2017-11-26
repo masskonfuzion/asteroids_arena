@@ -38,7 +38,7 @@ Arena.prototype.initialize = function () {
     var lineTopCollider = new CollisionComponentLineSeg();
     lineTopCollider.setEndPoints(lineTop.startPt[0], lineTop.startPt[1], lineTop.endPt[0], lineTop.endPt[1]);
     lineTopCollider.parentObj = this;   // Setting parentObj should happen in a function of Arena, like addCollider or something
-    gameLogic.collisionMgr.addCollider(lineTopCollider);    // Add arena boundary colliders to the collision manager
+    this.parentObj.collisionMgr.addCollider(lineTopCollider);    // Add arena boundary colliders to the collision manager
 
 
     var lineRight = new RenderComponentLine();
@@ -52,7 +52,7 @@ Arena.prototype.initialize = function () {
     var lineRightCollider = new CollisionComponentLineSeg();
     lineRightCollider.setEndPoints(lineRight.startPt[0], lineRight.startPt[1], lineRight.endPt[0], lineRight.endPt[1]);
     lineRightCollider.parentObj = this;
-    gameLogic.collisionMgr.addCollider(lineRightCollider);
+    this.parentObj.collisionMgr.addCollider(lineRightCollider);
 
  
     // Note: "Bot" looks like the bottom, but has + coord values, because Y coordinates increase down the screen in Canvas
@@ -67,7 +67,7 @@ Arena.prototype.initialize = function () {
     var lineBotCollider = new CollisionComponentLineSeg();
     lineBotCollider.setEndPoints(lineBot.startPt[0], lineBot.startPt[1], lineBot.endPt[0], lineBot.endPt[1]);
     lineBotCollider.parentObj = this;
-    gameLogic.collisionMgr.addCollider(lineBotCollider);
+    this.parentObj.collisionMgr.addCollider(lineBotCollider);
 
 
     var lineLeft = new RenderComponentLine();
@@ -81,7 +81,7 @@ Arena.prototype.initialize = function () {
     var lineLeftCollider = new CollisionComponentLineSeg();
     lineLeftCollider.setEndPoints(lineLeft.startPt[0], lineLeft.startPt[1], lineLeft.endPt[0], lineLeft.endPt[1]);
     lineLeftCollider.parentObj = this;
-    gameLogic.collisionMgr.addCollider(lineLeftCollider);
+    this.parentObj.collisionMgr.addCollider(lineLeftCollider);
 
 
 };

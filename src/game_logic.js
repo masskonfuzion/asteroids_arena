@@ -25,6 +25,7 @@ GameLogic.prototype.initialize = function() {
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
     this.collisionMgr = new CollisionManager();
     this.collisionMgr.initialize( {"x":0, "y":0, "width": game.canvas.width, "height": game.canvas.height} );     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
+    this.collisionMgr.parentObj = this; // TODO make a cleaner way to set parentObj (maybe make an addCollisionManager wrapper function)
 
     // ----- Initialize thrust/rocket particle system
     this.addGameObject("thrustPS", new ParticleSystem());
@@ -316,7 +317,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
 
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
-        // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the gameLogic obj, so the caller can simply put the GameCommand out
+        // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the GameLogic obj, so the caller can simply put the GameCommand out
         cmdMsg = { "topic": "GameCommand",
                    "command": "disableAndSpawnAsteroids",
                    "targetObj": this.gameObjs["astMgr"],
@@ -439,7 +440,7 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
         var spawnPos = vec2.create();
         vec2.set(spawnPos, Math.floor(Math.random() * 600 + 100), Math.floor(Math.random() * 250 + 100));   // TODO don't hardcode these values. Instead, maybe take in min/max x/y, based on arena dimensions
 
-        if (!gameLogic.gameObjs["arena"].containsPt(spawnPos)) {
+        if (!this.gameObjs["arena"].containsPt(spawnPos)) {
             // Start back at the top of the loop if the randomly generated coords are not in bounds
             continue;
         }
