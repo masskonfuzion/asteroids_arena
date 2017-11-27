@@ -86,6 +86,7 @@ GameLogic.prototype.setAngularVel = function(shipRef, angVel) {
 };
 
 GameLogic.prototype.draw = function(canvasContext) {
+    canvasContext.save();
     canvasContext.setTransform(1,0,0,1,0,0);    // Reset transformation (similar to OpenGL loadIdentity() for matrices)
 
     // Clear the canvas (note that the game application object is global)
@@ -108,6 +109,7 @@ GameLogic.prototype.draw = function(canvasContext) {
             }
         }
     }
+    canvasContext.restore();
 };
 
 

@@ -33,6 +33,16 @@ GameStatePlaying.prototype.render = function(canvasContext, dt_s) {
 // draw overlays (maybe score)
 // post-process simulation steps
 GameStatePlaying.prototype.postRender = function(canvasContext, dt_s) {
+    canvasContext.save();   // Save the transformation   (this is probably not necessary -- the transform should always be "identity", because we're maintaining state everywhere we manipulate the transform stack
+
+    scorePosNDC = [0.72, 0.066667];      // NDCs go from 0 to 1 on each axis
+
+    canvasContext.font = "24px AstronBoy";  // Testing
+    canvasContext.fillStyle = "orangered";
+    // TODO wrap NDC calculation in function
+    canvasContext.fillText("Score Goes Here", scorePosNDC[0] * canvasContext.canvas.width, scorePosNDC[1] * canvasContext.canvas.height);
+
+    canvasContext.restore();   // Restore the transformation
 };
 
 // A function callback registered with as the window event listener
