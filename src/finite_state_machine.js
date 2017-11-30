@@ -1,3 +1,4 @@
+// A graph/node-based finite state machine.
 // Some classes/helper functions for finite state machine
 
 // ============================================================================
@@ -96,6 +97,9 @@ FSMTransition.prototype.test = function() {
 // ============================================================================
 function FSMConditionInterface(a_obj, a_key, b_obj, b_key) {
     // An interface for conditional testing of object against other objects
+    // The idea behind the "objref" and "key" data members is to allow each condition to track object references
+    // In languages like C/C++, it is possible to track references to data items by memory address; that is not possible in JavaScript
+    // Therefore, we keep references to the objects that contain the data we want to track/evaluate against.
     this.objref_a = a_obj;
     this.key_a = a_key;
 
