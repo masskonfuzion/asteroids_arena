@@ -1,3 +1,9 @@
+function GameScoresAndStats() {
+    this.score = 0;
+    this.deaths = 0;
+    this.kills = 0;
+}
+
 function GameLogic() {
 // TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
     this.collisionMgr = null;   // Placeholder for a collision manager (definition probably belongs in base/interface class)
@@ -26,7 +32,7 @@ GameLogic.prototype.initialize = function() {
                                                "destroyMediumAsteroid": 50,
                                                "destroySmallAsteroid": 100 };
 
-    this.gameStats["playerScore"] = 0;  // TODO Probably re-work player scores so you can have scores for multiple players (whether human or computer)
+    this.gameStats["player"] = new GameScoresAndStats();
 
 
     // ----- Initialize collision manager
@@ -341,6 +347,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         // TODO also destroy the ship
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
+        this.gameStats["player"].deaths += 1;
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
@@ -362,13 +369,13 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         // Could wrap this in a function
         switch (asteroidRef.size) {
             case 0:
-                this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroySmallAsteroid"];
+                this.gameStats["player"].score += this.settings["hidden"]["pointValues"]["destroySmallAsteroid"];
                 break;
             case 1:
-                this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroyMediumAsteroid"];
+                this.gameStats["player"].score += this.settings["hidden"]["pointValues"]["destroyMediumAsteroid"];
                 break;
             case 2:
-                this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroyLargeAsteroid"];
+                this.gameStats["player"].score += this.settings["hidden"]["pointValues"]["destroyLargeAsteroid"];
                 break;
         }
 
@@ -447,6 +454,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
+        this.gameStats["player"].deaths += 1;
 
     }
 
