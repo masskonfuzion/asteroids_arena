@@ -352,6 +352,21 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         vec2.sub(fragRefDir, bulletRef.components["physics"].currPos, bulletRef.components["physics"].prevPos);         // make the fragment ref dir the bullet's velocity dir
         vec2.normalize(fragRefDir, fragRefDir);
 
+        // TODO use logic to determine who fired the bullet (can be done by looking at the bullet's parent? Or something like that?
+        // NOTE: We have to increment players' scores before destroying the bullets
+        switch (asteroidRef.size) {
+            case 0:
+                this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroySmallAsteroid"];
+                break;
+            case 1:
+                this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroyMediumAsteroid"];
+                break;
+            case 2:
+                this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroyLargeAsteroid"];
+                break;
+        }
+
+
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
         cmdMsg = { "topic": "GameCommand",
                    "command": "disableAndSpawnAsteroids",
@@ -370,6 +385,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                  };
 
         this.messageQueue.enqueue(cmdMsg);
+
 
     } else if (gameObjAType == "Bullet" && gameObjBType == "Spaceship" || gameObjBType == "Bullet" && gameObjAType == "Spaceship") {
         var bulletRef = null;
