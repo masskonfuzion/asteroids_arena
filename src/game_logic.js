@@ -5,6 +5,8 @@ function GameLogic() {
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
     this.objectIDToAssign = -1;  // probably belongs in the base class.
+    this.settings = { "hidden": {}, "visible": {} };    // hidden settings are, e.g. point values for accomplishing certain goals; visible settings are, e.g. game config options
+    this.gameStats = {};    // store things, e.g. player's score, in-game achievements, state variables, etc.
 }
 
 GameLogic.prototype.initialize = function() {
@@ -19,6 +21,12 @@ GameLogic.prototype.initialize = function() {
     this.messageQueue.registerListener('UserInput', this, this.actOnUserInputMessage);  // TODO - clean this up; the "UserInput" topic appears to be unused. The original idea was to first handle keyboard input (topic = UserInput), and then in the registered input listener function, enqueue messages with "GameCommand" (on both keyup and keydown events). But I don't think the 2-layer approach is necessary. I think we can go directly from the separate handleKeyDown and handleKeyUp functions to enqueueing the appropriate game actions
     this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
     this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
+
+    this.settings["hidden"]["pointValues"] = { "destroyLargeAsteroid": 25,
+                                               "destroyMediumAsteroid": 50,
+                                               "destroySmallAsteroid": 100 };
+
+    this.gameStats["playerScore"] = 0;  // TODO Probably re-work player scores so you can have scores for multiple players (whether human or computer)
 
 
     // ----- Initialize collision manager
