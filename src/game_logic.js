@@ -316,13 +316,14 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
+        var spaceshipRef = null;
         if (gameObjAType == "Asteroid") {
             asteroidRef = msg.colliderA.parentObj;
+            spaceshipRef = msg.colliderB.parentObj;
         } else {
+            spaceshipRef = msg.colliderA.parentObj;
             asteroidRef = msg.colliderB.parentObj;
         }
-
-        // TODO also destroy the ship
 
         var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
 
@@ -336,6 +337,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                "fragRefDir": fragRefDir }
                  };
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
+
+        // TODO also destroy the ship
+        // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
+        this.spawnAtNewLocation(spaceshipRef, 75);
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
@@ -354,6 +359,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // TODO use logic to determine who fired the bullet (can be done by looking at the bullet's parent? Or something like that?
         // NOTE: We have to increment players' scores before destroying the bullets
+        // Could wrap this in a function
         switch (asteroidRef.size) {
             case 0:
                 this.gameStats["playerScore"] += this.settings["hidden"]["pointValues"]["destroySmallAsteroid"];
