@@ -7,7 +7,6 @@ function AsteroidManager () {
     this.maxAsteroids = 0;
     this.activeAsteroids = { 2: 0, 1: 0, 0: 0};     // Dict of # of asteroids of each size
     this.initialAsteroids = 0;
-    this.numFreeSlots = 0;  // Track the # of free Asteroid slots in the particle system    // TODO -- check, are we using this var?
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Asteroid Manager derives from)
     this.commandMap["disableAndSpawnAsteroids"] = this.disableAndSpawnAsteroids;
@@ -102,15 +101,6 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
 AsteroidManager.prototype.resetAsteroidField = function() {
     // TODO revisit what to do when you reset
     // This fn is meant to be called after setting max/init (or maybe we should reset when we initialize? Not sure..
-
-
-    // Track the # of free slots in the Asteroid particle system. Before putting
-    // on a new Asteroid, there should be enough free slots to accommodate all
-    // fragments the Asteroid will eventually generate (er.. am I saying this
-    // right? Basically, to put 1 particle out, we have to be sure there are
-    // 4 slots open, because eventually 1 large Asteroid could be blasted into
-    // 4 small Asteroids.)
-    this.numFreeSlots = this.maxAsteroids;
 
 };
 
