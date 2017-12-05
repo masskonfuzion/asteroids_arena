@@ -8,6 +8,7 @@ function GameLogic() {
 // TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
     this.collisionMgr = null;   // Placeholder for a collision manager (definition probably belongs in base/interface class)
     this.gameObjs = {};
+    this.shipList = [];     // A list of only the spaceships (ships will be in this.gameObjs, as well, along with other game objects)
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
     this.objectIDToAssign = -1;  // probably belongs in the base class.
@@ -52,12 +53,12 @@ GameLogic.prototype.initialize = function() {
     var bulletMgrRef = this.gameObjs["bulletMgr"];
     bulletMgrRef.initialize(256);
 
-    // ----- Initialize spaceship
+    // ----- Initialize spaceships
     // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
     // TODO don't hardcode the initial position -- use arena test for containment
-    this.addGameObject("ship", new Spaceship());
-    var shipRef = this.gameObjs["ship"];
-    var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship"].imgObj,
+    this.addGameObject("ship0", new Spaceship());
+    var shipRef = this.gameObjs["ship0"];
+    var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship0"].imgObj,
                           "initialPos": [400, 225],
                         };
     shipRef.initialize(shipConfigObj);
@@ -69,6 +70,9 @@ GameLogic.prototype.initialize = function() {
 
     var spaceshipGunPE = shipRef.components["gunPE"];             // Get the spaceship's gun particle emitter
     spaceshipGunPE.registerParticleSystem(this.gameObjs["bulletMgr"].components["gunPS"]);
+
+    // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipList", we have to have a list of references to the ship GameObjects
+    this.shipList.push(shipRef);
 
     // ----- Initialize Asteroid Manager
     this.addGameObject("astMgr", new AsteroidManager());
@@ -111,7 +115,7 @@ GameLogic.prototype.draw = function(canvasContext) {
     var camPos = vec2.create();
     var viewportCenter = vec2.create();
     vec2.set(viewportCenter, game.canvas.width / 2, game.canvas.height / 2);
-    vec2.sub(camPos, viewportCenter, this.gameObjs["ship"].components["physics"].currPos);
+    vec2.sub(camPos, viewportCenter, this.gameObjs["ship0"].components["physics"].currPos);
 
     canvasContext.translate(camPos[0], camPos[1]);
 
@@ -176,7 +180,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         // TODO keep a reference to the player-controlled obj, instead of hard-coding?
         cmdMsg = { "topic": "GameCommand",
                    "command": "setThrustOn",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -186,7 +190,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOn",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -197,7 +201,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.keyCtrlMap["turnLeft"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
                    "command": "setTurnLeftOn",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -207,7 +211,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.keyCtrlMap["turnRight"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
                    "command": "setTurnRightOn",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -224,7 +228,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
 
         cmdMsg = { "topic": "GameCommand",
                    "command": "setThrustOff",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -234,7 +238,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOff",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -245,7 +249,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.keyCtrlMap["turnLeft"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
                    "command": "setTurnOff",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -256,7 +260,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.keyCtrlMap["turnRight"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
                    "command": "setTurnOff",
-                   "targetObj": this.gameObjs["ship"],
+                   "targetObj": this.gameObjs["ship0"],
                    "params": null
                  };
         this.messageQueue.enqueue(cmdMsg);

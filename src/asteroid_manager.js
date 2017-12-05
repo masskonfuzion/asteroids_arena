@@ -38,8 +38,8 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
 
     // Notes on bannedLocations:
     //  - We're probably taking references to the ship's (or ships') position(s), which is what we want
-    //  - the 32 in the "radius" field is hard-coded // TODO don't hardcode; get radius from render component properties
-    var bannedLocations = [ {"position": this.parentObj.gameObjs["ship"].components["physics"].currPos, "radius": 100 } ];
+    // TODO - for all bannedLocations assignments, use a list with all the ships in the shipList
+    var bannedLocations = [ {"position": this.parentObj.gameObjs["ship0"].components["physics"].currPos, "radius": 100 } ];
     for (var i = 0; i < initAsteroids; i++) {
         // Note the "funcCalls" property - "params" is a list that, when passed into a function.apply() call, is "splatted" into individual parameters, similar to Python *args
         var configObj = { "renderCompType": "image",
@@ -74,7 +74,7 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
         myEmitter.setPosition(spawnPos[0], spawnPos[1]);
         myEmitter.setVelocityRange(1.0, 5.0);   // TODO Confirm.. do I really need this here? I thought I only needed to set the velocity range one time, in the initialize function
 
-        var bannedLocations = [ {"position": this.parentObj.gameObjs["ship"].components["physics"].currPos, "radius": 50 } ];
+        var bannedLocations = [ {"position": this.parentObj.gameObjs["ship0"].components["physics"].currPos, "radius": 50 } ];
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
                           "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ],
@@ -148,7 +148,7 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         astToDisable.disable({"collisionMgrRef": this.components["asteroidPS"].collisionMgrRef});
         this.activeAsteroids[astToDisable.size] -= 1;
 
-        var bannedLocations = [ {"position": this.parentObj.gameObjs["ship"].components["physics"].currPos, "radius": 50 } ];
+        var bannedLocations = [ {"position": this.parentObj.gameObjs["ship0"].components["physics"].currPos, "radius": 50 } ];
         // TODO trigger a particle explosion
         if (astToDisable.size > 0) {
             for (var i = 0; i < params.numToSpawn; i++) {
