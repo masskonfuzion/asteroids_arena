@@ -369,10 +369,9 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                  };
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
 
-        // TODO also destroy the ship
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
-        this.gameStats["player"].deaths += 1;
+        this.gameStats["player"].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
@@ -442,6 +441,17 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         // Compute the spaceship's gun/emitter ID
         if (bulletRef.emitterID == spaceshipRef.components["gunPE"].emitterID) {
             //console.log("Skipping " + gameObjAType + "/" + gameObjBType + " collision because of self-shot prevention");
+        } else {
+            // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
+            this.spawnAtNewLocation(spaceshipRef, 75);
+            this.gameStats["player"].kills += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+
+            cmdMsg = { "topic": "GameCommand",
+                       "command": "disableBullet",
+                       "targetObj": this.gameObjs["bulletMgr"],
+                       "params": { "bulletToDisable": bulletRef }
+                     };
+            this.messageQueue.enqueue(cmdMsg);
         }
     } else if (gameObjAType == "Arena" && gameObjBType == "Bullet" || gameObjBType == "Arena" && gameObjAType == "Bullet") {
         // PSYCH!!! We don't test for bullet/arena collision.
