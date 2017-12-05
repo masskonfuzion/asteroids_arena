@@ -61,6 +61,27 @@ GameLogic.prototype.initialize = function() {
     var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship0"].imgObj,
                           "initialPos": [400, 225],
                         };
+    // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
+    shipRef.initialize(shipConfigObj);
+
+    this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
+
+    var spaceshipThrustPE = shipRef.components["thrustPE"];       // Get the spaceship's thrust particle emitter
+    spaceshipThrustPE.registerParticleSystem(this.gameObjs["thrustPS"]);
+
+    var spaceshipGunPE = shipRef.components["gunPE"];             // Get the spaceship's gun particle emitter
+    spaceshipGunPE.registerParticleSystem(this.gameObjs["bulletMgr"].components["gunPS"]);
+
+    // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipList", we have to have a list of references to the ship GameObjects
+    this.shipList.push(shipRef);
+
+
+    this.addGameObject("ship1", new Spaceship());
+    shipRef = this.gameObjs["ship1"];
+    shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship1"].imgObj,
+                      "initialPos": [650, 225],
+                        };
+    // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);
 
     this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
