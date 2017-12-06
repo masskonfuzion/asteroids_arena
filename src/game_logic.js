@@ -330,6 +330,14 @@ GameLogic.prototype.sendCmdToGameObj = function(msg) {
     msg["targetObj"].executeCommand(msg["command"], msg["params"]);
 };
 
+
+GameLogic.prototype.lookupObjectID = function(objName, prefix) {
+    // ASSUMPTION! the objName will be something like Name#.Component, where Name is the object name (like "Spaceship2"), and the component name is anything, e.g. "GunPE" (gun particle emitter)
+    var substrStartAt = prefix.length;
+    var substrDotPos = objName.indexOf(".");
+    return objName.substr(substrStartAt, substrDotPos - substrStartAt);
+};
+
 GameLogic.prototype.processCollisionEvent = function(msg) {
     //console.log("Processing collision event message ");
     //console.log(msg);
@@ -371,7 +379,11 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
-        this.gameStats["player"].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+
+        // TODO keep deaths for all the ships, including computer-controlled
+        if (this.shipDict[spaceshipRef.objectID] == "ship0") {    // NOTE: I hate that JS doesn't care that spaceshipObjectID is a string, but the keys in the dict/obj are int/float
+            this.gameStats["player"].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+        }
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
         var asteroidRef = null;
@@ -388,11 +400,9 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         vec2.sub(fragRefDir, bulletRef.components["physics"].currPos, bulletRef.components["physics"].prevPos);         // make the fragment ref dir the bullet's velocity dir
         vec2.normalize(fragRefDir, fragRefDir);
 
-        var substrStartAt = "Spaceship".length; // TODO don't hardcode "Spaceship"; use the vars at your disposal
-        var substrDotPos = bulletRef.emitterID.indexOf(".");
-        var shooterObjectID = bulletRef.emitterID.substr(substrStartAt, substrDotPos - substrStartAt);
         // NOTE: We have to increment players' scores before destroying the bullets
-        // TODO Wrap object ID in a function
+        var shooterObjectID = this.lookupObjectID(bulletRef.emitterID, "Spaceship");
+        // TODO keep scores for all the ships, including computer-controlled
         if (this.shipDict[shooterObjectID] == "ship0") {    // NOTE: I hate that JS doesn't care that shooterObjectID is a string, but the keys in the dict/obj are int/float
             switch (asteroidRef.size) {
                 case 0:
@@ -448,7 +458,12 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         } else {
             // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
             this.spawnAtNewLocation(spaceshipRef, 75);
-            this.gameStats["player"].kills += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+
+            var shooterObjectID = this.lookupObjectID(bulletRef.emitterID, "Spaceship");
+            // TODO keep track of kills for all ships, including computer-controlled
+            if (this.shipDict[shooterObjectID] == "ship0") {    // NOTE: I hate that JS doesn't care that shooterObjectID is a string, but the keys in the dict/obj are int/float
+                this.gameStats["player"].kills += 1;
+            }
 
             cmdMsg = { "topic": "GameCommand",
                        "command": "disableBullet",
@@ -493,7 +508,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
-        this.gameStats["player"].deaths += 1;
+        // TODO keep deaths for all the ships, including computer-controlled
+        if (this.shipDict[spaceshipRef.objectID] == "ship0") {    // NOTE: I hate that JS doesn't care that shooterObjectID is a string, but the keys in the dict/obj are int/float
+            this.gameStats["player"].deaths += 1;
+        }
 
     }
 
@@ -517,7 +535,7 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
     while (!spawnPosIsValid) {
 
         var spawnPos = vec2.create();
-        vec2.set(spawnPos, Math.floor(Math.random() * 600 + 100), Math.floor(Math.random() * 250 + 100));   // TODO don't hardcode these values. Instead, maybe take in min/max x/y, based on arena dimensions
+        vec2.set(spawnPos, Math.floor(Math.random() * 700) + 50, Math.floor(Math.random() * 300) + 50);   // TODO don't hardcode these values. Instead, maybe take in min/max x/y, based on arena dimensions
 
         if (!this.gameObjs["arena"].containsPt(spawnPos)) {
             // Start back at the top of the loop if the randomly generated coords are not in bounds
