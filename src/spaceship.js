@@ -12,6 +12,7 @@ function Spaceship() {
     this.addComponent("thrustPE", new ParticleEmitter());           // Particle emitter for rocket/thruster exhaust particle system
     this.addComponent("gunPE", new ParticleEmitter());              // Particle emitter for bullet/guns particle system
     this.addComponent("collision", new CollisionComponentAABB());
+    this.addComponent("ai", new FSM());
 
     var thrustPE = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
     thrustPE.setVelocityRange(150.0, 300.0);
@@ -40,6 +41,13 @@ function Spaceship() {
     this.commandMap["setTurnOff"] = this.disableTurn;
     this.commandMap["setFireAOn"] = this.enableFireA;
     this.commandMap["setFireAOff"] = this.disableFireA;
+
+    this.aiControlled = false;
+    this.aiBehavior = "";
+    this.aiProfile = "miner";    // TODO at some point, stop hardcoding this
+    this.aiMaxLinearVel = 24;    // TODO tune this -- currently set artificially low, for testing
+    this.target = null;
+
 }
 
 
@@ -56,6 +64,10 @@ Spaceship.prototype.initialize = function(configObj) {
     // NOTE: can't set particle emitter IDs in the constructor because the objectID for this object has not been set at that point
     this.components["gunPE"].setEmitterID(this.constructor.name + this.objectID.toString() + "." + "gunPE");
 
+    if(configObj.hasOwnProperty("isAI") && true == configObj["isAI"]) {
+        this.aiControlled = true;
+        this.initializeAI(configObj["knowledge"]);
+    }
 };
 
 // Override the default update()
@@ -212,3 +224,149 @@ Spaceship.prototype.disableFireA = function() {
     myGunPE.setDisabled();                       // Disable the emitter
 }
 
+
+Spaceship.prototype.initializeAI = function(knowledgeObj) {
+    // Initialize state machine
+    var aiFsm = this.components["ai"];
+    aiFsm.initialize(knowledgeObj); // the input to the AI is the entire game logic object)
+
+    // NOTE: It's probably not the best idea to pass the entire game logic object into this ship's
+    // AI FSM, but it's the quickest/easiest way, given the implementation details of this game.
+
+    // TODO move ship state machine into its own file
+    // TODO move state machine objects (states, conditions, transitions) into the state machine object. Or, otherwise, just don't store them in thee spaceship object (e.g. the ship doesn't need "this.aiState*"
+    this.aiStateSelectTarget = new FSMStateInterface("SelectTarget");
+    // TODO maybe give fsm states a reference to the fsm's knowledge. I can imagine the states having a use for knowledge in the enter() and exit() functions
+    this.aiStateSelectTarget.enter = function() {
+        // possibly some logic here, like setting hunter/miner profile
+    };
+    this.aiStateSelectTarget.exit = function() {
+    };
+    this.aiStateSelectTarget.update = function(knowledge, dt_s = null) {
+        // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
+
+        // knowledge is passed in by the state machine
+        // Find the nearest target
+        var parentObj = knowledge["parentObj"];
+        if (parentObj.aiProfile == "miner") {
+            // find nearest asteroid
+            var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
+            var minSqrDist = Number.MAX_SAFE_INTEGER;
+
+            for (var asteroid of astMgr.components["asteroidPS"].particles) {
+                // Blah, why did I make the asteroids a subclass of particles?
+                if (asteroid.alive) {
+                    var sqDist = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                    if (sqDist < minSqrDist) {
+                        minSqrDist = sqDist;
+                        parentObj.target = asteroid;
+                    }
+                }
+            }
+        }
+    };
+    this.aiCondSelectToPursue = new FSMNoCondition(null, null, null, null);
+    this.aiTransSelectToPursue = new FSMTransition("PursueTarget", this.aiCondSelectToPursue);
+    this.aiStateSelectTarget.addTransition(this.aiTransSelectToPursue);
+
+
+    this.aiStatePursueTarget = new FSMStateInterface("PursueTarget");
+    this.aiStatePursueTarget.enter = function() {
+    };
+    this.aiStatePursueTarget.exit = function() {
+    };
+    this.aiStatePursueTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
+        // Rembmer: game is a global object
+
+        // Compute rays offset by some number of degrees to the left and to the right of the ship's current heading/orientation
+        // - sightLine0 and sightLine1
+        // Compute the sight line normals, sightNormal0 and sightNormal1
+        // - so, e.g. if sightLine0 is "to the left", then its normal points "to the right", and if sightLine1 is "to the right",
+        // then its normal points "to the left"
+        // The target is "in sight" if:
+        // - The vector/ray from the ship to the target intersects the line segment formed by connecting the two sightLine vectors
+        //   some distance down the line
+        // - can also probably just use dot products
+        //   - use the sightLine vectors (normalized); get the vector from ship to target
+        //   - compute the points at the end of each sightLine vector
+        //   - compute vectors, one from those points to target; normalize
+        //   - dot the sightLine-target endpoint vectors against the sightLine normals
+        //   - actually, you probably only need to dot the vector from ship to target against the normals
+        //   - the target is in sight if each of the respective sightLine-to-target vectors dotted with the sightNormal is > 0
+        var parentObj = knowledge["parentObj"];
+
+        // Get a reference to the ship's angle vector
+        var shipDir = parentObj.components["physics"].angleVec;
+
+        var sightLine0 = vec2.create();
+        var sightLine1 = vec2.create();
+
+        var sightHalfAngle = 20;    // in degrees
+
+        var rotMat = mat2.create();
+
+        // Compute the "left" sight line
+        mat2.fromRotation(rotMat, glMatrix.toRadian(-sightHalfAngle));
+        vec2.transformMat2(sightLine0, shipDir, rotMat);
+        var norm0 = vec2.create();
+        vec2.set(norm0, sightLine0[1], sightLine0[0]);   // Cheap & easy 90 deg rotation in the positive direction
+
+        // Compute the "right" sight line
+        mat2.fromRotation(rotMat, glMatrix.toRadian(sightHalfAngle));
+        vec2.transformMat2(sightLine1, shipDir, rotMat);
+        var norm1 = vec2.create();
+        vec2.set(norm1, sightLine1[1], -sightLine1[0]);
+
+        // Compute the ship-to-target vector
+        var shipToTarget = vec2.create();
+        vec2.sub(shipToTarget, parentObj.target.components["physics"].currPos, parentObj.components["physics"].currPos);
+
+        // Compute dot products
+        var dotNorm0 = vec2.dot(norm0, shipToTarget);
+        var dotNorm1 = vec2.dot(norm1, shipToTarget);
+
+
+        if (dotNorm0 < 0) {
+            // Target is to the left
+            parentObj.enableTurnLeft();
+        } else if (dotNorm1 < 0) {
+            // Target is to the right
+            parentObj.enableTurnRight();
+        }
+
+        if (vec2.dot(shipDir, shipToTarget) > 0 && dotNorm0 > 0 && dotNorm1 > 0)
+        {
+            parentObj.disableTurn();
+
+            var currVel = vec2.create();
+            vec2.sub(currVel, parentObj.components["physics"].currPos, parentObj.components["physics"].prevPos);
+            if (vec2.length(currVel) / game.fixed_dt_s < parentObj.aiMaxLinearVel) {
+                parentObj.enableThrust();
+            } else {
+                parentObj.disableThrust();
+            }
+        }
+
+    };
+    // TODO maybe add a "bool true" and a "bool false" condition to the state machine code
+    this.aiCondPursueToSelect = new FSMConditionEQ({"target": aiFsm.knowledge["parentObj"].target}, "target", {"constBoolFalse": false}, "constBoolFalse");
+    this.aiTransPursueToSelect = new FSMTransition("SelectTarget", this.aiCondPursueToSelect);
+    // TODO rework conditions to use direct reference to knowledge object (no need to create another layer of object/key)
+    this.aiStatePursueTarget.addTransition(this.aiTransPursueToSelect);
+
+
+    this.aiStateAttackTarget = new FSMStateInterface("AttackTarget");
+
+    aiFsm.addState(this.aiStateSelectTarget);  // Add fsm state object to machine
+    aiFsm.addState(this.aiStatePursueTarget);  // Add fsm state object to machine
+    aiFsm.setInitState("SelectTarget");        // Set initial state by name
+    aiFsm.start();
+
+    // TODO add avoid states (because we're not doing any hierchical state machine stuff, we're going to have 2 avoid states -- one that transitions back "pursue", and one that transitions back to "attack"
+
+};
+
+
+Spaceship.prototype.resetAI = function() {
+    this.components["ai"].start();
+};

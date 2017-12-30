@@ -37,40 +37,6 @@ FSMStateInterface.prototype.setTerminal = function() {
 };
 
 
-//// ============================================================================
-//// FSM State Class
-//// ============================================================================
-//// This class is essentially the same as the FSMStateInterface class, but without the "interface" part.
-//// The goal is to be able to declare a var, like var myState = new FSMState(), which is possible if we're not implementing an interface
-//function FSMState(stateName = null) {
-//    this.stateName = stateName;
-//    this.isTerminal = false;
-//    this.transitions = [];
-//    // Note that transitions contain conditions to evaluate, and next-states. If no tests pass, then by default, the state stays the same
-//}
-//
-//FSMState.prototype.enter = function() {
-//    // Function called upon entering this state
-//};
-//
-//FSMState.prototype.exit = function() {
-//    // Function called upon exiting this state, right before switching to the next
-//};
-//
-//FSMState.prototype.update = function(objRef, dt_s=1.0) {
-//    // dt_s is delta-time, in seconds. May or may not be necessary.
-//};
-//
-//
-//FSMState.prototype.addTransition = function(transition) {
-//    this.transitions.push(transition);
-//};
-//
-//FSMState.prototype.setTerminal = function() {
-//    this.isTerminal = true;
-//};
-
-
 // ============================================================================
 // FSM Transition Class
 // ============================================================================
@@ -92,6 +58,7 @@ FSMTransition.prototype.test = function() {
 };
 
 
+// TODO rework condition classes here to not use dict-like objects. It's not necessary; the machine will have direct access to objects/values to compare against each other.
 // ============================================================================
 // FSM Condition Interface Classes
 // ============================================================================
@@ -303,18 +270,45 @@ FSMConditionORList.prototype.test = function() {
 };
 
 
+//"Unconditional"/No condition - always true
+//
+//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
+//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
+//to the data value. This allows the program to maintain consisten references to the actual data we
+//want to compare
+// Developer can pass in all null values
+function FSMNoCondition(a_obj, a_key, b_obj, b_key) {
+    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+}
+FSMNoCondition.prototype = Object.create(FSMConditionInterface);
+FSMNoCondition.prototype.constructor = FSMNoCondition;
+FSMNoCondition.prototype.test = function() {
+    return true;
+};
+
+
 // ============================================================================
 // Finite State Machine (FSM)
 // ============================================================================
+// We make the FSM a game object
 function FSM(objRef = null) {
+    GameObject.call(this);
+
     this.states = {};
     this.init_state = null;
     this.current_state = null;
     this.running = false;
-    this.obj_ref = objRef;  // A dict or similar -- contains all the data to be used as inputs to the FSM
+    this.knowledge = objRef;  // A dict or similar -- contains all the data to be used as inputs to the FSM
     // TODO determine if I need to deepcopy? But maybe not.. But maybe?
 
 }
+
+FSM.prototype = Object.create(GameObject.prototype);
+FSM.prototype.constructor = FSM;
+
+FSM.prototype.initialize = function(objRef = null) {
+    this.knowledge = objRef;  // A dict or similar -- contains all the data to be used as inputs to the FSM
+};
 
 //Iterate through the transitions of the current state, evaluating the control conditions.
 //If no conditions evaluate to True, then by default, stay in the same state.
@@ -333,7 +327,7 @@ FSM.prototype.checkTransitions = function() {
 //Update the current state
 FSM.prototype.update = function() {
     if (this.running) {
-        this.current_state.update(this.obj_ref);    // Optionally supply a dt (delta_time) variable
+        this.current_state.update(this.knowledge, dt_s=null);    // Optionally supply a dt (delta_time) variable
         if (this.current_state.isTerminal) {  // We run through one update cycle of a terminal state, in case the state wants to do anything useful as clean-up or whatever
             this.running = false;
             this.current_state.exit();  // Exit the terminal state
