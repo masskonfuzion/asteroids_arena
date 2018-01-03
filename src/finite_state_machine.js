@@ -2,37 +2,56 @@
 // Some classes/helper functions for finite state machine
 
 // ============================================================================
-// FSM State Interface Class
+// A "namespace" with helper functions
 // ============================================================================
-function FSMStateInterface(stateName = null) {
+var FSMTools = {
+    getNested: function (theObject, path, separator) {
+    try {
+        separator = separator || '.';
+
+        return path.
+                replace('[', separator).replace(']','').
+                split(separator).
+                reduce(
+                    function (obj, property) {
+                        return obj[property];
+                    }, theObject
+                );
+
+    } catch (err) {
+        return undefined;
+    }
+}
+};
+
+// ============================================================================
+// FSM State Class
+// ============================================================================
+function FSMState(stateName = null) {
     this.stateName = stateName;
     this.isTerminal = false;
     this.transitions = [];
     // Note that transitions contain conditions to evaluate, and next-states. If no tests pass, then by default, the state stays the same
 }
 
-FSMStateInterface.prototype.enter = function() {
+FSMState.prototype.enter = function() {
     // Function called upon entering this state
-    throw new Error("Function must be implemented by subclass");
-    
 };
 
-FSMStateInterface.prototype.exit = function() {
+FSMState.prototype.exit = function() {
     // Function called upon exiting this state, right before switching to the next
-    throw new Error("Function must be implemented by subclass");
 };
 
-FSMStateInterface.prototype.update = function(objRef, dt_s=1.0) {
+FSMState.prototype.update = function(objRef, dt_s=1.0) {
     // dt_s is delta-time, in seconds. May or may not be necessary.
-    throw new Error("Function must be implemented by subclass");
 };
 
 
-FSMStateInterface.prototype.addTransition = function(transition) {
+FSMState.prototype.addTransition = function(transition) {
     this.transitions.push(transition);
 };
 
-FSMStateInterface.prototype.setTerminal = function() {
+FSMState.prototype.setTerminal = function() {
     this.isTerminal = true;
 };
 
@@ -41,7 +60,7 @@ FSMStateInterface.prototype.setTerminal = function() {
 // FSM Transition Class
 // ============================================================================
 function FSMTransition(targetName = "", condition=null) {
-    this.target_name = targetName;  // A reference to the actual state object
+    this.target_name = targetName;  // The name (string) of the state to transition to
     this.condition = condition;     // The condition here is an instance of one of the FSMCondition classes below
 }
 
@@ -62,24 +81,25 @@ FSMTransition.prototype.test = function() {
 // ============================================================================
 // FSM Condition Interface Classes
 // ============================================================================
-function FSMConditionInterface(a_obj, a_key, b_obj, b_key) {
+function FSMConditionInterface(a_obj = null, a_key = null, b_obj = null, b_key = null) {
     // An interface for conditional testing of object against other objects
-    // The idea behind the "objref" and "key" data members is to allow each condition to track object references
-    // In languages like C/C++, it is possible to track references to data items by memory address; that is not possible in JavaScript
-    // Therefore, we keep references to the objects that contain the data we want to track/evaluate against.
-    this.objref_a = a_obj;
-    this.key_a = a_key;
-
-    this.objref_b = b_obj;
-    this.key_b = b_key;
+-    // The idea behind the "objref" and "key" data members is to allow each condition to track object references
+-    // In languages like C/C++, it is possible to track references to data items by memory address; that is not possible in JavaScript
+-    // Therefore, we keep references to the objects that contain the data we want to track/evaluate against.
+-    this.objref_a = a_obj;
+-    this.key_a = a_key;
+-
+-    this.objref_b = b_obj;
+-    this.key_b = b_key;
 }
+
 FSMConditionInterface.prototype.test = function() {
     throw new Error("Function must be implemented by subclass");
 };
 
 
 function FSMConditionListInterface(condList) {
-    // TODO make sure we're properly handling lists - probably need to do a "forced" copy?
+    // TODO make sure we're properly handling lists - possibly need to do a deep copy?
     this.condList = condList;
 }
 FSMConditionListInterface.prototype.test = function() {
@@ -92,11 +112,8 @@ FSMConditionListInterface.prototype.test = function() {
 // ============================================================================
 //Test if a > b
 
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
-// NOTE: DataWrapper is a "dict-like" object type that was created for a Python game library. A JavaScript equivalent object that is not specifically a "DataWrapper would be an Object like, {"data": 10}.
+//Note: the ctor takes in references to data stored in "dict objs".
+//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
 function FSMConditionGT(a_obj, a_key, b_obj, b_key) {
     FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
 }
@@ -109,10 +126,8 @@ FSMConditionGT.prototype.test = function() {
 
 //Test if a >= b
 
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
+//Note: the ctor takes in references to data stored in "dict objs".
+//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
 function FSMConditionGTE(a_obj, a_key, b_obj, b_key) {
     FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
 }
@@ -125,10 +140,8 @@ FSMConditionGTE.prototype.test = function() {
 
 //Test if a < b
 //
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
+//Note: the ctor takes in references to data stored in "dict objs".
+//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
 function FSMConditionLT(a_obj, a_key, b_obj, b_key) {
     FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
 }
@@ -141,10 +154,8 @@ FSMConditionLT.prototype.test = function() {
 
 //Test if a <= b
 //
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
+//Note: the ctor takes in references to data stored in "dict objs".
+//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
 function FSMConditionLTE(a_obj, a_key, b_obj, b_key) {
     FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
 }
@@ -157,10 +168,8 @@ FSMConditionLTE.prototype.test = function() {
 
 //Test if a == b
 //
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
+//Note: the ctor takes in references to data stored in "dict objs".
+//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
 function FSMConditionEQ(a_obj, a_key, b_obj, b_key) {
     FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
 }
@@ -270,20 +279,27 @@ FSMConditionORList.prototype.test = function() {
 };
 
 
-//"Unconditional"/No condition - always true
+//Const true -- always true
 //
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
-// Developer can pass in all null values
-function FSMNoCondition(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionReturnTrue() {
+    FSMConditionInterface.call(this);
 }
-FSMNoCondition.prototype = Object.create(FSMConditionInterface);
-FSMNoCondition.prototype.constructor = FSMNoCondition;
-FSMNoCondition.prototype.test = function() {
+FSMConditionReturnTrue.prototype = Object.create(FSMConditionInterface);
+FSMConditionReturnTrue.prototype.constructor = FSMConditionReturnTrue;
+FSMConditionReturnTrue.prototype.test = function() {
     return true;
+};
+
+
+//Const false -- always false
+//
+function FSMConditionReturnFalse() {
+    FSMConditionInterface.call(this);
+}
+FSMConditionReturnFalse.prototype = Object.create(FSMConditionInterface);
+FSMConditionReturnFalse.prototype.constructor = FSMConditionReturnFalse;
+FSMConditionReturnFalse.prototype.test = function() {
+    return false;   // Not sure if this would be useful... but including it, anyway
 };
 
 
@@ -337,7 +353,7 @@ FSM.prototype.update = function() {
 };
 
 
-//Set the initial state
+//Set the initial state (by text name)
 //NOTE: This function MUST be called before starting the machine
 FSM.prototype.setInitState = function(stateName) {
     this.init_state = this.states[stateName];

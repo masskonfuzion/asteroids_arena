@@ -235,14 +235,17 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
     // TODO move ship state machine into its own file
     // TODO move state machine objects (states, conditions, transitions) into the state machine object. Or, otherwise, just don't store them in thee spaceship object (e.g. the ship doesn't need "this.aiState*"
-    this.aiStateSelectTarget = new FSMStateInterface("SelectTarget");
+    // Note/question: In JS, if I (1) create an object (say, newObj)while inside a function, then (2) assign that object to container object (so, e.g. containerObj["someLabel"] = newObj; -- does newObj still exist after the function exits?
+    // In C/C++, the answer would depend on how I created newObj -- if i just statically declared newObj, it would be gone; I'd have to new/malloc the obj, to have a pointer to it in heap space.
+    // But in JS (I tested this in Firefox developer console) - the objects stick around. JS must already be doing some kind of heap allocation (which I guess makes sense, for a garbage-collected language)
+    var aiStateSelectTarget = new FSMState("SelectTarget");
     // TODO maybe give fsm states a reference to the fsm's knowledge. I can imagine the states having a use for knowledge in the enter() and exit() functions
-    this.aiStateSelectTarget.enter = function() {
+    aiStateSelectTarget.enter = function() {
         // possibly some logic here, like setting hunter/miner profile
     };
-    this.aiStateSelectTarget.exit = function() {
+    aiStateSelectTarget.exit = function() {
     };
-    this.aiStateSelectTarget.update = function(knowledge, dt_s = null) {
+    aiStateSelectTarget.update = function(knowledge, dt_s = null) {
         // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
 
         // knowledge is passed in by the state machine
@@ -265,17 +268,14 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
             }
         }
     };
-    this.aiCondSelectToPursue = new FSMNoCondition(null, null, null, null);
-    this.aiTransSelectToPursue = new FSMTransition("PursueTarget", this.aiCondSelectToPursue);
-    this.aiStateSelectTarget.addTransition(this.aiTransSelectToPursue);
+    var aiTransSelectToPursue = new FSMTransition("PursueTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to PursueTarget
+    aiStateSelectTarget.addTransition(this.aiTransSelectToPursue);
 
 
-    this.aiStatePursueTarget = new FSMStateInterface("PursueTarget");
-    this.aiStatePursueTarget.enter = function() {
-    };
-    this.aiStatePursueTarget.exit = function() {
-    };
-    this.aiStatePursueTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
+    var aiStatePursueTarget = new FSMState("PursueTarget");
+    aiStatePursueTarget.enter = function() { };
+    aiStatePursueTarget.exit = function() { };
+    aiStatePursueTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
         // Rembmer: game is a global object
 
         // Compute rays offset by some number of degrees to the left and to the right of the ship's current heading/orientation
@@ -348,14 +348,14 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         }
 
     };
-    // TODO maybe add a "bool true" and a "bool false" condition to the state machine code
-    this.aiCondPursueToSelect = new FSMConditionEQ({"target": aiFsm.knowledge["parentObj"].target}, "target", {"constBoolFalse": false}, "constBoolFalse");
-    this.aiTransPursueToSelect = new FSMTransition("SelectTarget", this.aiCondPursueToSelect);
+    // TODO maybe add a "bool true" and a "bool false" condition to the state machine code (but maybe not necessary)
+    var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge["parentObj"].target.alive, false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    var aiTransPursueToSelect = new FSMTransition("SelectTarget", this.aiCondPursueToSelect);
     // TODO rework conditions to use direct reference to knowledge object (no need to create another layer of object/key)
-    this.aiStatePursueTarget.addTransition(this.aiTransPursueToSelect);
+    aiStatePursueTarget.addTransition(this.aiTransPursueToSelect);
 
 
-    this.aiStateAttackTarget = new FSMStateInterface("AttackTarget");
+    this.aiStateAttackTarget = new FSMState("AttackTarget");
 
     aiFsm.addState(this.aiStateSelectTarget);  // Add fsm state object to machine
     aiFsm.addState(this.aiStatePursueTarget);  // Add fsm state object to machine
