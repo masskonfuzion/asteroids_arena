@@ -21,7 +21,16 @@ var FSMTools = {
     } catch (err) {
         return undefined;
     }
-}
+},
+
+    getValue: function(theObject, theType, theData) {
+        // if theType is "ref", then theData is a key/path to access the actual data to return, from theObject
+        // if theType is "const", then theData is the value to return (basically a pass-through function)
+        // NOTE - this feels over-complicated, but I haven't yet come up with a leaner way to do this in JavaScript
+
+        // Use ugly, one-liner ternary syntax ( condition ? val_if_true : val_if_false )
+        return theType == "const" ? theData : FSMTools.getNested(theObject, theData);
+    }
 };
 
 // ============================================================================
@@ -77,20 +86,24 @@ FSMTransition.prototype.test = function() {
 };
 
 
-// TODO rework condition classes here to not use dict-like objects. It's not necessary; the machine will have direct access to objects/values to compare against each other.
 // ============================================================================
 // FSM Condition Interface Classes
 // ============================================================================
-function FSMConditionInterface(a_obj = null, a_key = null, b_obj = null, b_key = null) {
+function FSMConditionInterface(knowledge = null, typeA = null, valA = null, typeB  = null, valB = null) {
     // An interface for conditional testing of object against other objects
--    // The idea behind the "objref" and "key" data members is to allow each condition to track object references
--    // In languages like C/C++, it is possible to track references to data items by memory address; that is not possible in JavaScript
--    // Therefore, we keep references to the objects that contain the data we want to track/evaluate against.
--    this.objref_a = a_obj;
--    this.key_a = a_key;
--
--    this.objref_b = b_obj;
--    this.key_b = b_key;
+    // typeA and typeB can be either "ref" or "const" (or null; but be careful with nulls)
+    // if typeA/B is "ref", then valA/B is a path to follow in the knowledge obj, to get the data for evaluation
+    // if typeA/B is "const", then valA/B is a constant
+    // In languages like C/C++, it is possible to track references to data items by memory address; that is not possible in JavaScript
+    // NOTE: I'm not sure I like storing a reference to the knowledge object in the condition class (for large state machines with many conditions, it might be better to use the one reference stored in the state machine itself; maybe pass it in from state machine into the test() functions of each condition). But meh, we have to start somewhere
+    // Therefore, we keep references to the objects that contain the data we want to track/evaluate against.
+    this.knowledge = knowledge;
+
+    this.typeA = typeA;
+    this.valA = valA;
+
+    this.typeB = typeB;
+    this.valB = valB;
 }
 
 FSMConditionInterface.prototype.test = function() {
@@ -106,120 +119,102 @@ FSMConditionListInterface.prototype.test = function() {
     throw new Error("Function must be implemented by subclass");
 };
 
-
 // ============================================================================
 // FSM Condition Classes
 // ============================================================================
 //Test if a > b
-
-//Note: the ctor takes in references to data stored in "dict objs".
-//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
-function FSMConditionGT(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionGT(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionGT.prototype = Object.create(FSMConditionInterface);
 FSMConditionGT.prototype.constructor = FSMConditionGT;
 FSMConditionGT.prototype.test = function() {
-    return this.objref_a[this.key_a] > this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a > b;
 };
 
 
 //Test if a >= b
-
-//Note: the ctor takes in references to data stored in "dict objs".
-//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
-function FSMConditionGTE(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionGTE(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionGTE.prototype = Object.create(FSMConditionInterface);
 FSMConditionGTE.prototype.constructor = FSMConditionGTE;
 FSMConditionGTE.prototype.test = function() {
-    return this.objref_a[this.key_a] >= this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a >= b;
 };
 
 
 //Test if a < b
-//
-//Note: the ctor takes in references to data stored in "dict objs".
-//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
-function FSMConditionLT(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionLT(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionLT.prototype = Object.create(FSMConditionInterface);
 FSMConditionLT.prototype.constructor = FSMConditionLT;
 FSMConditionLT.prototype.test = function() {
-    return this.objref_a[this.key_a] < this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a < b;
 };
 
 
 //Test if a <= b
-//
-//Note: the ctor takes in references to data stored in "dict objs".
-//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
-function FSMConditionLTE(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionLTE(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionLTE.prototype = Object.create(FSMConditionInterface);
 FSMConditionLTE.prototype.constructor = FSMConditionLTE;
 FSMConditionLTE.prototype.test = function() {
-    return this.objref_a[this.key_a] <= this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a <= b;
 };
 
 
 //Test if a == b
-//
-//Note: the ctor takes in references to data stored in "dict objs".
-//e.g., inObjA and inObjB should be a reference to someObj.key (can also be written someObj["key"])
-function FSMConditionEQ(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionEQ(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionEQ.prototype = Object.create(FSMConditionInterface);
 FSMConditionEQ.prototype.constructor = FSMConditionEQ;
 FSMConditionEQ.prototype.test = function() {
-    return this.objref_a[this.key_a] == this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a == b;
 };
 
 
 //Test if a != b
-//
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
-function FSMConditionNEQ(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionNEQ(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionNEQ.prototype = Object.create(FSMConditionInterface);
 FSMConditionNEQ.prototype.constructor = FSMConditionNEQ;
 FSMConditionNEQ.prototype.test = function() {
-    return this.objref_a[this.key_a] != this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a != b;
 };
 
 
 //Test if a && b is True
-//
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
-function FSMConditionAND(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionAND(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionAND.prototype = Object.create(FSMConditionInterface);
 FSMConditionAND.prototype.constructor = FSMConditionAND;
 FSMConditionAND.prototype.test = function() {
-    return this.objref_a[this.key_a] && this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a && b;
 };
 
 
 //Test if a list of conditions all evaluate to True (can mix and match, and even have nested
 //ANDLists or ORLists as items in the list)
-//
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
-
 function FSMConditionANDList(condList) {
     FSMConditionListInterface.call(this, condList);
 }
@@ -239,28 +234,20 @@ FSMConditionANDList.prototype.test = function() {
 
 
 //Test if a || b is True
-//
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
-function FSMConditionOR(a_obj, a_key, b_obj, b_key) {
-    FSMConditionInterface.call(this, a_obj, a_key, b_obj, b_key);
+function FSMConditionOR(knowledge, typeA, valA, typeB, valB) {
+    FSMConditionInterface.call(this, knowledge, typeA, valA, typeB, valB);
 }
 FSMConditionOR.prototype = Object.create(FSMConditionInterface);
 FSMConditionOR.prototype.constructor = FSMConditionOR;
 FSMConditionOR.prototype.test = function() {
-    return this.objref_a[this.key_a] || this.objref_b[this.key_b];
+    var a = FSMTools.getValue(this.knowledge, this.typeA, this.valA);
+    var b = FSMTools.getValue(this.knowledge, this.typeB, this.valB);
+    return a || b;
 };
 
 
 //Test if any of a list of conditions evaluates to True (can mix and match, and even have ANDLists or
 //ORLists as items in the list)
-//
-//Note: the ctor takes in "dict objs". These objs can be actual dict objects, or DataWrapper objects.
-//DataWrappers are wrappers around immutable types (e.g., int, float) that allow "dict-like" access
-//to the data value. This allows the program to maintain consisten references to the actual data we
-//want to compare
 function FSMConditionORList(condList) {
     FSMConditionListInterface.call(this, condList);
 }
@@ -280,7 +267,6 @@ FSMConditionORList.prototype.test = function() {
 
 
 //Const true -- always true
-//
 function FSMConditionReturnTrue() {
     FSMConditionInterface.call(this);
 }
@@ -292,7 +278,6 @@ FSMConditionReturnTrue.prototype.test = function() {
 
 
 //Const false -- always false
-//
 function FSMConditionReturnFalse() {
     FSMConditionInterface.call(this);
 }

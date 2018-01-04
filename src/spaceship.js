@@ -269,7 +269,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         }
     };
     var aiTransSelectToPursue = new FSMTransition("PursueTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to PursueTarget
-    aiStateSelectTarget.addTransition(this.aiTransSelectToPursue);
+    aiStateSelectTarget.addTransition(aiTransSelectToPursue);
 
 
     var aiStatePursueTarget = new FSMState("PursueTarget");
@@ -349,16 +349,16 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
     };
     // TODO maybe add a "bool true" and a "bool false" condition to the state machine code (but maybe not necessary)
-    var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge["parentObj"].target.alive, false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
-    var aiTransPursueToSelect = new FSMTransition("SelectTarget", this.aiCondPursueToSelect);
+    var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    var aiTransPursueToSelect = new FSMTransition("SelectTarget", aiCondPursueToSelect);
     // TODO rework conditions to use direct reference to knowledge object (no need to create another layer of object/key)
-    aiStatePursueTarget.addTransition(this.aiTransPursueToSelect);
+    aiStatePursueTarget.addTransition(aiTransPursueToSelect);
 
 
-    this.aiStateAttackTarget = new FSMState("AttackTarget");
+    var aiStateAttackTarget = new FSMState("AttackTarget");
 
-    aiFsm.addState(this.aiStateSelectTarget);  // Add fsm state object to machine
-    aiFsm.addState(this.aiStatePursueTarget);  // Add fsm state object to machine
+    aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
+    aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
     aiFsm.setInitState("SelectTarget");        // Set initial state by name
     aiFsm.start();
 
