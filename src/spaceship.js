@@ -240,10 +240,12 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     // But in JS (I tested this in Firefox developer console) - the objects stick around. JS must already be doing some kind of heap allocation (which I guess makes sense, for a garbage-collected language)
     var aiStateSelectTarget = new FSMState("SelectTarget");
     // TODO maybe give fsm states a reference to the fsm's knowledge. I can imagine the states having a use for knowledge in the enter() and exit() functions
-    aiStateSelectTarget.enter = function() {
+    // TODO while we're at it, we need to decide: should the states and conditions each store their own reference to the machine's knowledge object, or should they not (and the machine passes its reference everywhere it's needed?)
+    aiStateSelectTarget.enter = function(knowledge = null) {
         // possibly some logic here, like setting hunter/miner profile
+        // NOTE: we're actually overriding a function provided in the FSMState class, which has the same signature. If we don't actually use enter() and exit(), we don't have to implement them.
     };
-    aiStateSelectTarget.exit = function() {
+    aiStateSelectTarget.exit = function(knowledge = null) {
     };
     aiStateSelectTarget.update = function(knowledge, dt_s = null) {
         // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
@@ -273,8 +275,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
 
     var aiStatePursueTarget = new FSMState("PursueTarget");
-    aiStatePursueTarget.enter = function() { };
-    aiStatePursueTarget.exit = function() { };
+    aiStatePursueTarget.enter = function(knowledge = null) { };
+    aiStatePursueTarget.exit = function(knowledge = null) { };
     aiStatePursueTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
         // Rembmer: game is a global object
 
@@ -296,7 +298,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         var parentObj = knowledge["parentObj"];
 
         // Get a reference to the ship's angle vector
-        var shipDir = parentObj.components["physics"].angleVec;
+        var shipDir = parentObj.components["physics"].angleVec; // NOTE: shipDir is already unit length
 
         var sightLine0 = vec2.create();
         var sightLine1 = vec2.create();
@@ -307,15 +309,15 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
         // Compute the "left" sight line
         mat2.fromRotation(rotMat, glMatrix.toRadian(-sightHalfAngle));
-        vec2.transformMat2(sightLine0, shipDir, rotMat);
+        vec2.transformMat2(sightLine0, shipDir, rotMat);    // NOTE: sightLine0 is normalized, because it is the rotation of a normalized vector
         var norm0 = vec2.create();
-        vec2.set(norm0, sightLine0[1], sightLine0[0]);   // Cheap & easy 90 deg rotation in the positive direction
+        vec2.set(norm0, sightLine0[1], sightLine0[0]);   // Cheap & easy 90 deg rotation in the positive direction (also normalized already)
 
         // Compute the "right" sight line
         mat2.fromRotation(rotMat, glMatrix.toRadian(sightHalfAngle));
-        vec2.transformMat2(sightLine1, shipDir, rotMat);
+        vec2.transformMat2(sightLine1, shipDir, rotMat);    // NOTE: sightLine0 is normalized, because it is the rotation of a normalized vector
         var norm1 = vec2.create();
-        vec2.set(norm1, sightLine1[1], -sightLine1[0]);
+        vec2.set(norm1, sightLine1[1], -sightLine1[0]); // normalized (rotation of a normalized vector)
 
         // Compute the ship-to-target vector
         var shipToTarget = vec2.create();
@@ -326,39 +328,68 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         var dotNorm1 = vec2.dot(norm1, shipToTarget);
 
 
-        if (dotNorm0 < 0) {
-            // Target is to the left
-            parentObj.enableTurnLeft();
-        } else if (dotNorm1 < 0) {
-            // Target is to the right
-            parentObj.enableTurnRight();
-        }
+        if (vec2.dot(shipDir, shipToTarget) > 0) {
+            if (dotNorm0 < 0) {
+                // Target is to the left
+                parentObj.enableTurnLeft();
+            } else if (dotNorm1 < 0) {
+                // Target is to the right
+                parentObj.enableTurnRight();
+            } else if (dotNorm0 > 0 && dotNorm1 > 0) {
+                parentObj.disableTurn();
 
-        if (vec2.dot(shipDir, shipToTarget) > 0 && dotNorm0 > 0 && dotNorm1 > 0)
-        {
-            parentObj.disableTurn();
-
-            var currVel = vec2.create();
-            vec2.sub(currVel, parentObj.components["physics"].currPos, parentObj.components["physics"].prevPos);
-            if (vec2.length(currVel) / game.fixed_dt_s < parentObj.aiMaxLinearVel) {
-                parentObj.enableThrust();
+                var currVel = vec2.create();
+                vec2.sub(currVel, parentObj.components["physics"].currPos, parentObj.components["physics"].prevPos);
+                if (vec2.length(currVel) / game.fixed_dt_s < parentObj.aiMaxLinearVel) {
+                    parentObj.enableThrust();
+                } else {
+                    parentObj.disableThrust();
+                }
+            }
+        } else {
+            if (dotNorm0 < dotNorm1) {
+                parentObj.enableTurnLeft();
             } else {
-                parentObj.disableThrust();
+                parentObj.enableTurnRight();
             }
         }
 
     };
-    // TODO maybe add a "bool true" and a "bool false" condition to the state machine code (but maybe not necessary)
+    // NOTE: We're presuming that if a target becomes not-alive during pursuit, that means we didn't kill it; something else did
     var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
     var aiTransPursueToSelect = new FSMTransition("SelectTarget", aiCondPursueToSelect);
-    // TODO rework conditions to use direct reference to knowledge object (no need to create another layer of object/key)
     aiStatePursueTarget.addTransition(aiTransPursueToSelect);
+    
+    var aiCondPursueToAttack = new FSMConditionLT(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.target.components.physics.currPos"], "const", 1600);   // TODO don't hardcode -- use thresholds in an AI config object
+    var aiTransPursueToAttack = new FSMTransition("AttackTarget", aiCondPursueToAttack);
+    aiStatePursueTarget.addTransition(aiTransPursueToAttack);
 
 
     var aiStateAttackTarget = new FSMState("AttackTarget");
+    aiStateAttackTarget.enter = function(knowledge = null) {
+        // Fire away!!
+        var parentObj = knowledge["parentObj"];
+        parentObj.enableFireA();
+
+    };
+    aiStateAttackTarget.exit = function(knowledge = null) {
+        var parentObj = knowledge["parentObj"];
+        parentObj.disableFireA();
+
+    };
+    aiStateAttackTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
+    }
+    var aiCondAttackToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    var aiTransAttackToSelect = new FSMTransition("SelectTarget", aiCondAttackToSelect);
+    aiStateAttackTarget.addTransition(aiTransAttackToSelect);
+
+    var aiCondAttackToPursue = new FSMConditionGTE(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.target.components.physics.currPos"], "const", 1600);   // TODO don't hardcode -- use thresholds in an AI config object
+    var aiTransAttackToPursue = new FSMTransition("PursueTarget", aiCondAttackToPursue);
+    aiStateAttackTarget.addTransition(aiTransAttackToPursue);
 
     aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
     aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
+    aiFsm.addState(aiStateAttackTarget);  // Add fsm state object to machine
     aiFsm.setInitState("SelectTarget");        // Set initial state by name
     aiFsm.start();
 

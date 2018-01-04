@@ -28,8 +28,26 @@ var FSMTools = {
         // if theType is "const", then theData is the value to return (basically a pass-through function)
         // NOTE - this feels over-complicated, but I haven't yet come up with a leaner way to do this in JavaScript
 
-        // Use ugly, one-liner ternary syntax ( condition ? val_if_true : val_if_false )
-        return theType == "const" ? theData : FSMTools.getNested(theObject, theData);
+        // NOTE: I normally dislike JS more than I like it, but I actually love the ability to switch on string expressions
+        switch (theType) {
+            case 'ref':
+                return FSMTools.getNested(theObject, theData);
+            case 'const':
+                return theData;
+            case 'calc':
+                // calculations take in a list of parameters (i.e., theData is a list)
+                // theData[0] is the type of calculation (e.g. sum)
+                // For now, it will be assumed that all of the parameters to a calculation will be paths to access data from the knowledge object (basically, the same case as 'ref', above)
+                switch (theData[0]) {
+                    case 'sqrDist':
+                        // Major assumptions here:
+                        // theData[1] and theData[2] are glMatrix vec2 objects
+                        var a = FSMTools.getNested(theObject, theData[1]);
+                        var b = FSMTools.getNested(theObject, theData[2]);
+                        return vec2.sqrDist(a,b);
+                }
+                break;
+        }
     }
 };
 
@@ -43,11 +61,12 @@ function FSMState(stateName = null) {
     // Note that transitions contain conditions to evaluate, and next-states. If no tests pass, then by default, the state stays the same
 }
 
-FSMState.prototype.enter = function() {
+// TOOD maybe make FSMState an interface class, by throwing errors in these built-in enter(), exit(), and update() functions
+FSMState.prototype.enter = function(knowledge = null) {
     // Function called upon entering this state
 };
 
-FSMState.prototype.exit = function() {
+FSMState.prototype.exit = function(knowledge = null) {
     // Function called upon exiting this state, right before switching to the next
 };
 
@@ -316,10 +335,10 @@ FSM.prototype.initialize = function(objRef = null) {
 FSM.prototype.checkTransitions = function() {
    for (var transition of this.current_state.transitions) {
        if (transition.test()) {
-           this.current_state.exit();
+           this.current_state.exit(this.knowledge);
 
            this.current_state = this.states[transition.target_name];
-           this.current_state.enter();
+           this.current_state.enter(this.knowledge);
         }
     }
 };
