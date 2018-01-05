@@ -319,9 +319,9 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
             // Determine which direction to turn, to aim
             // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
             if (vec2.dot(normal, shipToTarget) > 0) {
-                parentShip.enableTurnLeft();
-            } else {
                 parentShip.enableTurnRight();
+            } else {
+                parentShip.enableTurnLeft();
             }
         } else {
             parentShip.disableTurn();
@@ -364,7 +364,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         // the dot product represents |u|*|v|*cos(th) - because |u| == |v| == 1, the dot product represents cos(th) between the two vectors
         var th = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
 
-        // if th > the ai aim/fire threshold angle, we need to narrow the angle by turning in the direction opposite the direction that shipToTarget is offset from shipDir
+        // if th > the ai aim/fire threshold angle, we need to narrow the angle by turning in the direction that shipToTarget is offset from shipDir
         if (th > glMatrix.toRadian(parentShip.aiConfig["aiFireHalfAngle"])) {
             // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
             // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
@@ -374,9 +374,9 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
             // Determine which direction to turn, to aim
             // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
             if (vec2.dot(normal, shipToTarget) > 0) {
-                parentShip.enableTurnLeft();
-            } else {
                 parentShip.enableTurnRight();
+            } else {
+                parentShip.enableTurnLeft();
             }
             
         } else {
