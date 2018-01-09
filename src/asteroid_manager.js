@@ -151,10 +151,10 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         var bannedLocations = [ {"position": this.parentObj.gameObjs["ship0"].components["physics"].currPos, "radius": 50 } ];
         // TODO trigger a particle explosion
         if (astToDisable.size > 0) {
-            for (var i = 0; i < params.numToSpawn; i++) {
-                var newSize = astToDisable.size - 1;
-                var newSizeStr = this.asteroidSizeMap[astToDisable.size - 1];
+            var newSize = astToDisable.size - 1;
+            var newSizeStr = this.asteroidSizeMap[astToDisable.size - 1];
 
+            for (var i = 0; i < params.numToSpawn; i++) {
                 var configObj = { "renderCompType": "image",
                                   "imageRef": game.imgMgr.imageMap[ newSizeStr ].imgObj,
                                   "funcCalls": [ { "func": Asteroid.prototype.setSize, "params": [newSize] } ],

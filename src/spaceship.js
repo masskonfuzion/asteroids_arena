@@ -316,7 +316,12 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
         var th = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
 
-        if (th > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
+        // if more than 90 deg between velocity dir and shipToTarget, then, turn to a heading that will oppose the ship's velocity (i.e. slow the ship down, not merely add velocity in some other dir)
+        if (false) {
+            // TODO fill me in here
+            // TODO also, perhaps remove or rework the thrust block below
+        }
+        else if (th > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
             // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
             // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
             var normal = vec2.create();
