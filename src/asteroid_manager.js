@@ -102,6 +102,9 @@ AsteroidManager.prototype.draw = function(canvasContext) {
     myPS.draw(canvasContext);
 };
 
+
+// disable asteroids (primarily when an asteroid leaves the arena; in other cases, e.g. collision with ship or
+// bullet, disableAndSpawnAsteroids is called (which disables an asteroid, and spawns new asteroid fragments
 // Note: Though disableAsteroids appears before disableAndSpawnAsteroids in the code, disableAndSpawnAsteroids was written before
 // disableAsteroids, chronologically. disableAsteroids takes in a list of asteroids to disable, to stay consistent with disableAndSpawnAsteroids, 
 // but looking back on it, I'm not sure why I pass in a list, and not just a single asteroid..
@@ -168,17 +171,25 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
                 var fragmentPos = vec2.create();
                 vec2.add(fragmentPos, spawnPoint, offsetVec);
 
-                myEmitter.setPosition(fragmentPos[0], fragmentPos[1]);
-                myEmitter.setVelocityRange(vec2.length(astVel) * launchData[i]["velMult"], vec2.length(astVel) * launchData[i]["velMult"]);
-                myEmitter.setLaunchDir(launchData[i]["dir"][0], launchData[i]["dir"][1]);
-                myEmitter.setAngleRange(0, 0);  // i.e., launch in exactly the direction of launchDir
+                // If the fragment position is in the arena, then spawn it
+                if (this.parentObj.gameObjs["arena"].containsPt(fragmentPos)) {
+                    myEmitter.setPosition(fragmentPos[0], fragmentPos[1]);
+                    myEmitter.setVelocityRange(vec2.length(astVel) * launchData[i]["velMult"], vec2.length(astVel) * launchData[i]["velMult"]);
+                    myEmitter.setLaunchDir(launchData[i]["dir"][0], launchData[i]["dir"][1]);
+                    myEmitter.setAngleRange(0, 0);  // i.e., launch in exactly the direction of launchDir
 
-                // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
-                myEmitter.emitParticle(game.fixed_dt_s, configObj);
-                this.activeAsteroids[newSize] += 1;
+                    // Emit a particle with the given config. Note that the config tells the particle which image to use for its render component
+                    myEmitter.emitParticle(game.fixed_dt_s, configObj);
+                    this.activeAsteroids[newSize] += 1;
+                } else {
+                    // Not sure if anything actually needs to happen here. If the fragment spawn
+                    // position is outside the arena, then do nothing.
+
+                    // Possibly delete this empty else block, because jumping to it wastes
+                    // processor time
+                }
             }
         }
-
     }
 };
 
