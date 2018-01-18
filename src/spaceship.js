@@ -44,6 +44,7 @@ function Spaceship() {
 
     this.aiControlled = false;
     this.aiConfig = {};
+    this.aiNearestObj = [];
 }
 
 
@@ -76,6 +77,23 @@ Spaceship.prototype.initialize = function(configObj) {
 
 // Override the default update()
 Spaceship.prototype.update = function(dt_s, config = null) {
+
+    if (this.aiControlled) {
+        // TODO compute nearest threat (use the quadtree to prune calculations)
+        // The quadtree is owned by the gameLogic object, which is also the parent obj of all spaceships
+        // NOTE: it would be safer to verify that the gameLogic object has a collisionMgr, but whatever, we know it does..
+        var qt = this.parentObj.collisionMgr.quadTree;
+
+        var nearObjs = []
+        // Clear the near objs list
+        qt.retrieve(nearObjs, this.components["collision"]);
+
+        var minDist = Number.MAX_SAFE_INTEGER;
+        for (var nearObj of nearObjs) {
+            var sqrDist = 0; // TODO standardize a way to get distance to an object -- maybe use closest point or some other math
+            // TODO 2018-01-11 - pick up from here
+        }
+    }
 
     // Iterate over all components and call their respective update() function
     for (var compName in this.components) {
@@ -140,6 +158,7 @@ Spaceship.prototype.update = function(dt_s, config = null) {
             this.components[compName].update(dt_s, updateConfigObj);
         }
     }
+
 }
 
 // Override the class default executeCommand()
@@ -287,26 +306,10 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         console.log("Exit state PursueTarget");
     };
     aiStatePursueTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
-        // Rembmer: game is a global object
-
-        // Compute rays offset by some number of degrees to the left and to the right of the ship's current heading/orientation
-        // - sightLine0 and sightLine1
-        // Compute the sight line normals, sightNormal0 and sightNormal1
-        // - so, e.g. if sightLine0 is "to the left", then its normal points "to the right", and if sightLine1 is "to the right",
-        // then its normal points "to the left"
-        // The target is "in sight" if:
-        // - The vector/ray from the ship to the target intersects the line segment formed by connecting the two sightLine vectors
-        //   some distance down the line
-        // - can also probably just use dot products
-        //   - use the sightLine vectors (normalized); get the vector from ship to target
-        //   - compute the points at the end of each sightLine vector
-        //   - compute vectors, one from those points to target; normalize
-        //   - dot the sightLine-target endpoint vectors against the sightLine normals
-        //   - actually, you probably only need to dot the vector from ship to target against the normals
-        //   - the target is in sight if each of the respective sightLine-to-target vectors dotted with the sightNormal is > 0
+        // Remember: game is a global object
         var parentShip = knowledge["parentObj"];
 
-        // Get a reference to the ship's angle vector
+        // Get a reference to the ship's heading vector
         var shipDir = vec2.clone( parentShip.components["physics"].angleVec ); // NOTE: angleVec is already unit length
 
         // Compute the ship-to-target vector
@@ -314,38 +317,67 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         vec2.sub(shipToTarget, parentShip.aiConfig["target"].components["physics"].currPos, parentShip.components["physics"].currPos);
         vec2.normalize(shipToTarget, shipToTarget);
 
+        // Compute the angle between the ship's heading and the shipToTarget vector
         var th = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
+        // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
+        // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
+        var normal = vec2.create();
+        vec2.set(normal, -shipDir[1], shipDir[0]);  // normal points in the +x (or +u) direction
 
-        // if more than 90 deg between velocity dir and shipToTarget, then, turn to a heading that will oppose the ship's velocity (i.e. slow the ship down, not merely add velocity in some other dir)
-        if (false) {
-            // TODO fill me in here
-            // TODO also, perhaps remove or rework the thrust block below
+        // TODO spruce up AI decision making here, something like the following:
+        // - ship should be able to shoot from "far away", even if drifting away from the target, as long as it has a good shot lined up
+
+        var currVel = vec2.create();
+        vec2.sub(currVel, parentShip.components["physics"].currPos, parentShip.components["physics"].prevPos);
+
+        switch (parentShip.aiConfig["aiBehavior"]) {
+            case "":
+                parentShip.aiConfig["aiBehavior"] = "FreePursuit";
+                // notice no break here
+                // if aiBehavior == "", we set it here, and then continue in this same update cycle to execute it
+                // this means that the state machine must reset aiBehavior to "" when appropriate
+                // aiBehavior constitutes a state machine-within-the-machine,  of sorts. We're hardcoding
+                // aiBehavior transitions
+
+            case "FreePursuit":
+                if (th > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
+                    // Determine which direction to turn, to aim
+                    // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
+                    if (vec2.dot(normal, shipToTarget) > 0) {
+                        parentShip.enableTurnRight();
+                    } else {
+                        parentShip.enableTurnLeft();
+                    }
+                } else {
+                    parentShip.disableTurn();
+
+                    // TODO come up with a way to have the ship control its velocity similar to how humans (well, I) do it. i.e., change heading/thrust to manage individual components of velocity. i.e. from here, transition into a ReduceVel behavior. The goal here is to get the ship dir to match shipToTarget (which, itself, will be changing, if the ship is drifting away from its desired target vector)
+                    if (vec2.dot(currVel, shipToTarget) < 0 || vec2.length(currVel) / game.fixed_dt_s < parentShip.aiConfig["aiMaxLinearVel"]) {
+                        parentShip.enableThrust();
+                    } else {
+                        parentShip.disableThrust();
+                    }
+                }
+                break;
+            case "ReduceVelU":
+                // Reduce velocity in the u direction, i.e. relative x-axis (I think, of the shipToTarget vector.. TODO analyze)
+                var normalizedVel = vec2.create();
+                vec2.normalize(normalizedVel, currVel); // store normalized currVel into normalizedVel
+
+                // calculate the angle between shipDir and shipToTarget - with it, determine whether to turn right or left to make the fastest heading change that will allow the ship to correct its velocity
+                break;
+
+            case "ReduceVelV":
+                // Reduce velocity in the v direction i.e. relative y-axis (I think, of the shipToTarget vector.. TODO analyze)
+                break;
         }
-        else if (th > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
-            // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
-            // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
-            var normal = vec2.create();
-            vec2.set(normal, -shipDir[1], shipDir[0]);    
 
-            // Determine which direction to turn, to aim
-            // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
-            if (vec2.dot(normal, shipToTarget) > 0) {
-                parentShip.enableTurnRight();
-            } else {
-                parentShip.enableTurnLeft();
-            }
-        } else {
-            parentShip.disableTurn();
-
-            var currVel = vec2.create();
-            // TODO come up with a way to have the ship control its velocity similar to how humans (well, I) do it. i.e., change heading/thrust to manage individual components of velocity
-            vec2.sub(currVel, parentShip.components["physics"].currPos, parentShip.components["physics"].prevPos);
-            if (vec2.dot(currVel, shipToTarget) < 0 || vec2.length(currVel) / game.fixed_dt_s < parentShip.aiConfig["aiMaxLinearVel"]) {
-                parentShip.enableThrust();
-            } else {
-                parentShip.disableThrust();
-            }
-        }
+        // NOTES on behaviors (and maybe some TODOs)
+        // - There should be a ReduceComponent pursuit behavior (in the Pursue and also Attack states) that reduces velocity in a given direction.
+        //   - The idea is to find a target velocity direction, and then act to reduce velocity in any direction other than that target dir
+        //   - (but this probably just means reducing velocity in the direction perpendicular to the target velocity)
+        // - There should also be a SlowDown behavior to reduce velocity in the current direction
+        //   - performed by turning 180 deg relative to current/desired velocity, and thrusting, to reduce velocity in that direction
     };
     // NOTE: We're presuming that if a target becomes not-alive during pursuit, that means we didn't kill it; something else did
     var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
@@ -355,6 +387,9 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     var aiCondPursueToAttack = new FSMConditionLTE(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
     var aiTransPursueToAttack = new FSMTransition("AttackTarget", aiCondPursueToAttack);
     aiStatePursueTarget.addTransition(aiTransPursueToAttack);
+
+    var aiCondPursueToAvoidA;
+    // TODO make an avoid state, and nearly finish it, but don't add conditions. Then, deep-copy it, so we have 2 separate states, but with the exact-same-everything (including update()). Then, after deep-copy, assign transitions/conditions, so that one transitions back to PursueTarget, and the other transitions back to AttackTarget. Use the nearest threat computed in the spacehip's update() procedure
 
 
     var aiStateAttackTarget = new FSMState("AttackTarget");
@@ -406,6 +441,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     var aiCondAttackToPursue = new FSMConditionGT(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
     var aiTransAttackToPursue = new FSMTransition("PursueTarget", aiCondAttackToPursue);
     aiStateAttackTarget.addTransition(aiTransAttackToPursue);
+    
+    var aiCondAttackToAvoidB;   // TODO make this condition essentially the same as (if not exactly the same as) aiCondAttackToAvoidA
 
     aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
     aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
