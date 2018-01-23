@@ -318,7 +318,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         vec2.normalize(shipToTarget, shipToTarget);
 
         // Compute the angle between the ship's heading and the shipToTarget vector
-        var th = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
+        var thHeadingTarget = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
         // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
         // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
         var normal = vec2.create();
@@ -330,6 +330,9 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         var currVel = vec2.create();
         vec2.sub(currVel, parentShip.components["physics"].currPos, parentShip.components["physics"].prevPos);
 
+        var normalizedVel = vec2.create();
+        vec2.normalize(normalizedVel, currVel); // store normalized currVel into normalizedVel
+
         switch (parentShip.aiConfig["aiBehavior"]) {
             case "":
                 parentShip.aiConfig["aiBehavior"] = "FreePursuit";
@@ -340,7 +343,23 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 // aiBehavior transitions
 
             case "FreePursuit":
-                if (th > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
+                // Adjust thrust
+                // if currVel u-component is already within an allowable threshold of deviance from the target velocity vector, then thrust freely
+                if (true) {
+                    // TODO come up with a way to have the ship control its velocity similar to how humans (well, I) do it. i.e., change heading/thrust to manage individual components of velocity. i.e. from here, transition into a ReduceVel behavior. The goal here is to get the ship dir to match shipToTarget (which, itself, could be changing, if the ship is drifting away from its desired target vector)
+                    if (vec2.dot(currVel, shipToTarget) < 0 || vec2.length(currVel) / game.fixed_dt_s < parentShip.aiConfig["aiMaxLinearVel"]) {
+                        parentShip.enableThrust();
+                    } else {
+                        parentShip.disableThrust();
+                    }
+
+                // otherwise, change aiBehavior to thrust in a different manner (might not be necessary? Just hardcode it here? or otherwise, use aiBehaviors in more places?
+                } else {
+                }
+
+
+                // Adjust turn/heading
+                if (thHeadingTarget > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
                     // Determine which direction to turn, to aim
                     // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
                     if (vec2.dot(normal, shipToTarget) > 0) {
@@ -350,19 +369,10 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                     }
                 } else {
                     parentShip.disableTurn();
-
-                    // TODO come up with a way to have the ship control its velocity similar to how humans (well, I) do it. i.e., change heading/thrust to manage individual components of velocity. i.e. from here, transition into a ReduceVel behavior. The goal here is to get the ship dir to match shipToTarget (which, itself, will be changing, if the ship is drifting away from its desired target vector)
-                    if (vec2.dot(currVel, shipToTarget) < 0 || vec2.length(currVel) / game.fixed_dt_s < parentShip.aiConfig["aiMaxLinearVel"]) {
-                        parentShip.enableThrust();
-                    } else {
-                        parentShip.disableThrust();
-                    }
                 }
                 break;
             case "ReduceVelU":
                 // Reduce velocity in the u direction, i.e. relative x-axis (I think, of the shipToTarget vector.. TODO analyze)
-                var normalizedVel = vec2.create();
-                vec2.normalize(normalizedVel, currVel); // store normalized currVel into normalizedVel
 
                 // calculate the angle between shipDir and shipToTarget - with it, determine whether to turn right or left to make the fastest heading change that will allow the ship to correct its velocity
                 break;
@@ -410,11 +420,11 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         vec2.sub(shipToTarget, parentShip.aiConfig["target"].components["physics"].currPos, parentShip.components["physics"].currPos);
         vec2.normalize(shipToTarget, shipToTarget);
 
-        // the dot product represents |u|*|v|*cos(th) - because |u| == |v| == 1, the dot product represents cos(th) between the two vectors
-        var th = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
+        // the dot product represents |u|*|v|*cos(thHeadingTarget) - because |u| == |v| == 1, the dot product represents cos(thHeadingTarget) between the two vectors
+        var thHeadingTarget = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
 
-        // if th > the ai aim/fire threshold angle, we need to narrow the angle by turning in the direction that shipToTarget is offset from shipDir
-        if (th > glMatrix.toRadian(parentShip.aiConfig["aiFireHalfAngle"])) {
+        // if thHeadingTarget > the ai aim/fire threshold angle, we need to narrow the angle by turning in the direction that shipToTarget is offset from shipDir
+        if (thHeadingTarget > glMatrix.toRadian(parentShip.aiConfig["aiFireHalfAngle"])) {
             // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
             // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
             var normal = vec2.create();
