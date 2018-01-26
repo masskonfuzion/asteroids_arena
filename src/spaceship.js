@@ -317,12 +317,11 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         vec2.sub(shipToTarget, parentShip.aiConfig["target"].components["physics"].currPos, parentShip.components["physics"].currPos);
         vec2.normalize(shipToTarget, shipToTarget);
 
-        // Compute the angle between the ship's heading and the shipToTarget vector
-        var thHeadingTarget = Math.acos( vec2.dot(shipDir, shipToTarget) );  // radians
+        // Compute the signed angle between the ship's heading and the shipToTarget vector
+        // (the sign indicates whether a + or - rotation about the angle is required to get from shipDir to shipToTarget)
+        var thHeadingTarget = parentShip.calcVecSeparatingAngle(shipDir, shipToTarget);     // radians
         // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
         // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
-        var normal = vec2.create();
-        vec2.set(normal, -shipDir[1], shipDir[0]);  // normal points in the +x (or +u) direction
 
         // TODO spruce up AI decision making here, something like the following:
         // - ship should be able to shoot from "far away", even if drifting away from the target, as long as it has a good shot lined up
@@ -468,3 +467,27 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 Spaceship.prototype.resetAI = function() {
     this.components["ai"].start();
 };
+
+
+// Purpose:
+// - Calculate the angle in between vectors
+// - Return the angle, in RADIANS, where the sign of the angle is determined relative to vecA
+// - i.e., vecB is the result of starting with vecA, and rotating vecA about [returnValue] radians
+// Preconditions:
+// - vecA and vecB are two normalized vectors
+// NOTE:
+// - surprisingly, glMatrix does not provide any functions to determine the angle between 2 vectors
+// - also, this calcVecSeparatingAngle function probably belongs in a math or ai namespace, as a helper function (TODO?)
+Spaceship.prototype.calcVecSeparatingAngle = function (vecA, vecB) {
+    // Use the property of the dot product that dot(A,B) = ||A||*||B||*cos(theta);
+    // If A and B are normalized, then ||A|| = ||B|| = 1. So they drop out, and you're left with: dot(A,B) = cos(theta)
+    var radians = Math.acos( vec2.dot(vecA, vecB) );
+
+    var normA = vec2.create();
+    vec2.set(normA, -vecA[1], vecA[0]);  // normal points in the +x (or +u) direction
+
+    // Compute the sign of the angle, so we can know how to rotate from vecA to vecB
+    var sign = vec2.dot(normA, vecB) > 0 ? 1 : -1;
+
+    return sign * radians;
+}
