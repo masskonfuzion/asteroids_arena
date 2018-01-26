@@ -319,7 +319,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
         // Compute the signed angle between the ship's heading and the shipToTarget vector
         // (the sign indicates whether a + or - rotation about the angle is required to get from shipDir to shipToTarget)
-        var thHeadingTarget = parentShip.calcVecSeparatingAngle(shipDir, shipToTarget);     // radians
+        var thHeadingTarget = MathUtils.calcVecSeparatingAngle(shipDir, shipToTarget);     // radians
         // We need to figure out which direction the angle sweeps, with respect to the ship's heading. So we'll compute a normal vector in the + rotation direction. So, e.g., (1,0) rotates to (0, 1); (0,1) rotates to (-1, 0), etc.
         // NOTE: In HTML5/Canvas space, a + rotation is clockwise on the screen (i.e., to the right)
 
@@ -358,10 +358,12 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
 
                 // Adjust turn/heading
-                if (thHeadingTarget > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
+                if (Math.abs(thHeadingTarget) > glMatrix.toRadian(20)) {   // TODO don't hardcode the half angle here
                     // Determine which direction to turn, to aim
                     // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
-                    if (vec2.dot(normal, shipToTarget) > 0) {
+                    if (thHeadingTarget > 0) {
+                        // In the HTML5 Canvas coordinate system, a + rotation is to the right
+                        // But it might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
                         parentShip.enableTurnRight();
                     } else {
                         parentShip.enableTurnLeft();
@@ -469,25 +471,3 @@ Spaceship.prototype.resetAI = function() {
 };
 
 
-// Purpose:
-// - Calculate the angle in between vectors
-// - Return the angle, in RADIANS, where the sign of the angle is determined relative to vecA
-// - i.e., vecB is the result of starting with vecA, and rotating vecA about [returnValue] radians
-// Preconditions:
-// - vecA and vecB are two normalized vectors
-// NOTE:
-// - surprisingly, glMatrix does not provide any functions to determine the angle between 2 vectors
-// - also, this calcVecSeparatingAngle function probably belongs in a math or ai namespace, as a helper function (TODO?)
-Spaceship.prototype.calcVecSeparatingAngle = function (vecA, vecB) {
-    // Use the property of the dot product that dot(A,B) = ||A||*||B||*cos(theta);
-    // If A and B are normalized, then ||A|| = ||B|| = 1. So they drop out, and you're left with: dot(A,B) = cos(theta)
-    var radians = Math.acos( vec2.dot(vecA, vecB) );
-
-    var normA = vec2.create();
-    vec2.set(normA, -vecA[1], vecA[0]);  // normal points in the +x (or +u) direction
-
-    // Compute the sign of the angle, so we can know how to rotate from vecA to vecB
-    var sign = vec2.dot(normA, vecB) > 0 ? 1 : -1;
-
-    return sign * radians;
-}
