@@ -381,8 +381,9 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                     // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
                     // Otherwise, work to reduce the velocity component that is doing more to take the ship away from its desired heading, and then get back to AlignToTarget (which will re-align the ship for thrusting)
                     parentShip.disableThrust();
+                    parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
+
                     if (Math.abs(thVelTarget) >= glMatrix.toRadian(30) && Math.abs(thVelTarget) <= glMatrix.toRadian(150)) {     // TODO don't hardcode the angle here
-                        parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
                         // Compute the direction in which to thrust, to reduce the velocity how we want
                         if (thVelTarget > 0) {
                             vec2.set(parentShip.aiConfig["aiVelCorrectDir"] , -normalizedVel[1], normalizedVel[0]); // + rotation
@@ -390,7 +391,6 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                             vec2.set(parentShip.aiConfig["aiVelCorrectDir"] , normalizedVel[1], -normalizedVel[0]); // - rotation
                         }
                     } else if (Math.abs(thVelTarget) < glMatrix.toRadian(30) && Math.abs(thVelTarget) > glMatrix.toRadian(150)) {
-                        parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
                         vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
                     }
                 }
@@ -416,8 +416,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 }
                 break;
 
-            case "ReduceVelV":
-                if ( Math.abs(vec2.dot(normalizedVel, parentShip.aiConfig["aiVelCorrectDir"])) > 0.1 ) {  // TODO don't hard-code thredhold -- store in a var somewhere
+            case "ThrustToAdjustVelocity":
+                if ( Math.abs(vec2.dot(normalizedVel, parentShip.aiConfig["aiVelCorrectDir"])) > 0.1 ) {  // TODO don't hard-code thredhold -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
                     parentShip.enableThrust();
                 } else {
                     parentShip.disableThrust();
