@@ -66,7 +66,7 @@ Spaceship.prototype.initialize = function(configObj) {
 
         this.aiConfig["aiBehavior"] = "";
         this.aiConfig["aiProfile"] = "miner";           // TODO at some point, stop hardcoding this
-        this.aiConfig["aiMaxLinearVel"] = 24;           // TODO tune this -- currently set artificially low, for testing
+        this.aiConfig["aiMaxLinearVel"] = 24;           // TODO tune this
         this.aiConfig["aiSqrAttackDist"] = 100 ** 2;     // Squared distance within which a ship will attack a target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees
         this.aiConfig["aiVelCorrectDir"] = vec2.create();
@@ -267,10 +267,10 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     aiStateSelectTarget.enter = function(knowledge = null) {
         // possibly some logic here, like setting hunter/miner profile
         // NOTE: we're actually overriding a function provided in the FSMState class, which has the same signature. If we don't actually use enter() and exit(), we don't have to implement them.
-        console.log("Enter state SelectTarget");
+        //console.log("Enter state SelectTarget");
     };
     aiStateSelectTarget.exit = function(knowledge = null) {
-        console.log("Exit state SelectTarget");
+        //console.log("Exit state SelectTarget");
     };
     aiStateSelectTarget.update = function(knowledge, dt_s = null) {
         // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
@@ -301,10 +301,17 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
     var aiStatePursueTarget = new FSMState("PursueTarget");
     aiStatePursueTarget.enter = function(knowledge = null) {
-        console.log("Enter state PursueTarget");
+        //console.log("Enter state PursueTarget");
     };
     aiStatePursueTarget.exit = function(knowledge = null) {
-        console.log("Exit state PursueTarget");
+        var parentShip = knowledge["parentObj"];
+
+        // When we exit the state, we blank out the ship's aiBehavior. This is by design;
+        // currently, the AI is designed to have only 1 behavior. We want states to be
+        // properly able to set the aiBehavior upon enter or first update. So we clear
+        // out the var on exit
+        parentShip.aiConfig["aiBehavior"] = "";
+        //console.log("Exit state PursueTarget");
     };
     aiStatePursueTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
         // Remember: game is a global object
@@ -334,6 +341,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
         var thVelTarget = MathUtils.angleBetween(normalizedVel, shipToTarget);
 
+        console.log("aiBehavior " + parentShip.aiConfig["aiBehavior"]);
+        
         switch (parentShip.aiConfig["aiBehavior"]) {
             case "":
                 parentShip.aiConfig["aiBehavior"] = "AlignToTarget";
@@ -374,25 +383,33 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 // * if ||vel|| > speed limit, then
                 // ** if angleBetween(vel, shipToTarget) <= 20 (degrees), stop thrusting (but keep drifting? - perhaps "drift" can be a state?)
                 // ** else work to reduce tangential component? (or, otherwise, do nothing, but continue 
-                if (vec2.len(currVel) <= parentShip.aiConfig["aiMaxLinearVel"]) {
+                if (vec2.len(currVel) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"]) {
                     // TODO continue from here (20180129) - start off by thrusting.  At the very bottom of this logic block (i.e. outside the switch), calculate the next state (DELETE THE if/else block
+                    console.log("ThrustToPursueTarget, vel magnitude: " + vec2.len(currVel) / game.fixed_dt_s, "Vec: ", currVel);
                     parentShip.enableThrust();
                 } else {
                     // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
                     // Otherwise, work to reduce the velocity component that is doing more to take the ship away from its desired heading, and then get back to AlignToTarget (which will re-align the ship for thrusting)
                     parentShip.disableThrust();
-                    parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
 
                     if (Math.abs(thVelTarget) >= glMatrix.toRadian(30) && Math.abs(thVelTarget) <= glMatrix.toRadian(150)) {     // TODO don't hardcode the angle here
+                        parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
                         // Compute the direction in which to thrust, to reduce the velocity how we want
                         if (thVelTarget > 0) {
                             vec2.set(parentShip.aiConfig["aiVelCorrectDir"] , -normalizedVel[1], normalizedVel[0]); // + rotation
                         } else {
                             vec2.set(parentShip.aiConfig["aiVelCorrectDir"] , normalizedVel[1], -normalizedVel[0]); // - rotation
                         }
-                    } else if (Math.abs(thVelTarget) < glMatrix.toRadian(30) && Math.abs(thVelTarget) > glMatrix.toRadian(150)) {
+                    } else if (Math.abs(thVelTarget) > glMatrix.toRadian(150)) {
                         vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
+                    } else {
+                        // If we're here, then our current velocity is "close enough" to being in line with the direction of
+                        // shipToTarget.  So, we simply drift
+                        // NOTE: As of right now, there is no "drift" behavior. Maybe there should be..
+                        // When aiBehavior is set to "", the state machine will go back into AlignToTarget ,which will do nothing if the ship is generally already facing the target
+                        parentShip.aiConfig["aiBehavior"] = "";
                     }
+
                 }
                 break;
                 
@@ -417,7 +434,9 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 break;
 
             case "ThrustToAdjustVelocity":
-                if ( Math.abs(vec2.dot(normalizedVel, parentShip.aiConfig["aiVelCorrectDir"])) > 0.1 ) {  // TODO don't hard-code thredhold -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
+                if ( Math.abs(vec2.dot(normalizedVel, parentShip.aiConfig["aiVelCorrectDir"])) > 0.1 && 
+                     vec2.len(currVel) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"] ) {  // TODO don't hard-code thredhold -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
+                    console.log("ThrustToAdjustVelocity");
                     parentShip.enableThrust();
                 } else {
                     parentShip.disableThrust();
@@ -448,12 +467,12 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
     var aiStateAttackTarget = new FSMState("AttackTarget");
     aiStateAttackTarget.enter = function(knowledge = null) {
-        console.log("Enter state AttackTarget");
+        //console.log("Enter state AttackTarget");
     };
     aiStateAttackTarget.exit = function(knowledge = null) {
         var parentShip = knowledge["parentObj"];
         parentShip.disableFireA();
-        console.log("Exit state AttackTarget");
+        //console.log("Exit state AttackTarget");
     };
     aiStateAttackTarget.update = function(knowledge, dt_s = game.fixed_dt_s) {
         var parentShip = knowledge["parentObj"];
