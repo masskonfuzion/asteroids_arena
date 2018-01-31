@@ -391,25 +391,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                     // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
                     // Otherwise, work to reduce the velocity component that is doing more to take the ship away from its desired heading, and then get back to AlignToTarget (which will re-align the ship for thrusting)
                     parentShip.disableThrust();
-
-                    if (Math.abs(thVelTarget) >= glMatrix.toRadian(30) && Math.abs(thVelTarget) <= glMatrix.toRadian(150)) {     // TODO don't hardcode the angle here
-                        parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
-                        // Compute the direction in which to thrust, to reduce the velocity how we want
-                        if (thVelTarget > 0) {
-                            vec2.set(parentShip.aiConfig["aiVelCorrectDir"] , -normalizedVel[1], normalizedVel[0]); // + rotation
-                        } else {
-                            vec2.set(parentShip.aiConfig["aiVelCorrectDir"] , normalizedVel[1], -normalizedVel[0]); // - rotation
-                        }
-                    } else if (Math.abs(thVelTarget) > glMatrix.toRadian(150)) {
-                        vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
-                    } else {
-                        // If we're here, then our current velocity is "close enough" to being in line with the direction of
-                        // shipToTarget.  So, we simply drift
-                        // NOTE: As of right now, there is no "drift" behavior. Maybe there should be..
-                        // When aiBehavior is set to "", the state machine will go back into AlignToTarget ,which will do nothing if the ship is generally already facing the target
-                        parentShip.aiConfig["aiBehavior"] = "";
-                    }
-
+                    parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
+                    vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
                 }
                 break;
                 
@@ -434,8 +417,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 break;
 
             case "ThrustToAdjustVelocity":
-                if ( Math.abs(vec2.dot(normalizedVel, parentShip.aiConfig["aiVelCorrectDir"])) > 0.1 && 
-                     vec2.len(currVel) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"] ) {  // TODO don't hard-code thredhold -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
+                if ( vec2.len(currVel) / game.fixed_dt_s >= 3 ) {  // TODO don't hard-code thredhold -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
                     console.log("ThrustToAdjustVelocity");
                     parentShip.enableThrust();
                 } else {
