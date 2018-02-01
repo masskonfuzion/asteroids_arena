@@ -66,7 +66,7 @@ Spaceship.prototype.initialize = function(configObj) {
 
         this.aiConfig["aiBehavior"] = "";
         this.aiConfig["aiProfile"] = "miner";           // TODO at some point, stop hardcoding this
-        this.aiConfig["aiMaxLinearVel"] = 24;           // TODO tune this
+        this.aiConfig["aiMaxLinearVel"] = 50;           // TODO tune this
         this.aiConfig["aiSqrAttackDist"] = 100 ** 2;     // Squared distance within which a ship will attack a target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees
         this.aiConfig["aiVelCorrectDir"] = vec2.create();
@@ -360,16 +360,13 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 // if currVel u-component is already within an allowable threshold of deviance from the target velocity vector, then thrust freely
 
                 // Adjust turn/heading
-                if (Math.abs(thHeadingTarget) > glMatrix.toRadian(20)) {   // TODO don't hardcode the angle here
-                    // Determine which direction to turn, to aim
-                    // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
-                    if (thHeadingTarget > 0) {
-                        // In the HTML5 Canvas coordinate system, a + rotation is to the right
-                        // But it might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
-                        parentShip.enableTurnRight();
-                    } else {
-                        parentShip.enableTurnLeft();
-                    }
+                // TODO don't hardcode the angles in the following if statements
+                if (thHeadingTarget > glMatrix.toRadian(5)) {
+                    // In the HTML5 Canvas coordinate system, a + rotation is to the right
+                    // But it might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
+                    parentShip.enableTurnRight();
+                } else if (thHeadingTarget < glMatrix.toRadian(-5)) {
+                    parentShip.enableTurnLeft();
                 } else {
                     parentShip.disableTurn();
                     parentShip.aiConfig["aiBehavior"] = "ThrustToPursueTarget";
@@ -391,25 +388,38 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                     // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
                     // Otherwise, work to reduce the velocity component that is doing more to take the ship away from its desired heading, and then get back to AlignToTarget (which will re-align the ship for thrusting)
                     parentShip.disableThrust();
-                    parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
-                    vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
+
+                    if ( Math.abs(thVelTarget) <= glMatrix.toRadian(45) ) {    // TODO don't hardcode threshold
+                        parentShip.aiConfig["aiBehavior"] = "Drift";
+                    } else {
+                        parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
+                        vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
+                    }
                 }
+                break;
+
+            case "Drift":
+                    // This state is meant to allow the spaceship to "do nothing" if it is already well-aligned with its target
+                    if ( Math.abs(thVelTarget) > glMatrix.toRadian(60) ) {    // TODO don't hardcode threshold
+                        // TODO possibly encapsulate into function. This code is identical to the code in ThrustToPursueTarget
+                        parentShip.aiConfig["aiBehavior"] = "AlignToCorrectVel";
+                        vec2.set(parentShip.aiConfig["aiVelCorrectDir"], -normalizedVel[0], -normalizedVel[1]);
+                    }
+                
                 break;
                 
             case "AlignToCorrectVel":
-                // Line up the ship's heading to reduce velocity in a given direction (aiConfig.aiVelCorrectDir)
+                // Line up the ship's heading to reduce velocity in the direction it's going
 
                 var th_Heading_DesiredVel = MathUtils.angleBetween(shipDir, parentShip.aiConfig["aiVelCorrectDir"]);
-                if (Math.abs(th_Heading_DesiredVel) > glMatrix.toRadian(7)) {   // TODO don't hardcode the angle here
+                if (th_Heading_DesiredVel > glMatrix.toRadian(5)) {   // TODO don't hardcode the angle here
                     // Determine which direction to turn, to aim
                     // Could ternary here ( condition ? val_if_true : val_if_false ), but for readability, we'll use long form
-                    if (th_Heading_DesiredVel > 0) {
-                        // In the HTML5 Canvas coordinate system, a + rotation is to the right
-                        // But it might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
-                        parentShip.enableTurnRight();
-                    } else {
-                        parentShip.enableTurnLeft();
-                    }
+                    // In the HTML5 Canvas coordinate system, a + rotation is to the right
+                    // But it might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
+                    parentShip.enableTurnRight();
+                } else if (th_Heading_DesiredVel < glMatrix.toRadian(-5)) {     // TODO don't hardcode
+                    parentShip.enableTurnLeft();
                 } else {
                     parentShip.disableTurn();
                     parentShip.aiConfig["aiBehavior"] = "ThrustToAdjustVelocity";
@@ -417,7 +427,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 break;
 
             case "ThrustToAdjustVelocity":
-                if ( vec2.len(currVel) / game.fixed_dt_s >= 3 ) {  // TODO don't hard-code thredhold -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
+                if ( vec2.len(currVel) / game.fixed_dt_s >= 7 &&
+                     vec2.dot(normalizedVel, parentShip.aiConfig["aiVelCorrectDir"]) < 0) {  // TODO don't hard-code thresholds -- store in a var somewhere -- also, might not want to use abs here? We might care about the sign
                     console.log("ThrustToAdjustVelocity");
                     parentShip.enableThrust();
                 } else {
@@ -511,6 +522,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
 
 Spaceship.prototype.resetAI = function() {
+    this.aiConfig["aiBehavior"] = "";
     this.components["ai"].start();
 };
 
