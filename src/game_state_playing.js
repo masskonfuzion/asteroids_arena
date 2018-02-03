@@ -50,7 +50,7 @@ GameStatePlaying.prototype.postRender = function(canvasContext, dt_s) {
         scoreLabelPosNDC = [0.72, textPosY];      // NDCs go from 0 to 1 on each axis
         scorePosNDC = [0.80, textPosY];      // NDCs go from 0 to 1 on each axis    //TODO figure out right/left align (maybe canvas can do this for you?)
 
-        canvasContext.font = "24px AstronBoy";  // Testing
+        canvasContext.font = "18px GameFont";  // Testing
         canvasContext.fillStyle = jankyListOfScoreColors[i];  // TODO Eventually:  change color to match player ship color
         // TODO wrap NDC calculation in function
         canvasContext.fillText("Deaths", deathsLabelPosNDC[0] * canvasContext.canvas.width, deathsLabelPosNDC[1] * canvasContext.canvas.height);
