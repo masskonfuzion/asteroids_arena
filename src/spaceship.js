@@ -65,8 +65,8 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiControlled = true;
 
         this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
-        this.aiConfig["aiProfile"] = "miner";           // TODO at some point, stop hardcoding this
-        this.aiConfig["aiMaxLinearVel"] = 50;           // TODO tune this
+        this.aiConfig["aiProfile"] = configObj.hasOwnProperty["aiProfile"] ? configObj["aiProfile"] : "miner";  // default to miner behavior profile if we forget to specify
+        this.aiConfig["aiMaxLinearVel"] = 50;
         this.aiConfig["aiVelCorrectThreshold"] = 10;
         this.aiConfig["aiSqrAttackDist"] = 100 ** 2;     // Squared distance within which a ship will attack a target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees

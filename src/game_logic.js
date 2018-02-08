@@ -58,6 +58,7 @@ GameLogic.prototype.initialize = function() {
     // ----- Initialize spaceships
     // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
     // TODO don't hardcode the initial position -- use arena test for containment
+    // TODO don't hardcode the ship names (e.g. ship0); compute/generate those
     this.addGameObject("ship0", new Spaceship());
     var shipRef = this.gameObjs["ship0"];
     var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship0"].imgObj,
@@ -89,7 +90,8 @@ GameLogic.prototype.initialize = function() {
     shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship1"].imgObj,
                       "initialPos": [650, 225],
                       "isAI": true,
-                      "knowledge": knowledgeObj
+                      "knowledge": knowledgeObj,
+                      "aiProfile": "miner"
                     };
     // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);
