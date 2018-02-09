@@ -293,20 +293,43 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         // Find the nearest target
         var parentObj = knowledge["parentObj"];
         if (parentObj.aiConfig["aiProfile"] == "miner") {
-            // find nearest asteroid
+            // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
             var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
             var minSqrDist = Number.MAX_SAFE_INTEGER;
 
+            var potentialAstTarget = null;
             for (var asteroid of astMgr.components["asteroidPS"].particles) {
                 // Blah, why did I make the asteroids a subclass of particles?
                 if (asteroid.alive) {
-                    var sqDist = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
-                    if (sqDist < minSqrDist) {
-                        minSqrDist = sqDist;
-                        parentObj.aiConfig["target"] = asteroid;
+                    var sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                    if (sqDistAst < minSqrDist) {
+                        minSqrDist = sqDistAst;
+                        potentialAstTarget = asteroid;
                     }
                 }
             }
+
+            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
+                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+                if (parentObj.objectID != shipDictIDKey) {
+                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
+                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
+
+                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                    var sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
+                    if (sqDistShip < minSqrDist) {
+                        minSqrDist = sqDistShip;
+                        potentialShipTarget = shipRef;
+                    }
+                }
+            }
+            
+            // Target the nearest asteroid, unless a ship is closer
+            parentObj.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
+
+        } else if (parentObj.aiConfig["aiProfile"] == "hunter") {
+            // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
+            // TODO implement hunter profile
         }
     };
     var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
