@@ -65,8 +65,8 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiControlled = true;
 
         this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
-        this.aiConfig["aiProfile"] = configObj.hasOwnProperty["aiProfile"] ? configObj["aiProfile"] : "miner";  // default to miner behavior profile if we forget to specify
-        this.aiConfig["aiHuntRadius"] = configObj.hasOwnProperty["aiHuntRadius"] ? configObj["aiHuntRadius"] : null;
+        this.aiConfig["aiProfile"] = configObj.hasOwnProperty("aiProfile") ? configObj["aiProfile"] : "miner";  // default to miner behavior profile if we forget to specify
+        this.aiConfig["aiHuntRadius"] = configObj.hasOwnProperty("aiHuntRadius") ? configObj["aiHuntRadius"] : null;
         this.aiConfig["aiMaxLinearVel"] = 50;
         this.aiConfig["aiVelCorrectThreshold"] = 10;
         this.aiConfig["aiSqrAttackDist"] = 100 ** 2;     // Squared distance within which a ship will attack a target
@@ -351,23 +351,28 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                     }
                 }
             }
+            // Target the nearest ship
+            parentObj.aiConfig["target"] =  potentialShipTarget;
 
             // If the nearest ship is outside the hunt radius, then go for asteroids
             if (minSqrDistShip >= parentObj.aiConfig["aiHuntRadius"] * parentObj.aiConfig["aiHuntRadius"]) {
                 var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
 
                 var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+                var sqDistAst = 0;
                 var potentialAstTarget = null;
                 for (var asteroid of astMgr.components["asteroidPS"].particles) {
                     // Blah, why did I make the asteroids a subclass of particles?
                     if (asteroid.alive) {
-                        var sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                        sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
                         if (sqDistAst < minSqrDistAst) {
                             minSqrDistAst = sqDistAst;
                             potentialAstTarget = asteroid;
                         }
                     }
                 }
+                // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
+                parentObj.aiConfig["target"] =  potentialAstTarget;
             }
         }
     };

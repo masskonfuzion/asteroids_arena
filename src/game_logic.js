@@ -27,7 +27,6 @@ GameLogic.prototype.initialize = function() {
 
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(64);
-    this.messageQueue.registerListener('UserInput', this, this.actOnUserInputMessage);  // TODO - clean this up; the "UserInput" topic appears to be unused. The original idea was to first handle keyboard input (topic = UserInput), and then in the registered input listener function, enqueue messages with "GameCommand" (on both keyup and keydown events). But I don't think the 2-layer approach is necessary. I think we can go directly from the separate handleKeyDown and handleKeyUp functions to enqueueing the appropriate game actions
     this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
     this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
 
@@ -40,9 +39,8 @@ GameLogic.prototype.initialize = function() {
 
     // ----- Initialize collision manager
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
-    this.collisionMgr = new CollisionManager();
+    this.addCollisionManager();
     this.collisionMgr.initialize( {"x":0, "y":0, "width": game.canvas.width, "height": game.canvas.height} );     // width/height should match canvas width/height (maybe just use the canvas object?) .. Or.... should the quadtree size match the arena size (which is larger than the canvas)?
-    this.collisionMgr.parentObj = this; // TODO make a cleaner way to set parentObj (maybe make an addCollisionManager wrapper function)
 
     // ----- Initialize thrust/rocket particle system
     this.addGameObject("thrustPS", new ParticleSystem());
@@ -163,6 +161,12 @@ GameLogic.prototype.addGameObject = function(objName, obj) {
     this.gameObjs[objName] = obj;
     this.gameObjs[objName].objectID = this.objectIDToAssign;
     this.gameObjs[objName].parentObj = this;
+};
+
+GameLogic.prototype.addCollisionManager = function() {
+    // create a collision manager and assign it to this.collisionMgr (which is initialized as null when the gameLogic is constructed)
+    this.collisionMgr = new CollisionManager();
+    this.collisionMgr.parentObj = this;
 };
 
 GameLogic.prototype.setThrust = function(shipRef) {
@@ -354,20 +358,6 @@ GameLogic.prototype.update = function(dt_s, config = null) {
 
     // Process AI (if any/still TODO)
     // NOTE that user input is handled via event handler in the web browser
-};
-
-GameLogic.prototype.actOnUserInputMessage = function(msg) {
-    //console.log('actOnUserInputMessage: "this" =');
-    //console.log(this);
-    if (msg["topic"] == "UserInput") {
-        //console.log('Command: Topic=' + msg["topic"] + ', Command=' + msg["command"]);
-
-        // TODO issue ship control commands from here (i.e. use command pattern)
-        if (msg["command"] == 'ChangeCamera') {
-            //console.log('Taking some action (TODO finish this)');
-            // TODO probably enqueue a new message, with topic "GameCommand". The AI will also use this
-        }
-    }
 };
 
 GameLogic.prototype.sendCmdToGameObj = function(msg) {
