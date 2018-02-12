@@ -69,7 +69,7 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiConfig["aiHuntRadius"] = configObj.hasOwnProperty("aiHuntRadius") ? configObj["aiHuntRadius"] : null;
         this.aiConfig["aiMaxLinearVel"] = 50;
         this.aiConfig["aiVelCorrectThreshold"] = 10;
-        this.aiConfig["aiSqrAttackDist"] = 100 ** 2;     // Squared distance within which a ship will attack a target
+        this.aiConfig["aiSqrAttackDist"] = 140 ** 2;     // Squared distance within which a ship will attack a target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees
         this.aiConfig["aiVelCorrectDir"] = vec2.create();
         this.aiConfig["aiAlignHeadingThreshold"] = 10;     // Align-heading-towards-target threshold; a half-angle, in degrees
@@ -423,7 +423,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         var thVelTarget = MathUtils.angleBetween(normalizedVel, shipToTarget);
 
         var behaviorIndex = parentShip.aiConfig["aiBehavior"].length - 1;
-        console.log("aiBehavior " + parentShip.aiConfig["aiBehavior"][behaviorIndex] + ";\tlist:", parentShip.aiConfig["aiBehavior"]);
+        //console.log("aiBehavior " + parentShip.aiConfig["aiBehavior"][behaviorIndex] + ";\tlist:", parentShip.aiConfig["aiBehavior"]);
         
         switch (parentShip.aiConfig["aiBehavior"][behaviorIndex]) {
             case "Default":
@@ -477,7 +477,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                 // ** if angleBetween(vel, shipToTarget) <= 20 (degrees), stop thrusting (but keep drifting? - perhaps "drift" can be a state?)
                 // ** else work to reduce tangential component? (or, otherwise, do nothing, but continue 
                 if (vec2.len(currVel) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"]) {
-                    console.log("ThrustToPursueTarget, vel magnitude: " + vec2.len(currVel) / game.fixed_dt_s, "Vec: ", currVel, "align to:", parentShip.aiConfig["aiVelCorrectDir"]);
+                    //console.log("ThrustToPursueTarget, vel magnitude: " + vec2.len(currVel) / game.fixed_dt_s, "Vec: ", currVel, "align to:", parentShip.aiConfig["aiVelCorrectDir"]);
                     parentShip.enableThrust();
                 } else {
                     // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
@@ -534,7 +534,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
                     var th_Heading_DesiredVel = MathUtils.angleBetween(shipDir, parentShip.aiConfig["aiVelCorrectDir"]);
 
                     if (Math.abs(th_Heading_DesiredVel) <= parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]) {
-                        console.log("ThrustToAdjustVelocity, vel magnitude: " + vec2.len(currVel) / game.fixed_dt_s, "Vec: ", currVel, "align to:", parentShip.aiConfig["aiVelCorrectDir"]);
+                        //console.log("ThrustToAdjustVelocity, vel magnitude: " + vec2.len(currVel) / game.fixed_dt_s, "Vec: ", currVel, "align to:", parentShip.aiConfig["aiVelCorrectDir"]);
                         parentShip.enableThrust();
                     } else {
                         parentShip.disableThrust();
