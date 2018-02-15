@@ -27,3 +27,9 @@ MathUtils.angleBetween = function (vecA, vecB) {
 
     return sign * radians;
 };
+
+MathUtils.lerp = function(i, min, max) {
+    // 1-dimensional (scalar) linear interpolation
+    // i must be a value between 0 and 1, inclusive
+    return min + (max - min) * i;
+};

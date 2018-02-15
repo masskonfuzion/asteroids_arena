@@ -55,3 +55,5 @@ GameStateBase.prototype.postRender = function(canvasContext, dt_s) {
 // Can be coded to handle input directly, or can be a wrapper around an internal game logic object's input handler
 GameStateBase.prototype.handleKeyboardInput = function(evt) {
 };
+
+// TODO add mouse / other input handling
