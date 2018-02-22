@@ -57,7 +57,10 @@ var game = new GameApplication(800, 450);   // Global scope
 var frameID = null;
 var gameStatePlaying = new GameStatePlaying();
 var gameStateMainMenu = new GameStateMainMenu();
-var gameStateMgr = new GameStateManager();
+
+var gameStateMgr = new GameStateManager();  // TODO make game states belong to the manager?
+gameStateMgr.addState("Playing", gameStatePlaying);     // TODO consider constructing game states in the GameStateManager scope? States are currently global vars, but could just easily be local to the manager
+gameStateMgr.addState("MainMenu", gameStateMainMenu);     
 
 
 // Trap keyboard events and forward them to game logic
