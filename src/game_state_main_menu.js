@@ -116,15 +116,11 @@ GameStateMainMenu.prototype.doUICommand = function(msg) {
     // Take action on a message with topic, "UICommand"
     // UICommand messages contain a command, a targetObj (i.e. who's going to execute the command), and a params list
     // The command is most likely to call a function. This is not quite a function callback, because we are not storing a pre-determined function ptr
-    console.log("In doUICommand(), with msg = ", msg);
+    //console.log("In doUICommand(), with msg = ", msg);
 
     switch (msg.command) {
         case "changeState":
             // call the game state manager's changestate function
-
-            // Get the game state object to switch to (i.e., the command has the text name of the object; but we need the actual object, in order to do the state change
-
-
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
             break;

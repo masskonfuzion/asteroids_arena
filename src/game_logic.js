@@ -20,16 +20,18 @@ function GameLogic() {
 
 GameLogic.prototype.initialize = function() {
     // Key control map is keyed on keypress event "code", e.g. "KeyW" (as opposed to "keyCode", which is a number, like 87)
-    // TODO change to using numeric keyCodes for input?
+    // Based on documentation on the Mozilla Developer Network (MDN), "code" is preferred, and "keyCode" is deprecated
     this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
     this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
     this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
     this.keyCtrlMap["fireA"] = { "code": "ShiftLeft", "state": false };
 
     this.messageQueue = new MessageQueue();
-    this.messageQueue.initialize(64);
+    this.messageQueue.initialize(16);
     this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
     this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
+    this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
+    this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
     this.settings["hidden"]["pointValues"] = { "destroyLargeAsteroid": 25,
                                                "destroyMediumAsteroid": 50,
@@ -341,6 +343,17 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
+    // NOTE: UI controls are hard-coded currently; but they could also be stored in a key mapping,
+    // like this.keyCtrlMap, for easy customization
+    else if (evt.code == "Escape") {
+        // TODO Pop up confirmation before exiting. Probably easiest to make a separate game state (i.e., stack it on top of the playing state)
+        var cmdMsg = { "topic": "UICommand",
+                       "targetObj": this,
+                       "command": "changeState",
+                       "params": {"stateName": "MainMenu"}
+                     };
+        this.messageQueue.enqueue(cmdMsg);
+    }
 };
 
 GameLogic.prototype.update = function(dt_s, config = null) {
@@ -643,3 +656,20 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
         queryObj.resetAI();
     }
 }
+
+
+GameLogic.prototype.doUICommand = function(msg) {
+    // Take action on a message with topic, "UICommand"
+    // UICommand messages contain a command, a targetObj (i.e. who's going to execute the command), and a params list
+    // The command is most likely to call a function. This is not quite a function callback, because we are not storing a pre-determined function ptr
+    //console.log("In doUICommand(), with msg = ", msg);
+
+    switch (msg.command) {
+        case "changeState":
+            // call the game state manager's changestate function
+            // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
+            gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
+            break;
+    }
+
+};
