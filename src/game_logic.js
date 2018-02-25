@@ -27,9 +27,8 @@ GameLogic.prototype.initialize = function() {
     this.keyCtrlMap["fireA"] = { "code": "ShiftLeft", "state": false };
 
     this.messageQueue = new MessageQueue();
-    this.messageQueue.initialize(16);
+    this.messageQueue.initialize(64);
     this.messageQueue.registerListener('GameCommand', this, this.sendCmdToGameObj);
-    this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
     this.messageQueue.registerListener('CollisionEvent', this, this.processCollisionEvent);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
@@ -89,7 +88,7 @@ GameLogic.prototype.initialize = function() {
                        };
 
     shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship1"].imgObj,
-                      "initialPos": [650, 225],
+                      "initialPos": [50, 225],
                       "isAI": true,
                       "knowledge": knowledgeObj,
                       "aiProfile": "miner"
@@ -117,7 +116,7 @@ GameLogic.prototype.initialize = function() {
                        };
 
     shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship2"].imgObj,
-                      "initialPos": [550, 225],
+                      "initialPos": [750, 225],
                       "isAI": true,
                       "knowledge": knowledgeObj,
                       "aiProfile": "hunter",
@@ -299,6 +298,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
 GameLogic.prototype.handleKeyUpEvent = function(evt) {
     //console.log('Key code ' + evt.keyCode + ' up');
 
+    var cmdMsg = {};
     if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
         // User released thrust key
         this.keyCtrlMap["thrust"]["state"] = false;
@@ -347,11 +347,11 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     // like this.keyCtrlMap, for easy customization
     else if (evt.code == "Escape") {
         // TODO Pop up confirmation before exiting. Probably easiest to make a separate game state (i.e., stack it on top of the playing state)
-        var cmdMsg = { "topic": "UICommand",
-                       "targetObj": this,
-                       "command": "changeState",
-                       "params": {"stateName": "MainMenu"}
-                     };
+        cmdMsg = { "topic": "UICommand",
+                   "targetObj": this,
+                   "command": "changeState",
+                   "params": {"stateName": "MainMenu"}
+                 };
         this.messageQueue.enqueue(cmdMsg);
     }
 };
@@ -401,7 +401,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
     // TODO Possibly restructure collision event if/then cases into their own individual function calls; maybe use function callbacks
 
-    var cmdMsg;
+    var cmdMsg = {}
 
     if (gameObjAType == "Spaceship" && gameObjBType == "Asteroid" || gameObjBType == "Spaceship" && gameObjAType == "Asteroid") {
         //console.log("We have a collision between a spaceship and an asteroid")
@@ -417,25 +417,28 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             asteroidRef = msg.colliderB.parentObj;
         }
 
-        var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
+        // The collision can only count if the spaceship is both alived and "enabled" (i.e., not in the middle of a respawn)
+        if (spaceshipRef.ableState == SpaceshipAbleStateEnum.enabled) {
+            var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
 
-        // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
-        // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the GameLogic obj, so the caller can simply put the GameCommand out
-        cmdMsg = { "topic": "GameCommand",
-                   "command": "disableAndSpawnAsteroids",
-                   "targetObj": this.gameObjs["astMgr"],
-                   "params": { "disableList": [ asteroidRef ],
-                               "numToSpawn": 2,
-                               "fragRefDir": fragRefDir }
-                 };
-        this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
+            // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
+            // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the GameLogic obj, so the caller can simply put the GameCommand out
+            cmdMsg = { "topic": "GameCommand",
+                       "command": "disableAndSpawnAsteroids",
+                       "targetObj": this.gameObjs["astMgr"],
+                       "params": { "disableList": [ asteroidRef ],
+                                   "numToSpawn": 2,
+                                   "fragRefDir": fragRefDir }
+                     };
+            this.messageQueue.enqueue(cmdMsg);  // NOTE: we do this here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
 
-        // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
-        this.spawnAtNewLocation(spaceshipRef, 75);
+            // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
+            this.spawnAtNewLocation(spaceshipRef, 75);
 
-        // TODO keep deaths for all the ships, including computer-controlled
-        var shipName = this.shipDict[spaceshipRef.objectID];    // NOTE: I hate that JS doesn't care that spaceshipObjectID is a string, but the keys in the dict/obj are int/float
-        this.gameStats[shipName].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+            // TODO keep deaths for all the ships, including computer-controlled
+            var shipName = this.shipDict[spaceshipRef.objectID];    // NOTE: I hate that JS doesn't care that spaceshipObjectID is a string, but the keys in the dict/obj are int/float
+            this.gameStats[shipName].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+        }
 
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
         // Get a reference to the asteroid obj that is part of the collision, to include it as a param to the AsteroidManager, to disable the Asteroid and spawn new ones
@@ -502,33 +505,35 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             spaceshipRef = msg.colliderA.parentObj;
         }
 
-        // Make sure we're not processing the moment when a bullet fired by a spaceship is intersecting with the hitbox for the ship
+        if (spaceshipRef.ableState == SpaceshipAbleStateEnum.enabled) {
+            // Make sure we're not processing the moment when a bullet fired by a spaceship is intersecting with the hitbox for the ship
 
-        // Compute the spaceship's gun/emitter ID
-        if (bulletRef.emitterID == spaceshipRef.components["gunPE"].emitterID) {
-            //console.log("Skipping " + gameObjAType + "/" + gameObjBType + " collision because of self-shot prevention");
-        } else {
-            // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
-            this.spawnAtNewLocation(spaceshipRef, 75);
+            // Compute the spaceship's gun/emitter ID
+            if (bulletRef.emitterID == spaceshipRef.components["gunPE"].emitterID) {
+                //console.log("Skipping " + gameObjAType + "/" + gameObjBType + " collision because of self-shot prevention");
+            } else {
+                // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
+                this.spawnAtNewLocation(spaceshipRef, 75);
 
-            var shooterObjectID = this.lookupObjectID(bulletRef.emitterID, "Spaceship");
-            // TODO keep track of kills for all ships, including computer-controlled
-            var shooterName = this.shipDict[shooterObjectID];  // NOTE: I hate that JS doesn't care that shooterObjectID is a string, but the keys in the dict/obj are int/float
-                // If ship0 is the shooter, then increment human player's kills (TODO think about scaling up for local multiplayer?)
-            this.gameStats[shooterName].kills += 1;
-            this.gameStats[shooterName].score += this.settings["hidden"]["pointValues"]["kill"];
+                var shooterObjectID = this.lookupObjectID(bulletRef.emitterID, "Spaceship");
+                // TODO keep track of kills for all ships, including computer-controlled
+                var shooterName = this.shipDict[shooterObjectID];  // NOTE: I hate that JS doesn't care that shooterObjectID is a string, but the keys in the dict/obj are int/float
+                    // If ship0 is the shooter, then increment human player's kills (TODO think about scaling up for local multiplayer?)
+                this.gameStats[shooterName].kills += 1;
+                this.gameStats[shooterName].score += this.settings["hidden"]["pointValues"]["kill"];
 
-            var victimName = this.shipDict[spaceshipRef.objectID];
-                // If spaceshipRef's objectID is the key of ship0 in this.shipDict, then the human player got hit. Increment deaths
-            this.gameStats[victimName].deaths += 1;
-            this.gameStats[victimName].score = Math.max(0, this.gameStats[victimName].score + this.settings["hidden"]["pointValues"]["death"]);
+                var victimName = this.shipDict[spaceshipRef.objectID];
+                    // If spaceshipRef's objectID is the key of ship0 in this.shipDict, then the human player got hit. Increment deaths
+                this.gameStats[victimName].deaths += 1;
+                this.gameStats[victimName].score = Math.max(0, this.gameStats[victimName].score + this.settings["hidden"]["pointValues"]["death"]);
 
-            cmdMsg = { "topic": "GameCommand",
-                       "command": "disableBullet",
-                       "targetObj": this.gameObjs["bulletMgr"],
-                       "params": { "bulletToDisable": bulletRef }
-                     };
-            this.messageQueue.enqueue(cmdMsg);
+                cmdMsg = { "topic": "GameCommand",
+                           "command": "disableBullet",
+                           "targetObj": this.gameObjs["bulletMgr"],
+                           "params": { "bulletToDisable": bulletRef }
+                         };
+                this.messageQueue.enqueue(cmdMsg);
+            }
         }
     } else if (gameObjAType == "Arena" && gameObjBType == "Bullet" || gameObjBType == "Arena" && gameObjAType == "Bullet") {
         // PSYCH!!! We don't test for bullet/arena collision.
@@ -655,6 +660,10 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
         queryObj.disableTurn();
         queryObj.resetAI();
     }
+
+    // Set the "queryObj's" ableState to spawning
+    queryObj.ableState = SpaceshipAbleStateEnum.spawning;
+    queryObj.resetSpawnClock();
 }
 
 

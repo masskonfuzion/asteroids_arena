@@ -32,6 +32,8 @@ function Spaceship() {
 
     this.fireAState = false;        // To be used in AI/logic or whatever, to tell the game that this spaceship is firing its guns
     this.ableState = SpaceshipAbleStateEnum.enabled;
+    this.spawnGracePd_s = 2;    // spawn grace period, in seconds
+    this.spawnClock = 0;        // time remaining during spawning abaleState, before switching to fully enabled
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
@@ -60,6 +62,9 @@ Spaceship.prototype.initialize = function(configObj) {
 
     // NOTE: can't set particle emitter IDs in the constructor because the objectID for this object has not been set at that point
     this.components["gunPE"].setEmitterID(this.constructor.name + this.objectID.toString() + "." + "gunPE");
+
+    this.ableState = SpaceshipAbleStateEnum.spawning;
+    this.resetSpawnClock();
 
     if(configObj.hasOwnProperty("isAI") && true == configObj["isAI"]) {
         this.aiControlled = true;
@@ -93,7 +98,6 @@ Spaceship.prototype.initialize = function(configObj) {
 
 // Override the default update()
 Spaceship.prototype.update = function(dt_s, config = null) {
-
     if (this.aiControlled) {
         // TODO compute nearest threat (use the quadtree to prune calculations)
         // The quadtree is owned by the gameLogic object, which is also the parent obj of all spaceships
@@ -175,6 +179,17 @@ Spaceship.prototype.update = function(dt_s, config = null) {
         }
     }
 
+    // If ship has spawned recently, count down until spawnClock reaches 0, then change ableState to enabled
+    // i.e., in spawning state, the ship is "partially enabled", except collisions are not processed (see game_logic.js)
+    if (this.ableState == SpaceshipAbleStateEnum.spawning) {
+        this.spawnClock -= dt_s;
+
+        if (this.spawnClock <= 0) {
+            this.spawnClock = 0;
+            this.ableState = SpaceshipAbleStateEnum.enabled;
+        }
+    }
+
 }
 
 // Override the class default executeCommand()
@@ -197,6 +212,16 @@ Spaceship.prototype.draw = function(canvasContext) {
 
     myRenderComp.draw(canvasContext);                                               // Draw -- rendercomponent will use my position, so this draw() effectively "translates" the sprite to where it belongs
     canvasContext.restore(); // similar to glPopMatrix
+
+    // Draw an indicator if the ship is protected, because it just respawned
+    if (this.ableState == SpaceshipAbleStateEnum.spawning) {
+        // draw a circle
+        canvasContext.strokeStyle = "yellow";
+        canvasContext.lineWidth = 1;
+        canvasContext.arc(this.components["physics"].currPos[0], this.components["physics"].currPos[1], 40, 0, Math.PI * 2);
+        canvasContext.stroke(); // have to call stroke() to "commit" the arc to the canvas
+    }
+
 
     // ----- DEBUGGING stuff
     var myCollisionComp = this.components["collision"];
@@ -660,4 +685,6 @@ Spaceship.prototype.resetAI = function() {
     this.components["ai"].start();
 };
 
-
+Spaceship.prototype.resetSpawnClock = function() {
+    this.spawnClock = this.spawnGracePd_s;
+};
