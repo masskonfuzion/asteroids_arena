@@ -218,8 +218,10 @@ Spaceship.prototype.draw = function(canvasContext) {
         // draw a circle
         canvasContext.strokeStyle = "yellow";
         canvasContext.lineWidth = 1;
-        canvasContext.arc(this.components["physics"].currPos[0], this.components["physics"].currPos[1], 40, 0, Math.PI * 2);
+        canvasContext.beginPath();
+        canvasContext.arc(this.components["physics"].currPos[0], this.components["physics"].currPos[1], 32, 0, Math.PI * 2);
         canvasContext.stroke(); // have to call stroke() to "commit" the arc to the canvas
+        canvasContext.closePath();
     }
 
 
