@@ -597,6 +597,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
 
     var aiCondPursueToAvoidA;
     // TODO make an avoid state, and nearly finish it, but don't add conditions. Then, deep-copy it, so we have 2 separate states, but with the exact-same-everything (including update()). Then, after deep-copy, assign transitions/conditions, so that one transitions back to PursueTarget, and the other transitions back to AttackTarget. Use the nearest threat computed in the spacehip's update() procedure
+    // ^^ Actually.. we might need to look into a proper alarming mechanism (like in Game AI Programming by Ian Millington). E.g., consider what happens if, e.g. with the design above, the target ship gets shot during the pursuer's asteroid/arena avoidance phase? with the design above, now, the state machine would get confused. I think both Avoid and TargetLost should be alarms or triggers to change behavior
 
 
     var aiStateAttackTarget = new FSMState("AttackTarget");
