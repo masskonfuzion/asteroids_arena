@@ -98,22 +98,23 @@ Spaceship.prototype.initialize = function(configObj) {
 
 // Override the default update()
 Spaceship.prototype.update = function(dt_s, config = null) {
-    if (this.aiControlled) {
-        // TODO compute nearest threat (use the quadtree to prune calculations)
-        // The quadtree is owned by the gameLogic object, which is also the parent obj of all spaceships
-        // NOTE: it would be safer to verify that the gameLogic object has a collisionMgr, but whatever, we know it does..
-        var qt = this.parentObj.collisionMgr.quadTree;
+    //if (this.aiControlled) {
+    //    // TODO compute nearest threat (use the quadtree to prune calculations)
+    //    // The quadtree is owned by the gameLogic object, which is also the parent obj of all spaceships
+    //    // NOTE: it would be safer to verify that the gameLogic object has a collisionMgr, but whatever, we know it does..
+    //    var qt = this.parentObj.collisionMgr.quadTree;
 
-        var nearObjs = [];
-        // Clear the near objs list
-        qt.retrieve(nearObjs, this.components["collision"]);
+    //    var nearObjs = [];
+    //    // Clear the near objs list
+    //    qt.retrieve(nearObjs, this.components["collision"]);
 
-        var minDist = Number.MAX_SAFE_INTEGER;
-        for (var nearObj of nearObjs) {
-            var sqrDist = 0; // TODO standardize a way to get distance to an object -- maybe use closest point or some other math
-            // TODO 2018-01-11 - pick up from here
-        }
-    }
+    //    var minDist = Number.MAX_SAFE_INTEGER;
+    //    for (var nearObj of nearObjs) {
+    //        var sqrDist = 0; // TODO standardize a way to get distance to an object -- maybe use closest point or some other math
+    //        // TODO 2018-01-11 - pick up from here
+    //        // TODO 2018-04-12 - Hmmm.... pick up what from here? What was I trying to do? Always keep a reference to the nearest threat, no matter what state the AI is in? Possibly
+    //    }
+    //}
 
     // Iterate over all components and call their respective update() function
     for (var compName in this.components) {
@@ -303,108 +304,8 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     // Note/question: In JS, if I (1) create an object (say, newObj)while inside a function, then (2) assign that object to container object (so, e.g. containerObj["someLabel"] = newObj; -- does newObj still exist after the function exits?
     // In C/C++, the answer would depend on how I created newObj -- if i just statically declared newObj, it would be gone; I'd have to new/malloc the obj, to have a pointer to it in heap space.
     // But in JS (I tested this in Firefox developer console) - the objects stick around. JS must already be doing some kind of heap allocation (which I guess makes sense, for a garbage-collected language)
-    var aiStateSelectTarget = new FSMState("SelectTarget");
     // TODO maybe give fsm states a reference to the fsm's knowledge. I can imagine the states having a use for knowledge in the enter() and exit() functions
     // TODO while we're at it, we need to decide: should the states and conditions each store their own reference to the machine's knowledge object, or should they not (and the machine passes its reference everywhere it's needed?)
-    aiStateSelectTarget.enter = function(knowledge = null) {
-        // possibly some logic here, like setting hunter/miner profile
-        // NOTE: we're actually overriding a function provided in the FSMState class, which has the same signature. If we don't actually use enter() and exit(), we don't have to implement them.
-        //console.log("Enter state SelectTarget");
-    };
-    aiStateSelectTarget.exit = function(knowledge = null) {
-        //console.log("Exit state SelectTarget");
-    };
-    aiStateSelectTarget.update = function(knowledge, dt_s = null) {
-        // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
-
-        // knowledge is passed in by the state machine
-        // Find the nearest target
-        var parentObj = knowledge["parentObj"];
-        if (parentObj.aiConfig["aiProfile"] == "miner") {
-            // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
-            // TODO possibly wrap the target selection loops inside functions. We're duplicating code here
-            var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
-
-            var minSqrDistAst = Number.MAX_SAFE_INTEGER;
-            var potentialAstTarget = null;
-            for (var asteroid of astMgr.components["asteroidPS"].particles) {
-                // Blah, why did I make the asteroids a subclass of particles?
-                if (asteroid.alive) {
-                    var sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
-                    if (sqDistAst < minSqrDistAst) {
-                        minSqrDistAst = sqDistAst;
-                        potentialAstTarget = asteroid;
-                    }
-                }
-            }
-
-            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
-            var potentialShipTarget = null;
-            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
-                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
-                if (parentObj.objectID != shipDictIDKey) {
-                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
-                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
-
-                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
-                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
-                    if (sqDistShip < minSqrDistShip) {
-                        minSqrDistShip = sqDistShip;
-                        potentialShipTarget = shipRef;
-                    }
-                }
-            }
-            
-            // Target the nearest asteroid, unless a ship is closer
-            parentObj.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
-
-        } else if (parentObj.aiConfig["aiProfile"] == "hunter") {
-            // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
-            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
-
-            var sqDistShip = 0;
-            var potentialShipTarget = null;
-            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
-                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
-                if (parentObj.objectID != shipDictIDKey) {
-                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
-                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
-
-                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
-                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
-                    if (sqDistShip < minSqrDistShip) {
-                        minSqrDistShip = sqDistShip;
-                        potentialShipTarget = shipRef;
-                    }
-                }
-            }
-            // Target the nearest ship
-            parentObj.aiConfig["target"] =  potentialShipTarget;
-
-            // If the nearest ship is outside the hunt radius, then go for asteroids
-            if (minSqrDistShip >= parentObj.aiConfig["aiHuntRadius"] * parentObj.aiConfig["aiHuntRadius"]) {
-                var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
-
-                var minSqrDistAst = Number.MAX_SAFE_INTEGER;
-                var sqDistAst = 0;
-                var potentialAstTarget = null;
-                for (var asteroid of astMgr.components["asteroidPS"].particles) {
-                    // Blah, why did I make the asteroids a subclass of particles?
-                    if (asteroid.alive) {
-                        sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
-                        if (sqDistAst < minSqrDistAst) {
-                            minSqrDistAst = sqDistAst;
-                            potentialAstTarget = asteroid;
-                        }
-                    }
-                }
-                // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
-                parentObj.aiConfig["target"] =  potentialAstTarget;
-            }
-        }
-    };
-    var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
-    aiStateSelectTarget.addTransition(aiTransSelectToAttack);
 
 
     var aiStatePursueTarget = new FSMState("PursueTarget");
@@ -652,6 +553,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     
     var aiCondAttackToAvoidB;   // TODO make this condition essentially the same as (if not exactly the same as) aiCondAttackToAvoidA
 
+    var aiStateSelectTarget = this.createAIStateSelectTarget();
     aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
     aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
     aiFsm.addState(aiStateAttackTarget);  // Add fsm state object to machine
@@ -690,4 +592,111 @@ Spaceship.prototype.resetAI = function() {
 
 Spaceship.prototype.resetSpawnClock = function() {
     this.spawnClock = this.spawnGracePd_s;
+};
+
+
+Spaceship.prototype.createAIStateSelectTarget = function() {
+    var aiStateSelectTarget = new FSMState("SelectTarget");
+
+    aiStateSelectTarget.enter = function(knowledge = null) {
+        // possibly some logic here, like setting hunter/miner profile
+        // NOTE: we're actually overriding a function provided in the FSMState class, which has the same signature. If we don't actually use enter() and exit(), we don't have to implement them.
+        //console.log("Enter state SelectTarget");
+    };
+    aiStateSelectTarget.exit = function(knowledge = null) {
+        //console.log("Exit state SelectTarget");
+    };
+    aiStateSelectTarget.update = function(knowledge, dt_s = null) {
+        // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
+
+        // knowledge is passed in by the state machine
+        // Find the nearest target
+        var parentObj = knowledge["parentObj"];
+        if (parentObj.aiConfig["aiProfile"] == "miner") {
+            // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
+            // TODO possibly wrap the target selection loops inside functions. We're duplicating code here
+            var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
+
+            var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+            var potentialAstTarget = null;
+            for (var asteroid of astMgr.components["asteroidPS"].particles) {
+                // Blah, why did I make the asteroids a subclass of particles?
+                if (asteroid.alive) {
+                    var sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                    if (sqDistAst < minSqrDistAst) {
+                        minSqrDistAst = sqDistAst;
+                        potentialAstTarget = asteroid;
+                    }
+                }
+            }
+
+            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
+            var potentialShipTarget = null;
+            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
+                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+                if (parentObj.objectID != shipDictIDKey) {
+                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
+                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
+
+                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
+                    if (sqDistShip < minSqrDistShip) {
+                        minSqrDistShip = sqDistShip;
+                        potentialShipTarget = shipRef;
+                    }
+                }
+            }
+            
+            // Target the nearest asteroid, unless a ship is closer
+            parentObj.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
+
+        } else if (parentObj.aiConfig["aiProfile"] == "hunter") {
+            // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
+            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
+
+            var sqDistShip = 0;
+            var potentialShipTarget = null;
+            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
+                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+                if (parentObj.objectID != shipDictIDKey) {
+                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
+                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
+
+                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
+                    if (sqDistShip < minSqrDistShip) {
+                        minSqrDistShip = sqDistShip;
+                        potentialShipTarget = shipRef;
+                    }
+                }
+            }
+            // Target the nearest ship
+            parentObj.aiConfig["target"] =  potentialShipTarget;
+
+            // If the nearest ship is outside the hunt radius, then go for asteroids
+            if (minSqrDistShip >= parentObj.aiConfig["aiHuntRadius"] * parentObj.aiConfig["aiHuntRadius"]) {
+                var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
+
+                var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+                var sqDistAst = 0;
+                var potentialAstTarget = null;
+                for (var asteroid of astMgr.components["asteroidPS"].particles) {
+                    // Blah, why did I make the asteroids a subclass of particles?
+                    if (asteroid.alive) {
+                        sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                        if (sqDistAst < minSqrDistAst) {
+                            minSqrDistAst = sqDistAst;
+                            potentialAstTarget = asteroid;
+                        }
+                    }
+                }
+                // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
+                parentObj.aiConfig["target"] =  potentialAstTarget;
+            }
+        }
+    };  // end update() func
+    var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
+    aiStateSelectTarget.addTransition(aiTransSelectToAttack);
+
+    return aiStateSelectTarget;
 };
