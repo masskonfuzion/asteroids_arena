@@ -307,6 +307,188 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
     // TODO maybe give fsm states a reference to the fsm's knowledge. I can imagine the states having a use for knowledge in the enter() and exit() functions
     // TODO while we're at it, we need to decide: should the states and conditions each store their own reference to the machine's knowledge object, or should they not (and the machine passes its reference everywhere it's needed?)
 
+    // TODO add avoid states (because we're not doing any hierchical state machine stuff, we're going to have 2 avoid states -- one that transitions back "pursue", and one that transitions back to "attack"
+
+    var aiStateSelectTarget = this.createAIStateSelectTarget();
+    var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
+    aiStateSelectTarget.addTransition(aiTransSelectToAttack);
+    aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
+
+
+    var aiStatePursueTarget = this.createAIStatePursueTarget();
+    // NOTE: We're presuming that if a target becomes not-alive during pursuit, that means we didn't kill it; something else did
+    var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    var aiTransPursueToSelect = new FSMTransition("SelectTarget", aiCondPursueToSelect);
+    aiStatePursueTarget.addTransition(aiTransPursueToSelect);
+    
+    var aiCondPursueToAttack = new FSMConditionLTE(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
+    var aiTransPursueToAttack = new FSMTransition("AttackTarget", aiCondPursueToAttack);
+    aiStatePursueTarget.addTransition(aiTransPursueToAttack);
+
+    var aiCondPursueToAvoidA;
+    // TODO make an avoid state, and nearly finish it, but don't add conditions. Then, deep-copy it, so we have 2 separate states, but with the exact-same-everything (including update()). Then, after deep-copy, assign transitions/conditions, so that one transitions back to PursueTarget, and the other transitions back to AttackTarget. Use the nearest threat computed in the spacehip's update() procedure
+    // ^^ Actually.. we might need to look into a proper alarming mechanism (like in Game AI Programming by Ian Millington). E.g., consider what happens if, e.g. with the design above, the target ship gets shot during the pursuer's asteroid/arena avoidance phase? with the design above, now, the state machine would get confused. I think both Avoid and TargetLost should be alarms or triggers to change behavior
+    aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
+
+
+    var aiStateAttackTarget = this.createAIStateAttackTarget();
+    var aiCondAttackToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    var aiTransAttackToSelect = new FSMTransition("SelectTarget", aiCondAttackToSelect);
+    aiStateAttackTarget.addTransition(aiTransAttackToSelect);
+
+    var aiCondAttackToPursue = new FSMConditionGT(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
+    var aiTransAttackToPursue = new FSMTransition("PursueTarget", aiCondAttackToPursue);
+    aiStateAttackTarget.addTransition(aiTransAttackToPursue);
+    
+    var aiCondAttackToAvoidB;   // TODO make this condition essentially the same as (if not exactly the same as) aiCondAttackToAvoidA
+    aiFsm.addState(aiStateAttackTarget);  // Add fsm state object to machine
+
+
+    aiFsm.setInitState("SelectTarget");        // Set initial state by name
+    aiFsm.start();
+
+
+};
+
+
+// TODO possibly move "start reaction delay" into an AI class
+Spaceship.prototype.startReflexDelay = function() {
+    this.aiConfig.aiReflex.delayInterval = Math.random() * (this.aiConfig.aiReflex.delayRange.max - this.aiConfig.aiReflex.delayRange.min) + this.aiConfig.aiReflex.delayRange.min;
+    this.aiConfig.aiReflex.currTimestamp = performance.now();
+    this.aiConfig.aiReflex.prevTimestamp = this.aiConfig.aiReflex.currTimestamp;
+    this.aiConfig.aiReflex.reflexState = 1;     // actively pausing to simulate reflex delay
+};
+
+Spaceship.prototype.updateReflex = function() {
+    this.aiConfig.aiReflex.currTimestamp = performance.now();
+    if ((this.aiConfig.aiReflex.currTimestamp - this.aiConfig.aiReflex.prevTimestamp) > this.aiConfig.aiReflex.delayInterval) {
+        this.aiConfig.aiReflex.reflexState = 2; // reflex delay time has elapsed
+    }
+};
+
+Spaceship.prototype.finishReflexDelay = function() {
+    this.aiConfig.aiReflex.reflexState = 0; // reflex state goes back to 0, which means "not started"
+};
+
+Spaceship.prototype.resetAI = function() {
+    // potential optimization: instead of assigning a new array here, pop all elements, instead of "Default"
+    this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
+    this.components["ai"].start();
+};
+
+Spaceship.prototype.resetSpawnClock = function() {
+    this.spawnClock = this.spawnGracePd_s;
+};
+
+
+Spaceship.prototype.createAIStateSelectTarget = function() {
+    var aiStateSelectTarget = new FSMState("SelectTarget");
+
+    aiStateSelectTarget.enter = function(knowledge = null) {
+        // possibly some logic here, like setting hunter/miner profile
+        // NOTE: we're actually overriding a function provided in the FSMState class, which has the same signature. If we don't actually use enter() and exit(), we don't have to implement them.
+        //console.log("Enter state SelectTarget");
+    };
+    aiStateSelectTarget.exit = function(knowledge = null) {
+        //console.log("Exit state SelectTarget");
+    };
+    aiStateSelectTarget.update = function(knowledge, dt_s = null) {
+        // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
+
+        // knowledge is passed in by the state machine
+        // Find the nearest target
+        var parentObj = knowledge["parentObj"];
+        if (parentObj.aiConfig["aiProfile"] == "miner") {
+            // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
+            // TODO possibly wrap the target selection loops inside functions. We're duplicating code here
+            var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
+
+            var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+            var potentialAstTarget = null;
+            for (var asteroid of astMgr.components["asteroidPS"].particles) {
+                // Blah, why did I make the asteroids a subclass of particles?
+                if (asteroid.alive) {
+                    var sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                    if (sqDistAst < minSqrDistAst) {
+                        minSqrDistAst = sqDistAst;
+                        potentialAstTarget = asteroid;
+                    }
+                }
+            }
+
+            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
+            var potentialShipTarget = null;
+            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
+                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+                if (parentObj.objectID != shipDictIDKey) {
+                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
+                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
+
+                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
+                    if (sqDistShip < minSqrDistShip) {
+                        minSqrDistShip = sqDistShip;
+                        potentialShipTarget = shipRef;
+                    }
+                }
+            }
+            
+            // Target the nearest asteroid, unless a ship is closer
+            parentObj.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
+
+        } else if (parentObj.aiConfig["aiProfile"] == "hunter") {
+            // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
+            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
+
+            var sqDistShip = 0;
+            var potentialShipTarget = null;
+            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
+                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+                if (parentObj.objectID != shipDictIDKey) {
+                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
+                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
+
+                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
+                    if (sqDistShip < minSqrDistShip) {
+                        minSqrDistShip = sqDistShip;
+                        potentialShipTarget = shipRef;
+                    }
+                }
+            }
+            // Target the nearest ship
+            parentObj.aiConfig["target"] =  potentialShipTarget;
+
+            // If the nearest ship is outside the hunt radius, then go for asteroids
+            if (minSqrDistShip >= parentObj.aiConfig["aiHuntRadius"] * parentObj.aiConfig["aiHuntRadius"]) {
+                var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
+
+                var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+                var sqDistAst = 0;
+                var potentialAstTarget = null;
+                for (var asteroid of astMgr.components["asteroidPS"].particles) {
+                    // Blah, why did I make the asteroids a subclass of particles?
+                    if (asteroid.alive) {
+                        sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
+                        if (sqDistAst < minSqrDistAst) {
+                            minSqrDistAst = sqDistAst;
+                            potentialAstTarget = asteroid;
+                        }
+                    }
+                }
+                // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
+                parentObj.aiConfig["target"] =  potentialAstTarget;
+            }
+        }
+    };  // end update() func
+
+    return aiStateSelectTarget;
+};
+
+
+
+
+Spaceship.prototype.createAIStatePursueTarget = function() {
 
     var aiStatePursueTarget = new FSMState("PursueTarget");
     aiStatePursueTarget.enter = function(knowledge = null) {
@@ -487,20 +669,12 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
         // - There should also be a SlowDown behavior to reduce velocity in the current direction
         //   - performed by turning 180 deg relative to current/desired velocity, and thrusting, to reduce velocity in that direction
     };
-    // NOTE: We're presuming that if a target becomes not-alive during pursuit, that means we didn't kill it; something else did
-    var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
-    var aiTransPursueToSelect = new FSMTransition("SelectTarget", aiCondPursueToSelect);
-    aiStatePursueTarget.addTransition(aiTransPursueToSelect);
-    
-    var aiCondPursueToAttack = new FSMConditionLTE(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
-    var aiTransPursueToAttack = new FSMTransition("AttackTarget", aiCondPursueToAttack);
-    aiStatePursueTarget.addTransition(aiTransPursueToAttack);
 
-    var aiCondPursueToAvoidA;
-    // TODO make an avoid state, and nearly finish it, but don't add conditions. Then, deep-copy it, so we have 2 separate states, but with the exact-same-everything (including update()). Then, after deep-copy, assign transitions/conditions, so that one transitions back to PursueTarget, and the other transitions back to AttackTarget. Use the nearest threat computed in the spacehip's update() procedure
-    // ^^ Actually.. we might need to look into a proper alarming mechanism (like in Game AI Programming by Ian Millington). E.g., consider what happens if, e.g. with the design above, the target ship gets shot during the pursuer's asteroid/arena avoidance phase? with the design above, now, the state machine would get confused. I think both Avoid and TargetLost should be alarms or triggers to change behavior
+    return aiStatePursueTarget;
+};
 
 
+Spaceship.prototype.createAIStateAttackTarget = function() {
     var aiStateAttackTarget = new FSMState("AttackTarget");
     aiStateAttackTarget.enter = function(knowledge = null) {
         //console.log("Enter state AttackTarget");
@@ -543,160 +717,7 @@ Spaceship.prototype.initializeAI = function(knowledgeObj) {
             parentShip.enableFireA();
         }
     }
-    var aiCondAttackToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
-    var aiTransAttackToSelect = new FSMTransition("SelectTarget", aiCondAttackToSelect);
-    aiStateAttackTarget.addTransition(aiTransAttackToSelect);
 
-    var aiCondAttackToPursue = new FSMConditionGT(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
-    var aiTransAttackToPursue = new FSMTransition("PursueTarget", aiCondAttackToPursue);
-    aiStateAttackTarget.addTransition(aiTransAttackToPursue);
-    
-    var aiCondAttackToAvoidB;   // TODO make this condition essentially the same as (if not exactly the same as) aiCondAttackToAvoidA
-
-    var aiStateSelectTarget = this.createAIStateSelectTarget();
-    aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
-    aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
-    aiFsm.addState(aiStateAttackTarget);  // Add fsm state object to machine
-    aiFsm.setInitState("SelectTarget");        // Set initial state by name
-    aiFsm.start();
-
-    // TODO add avoid states (because we're not doing any hierchical state machine stuff, we're going to have 2 avoid states -- one that transitions back "pursue", and one that transitions back to "attack"
-
+    return aiStateAttackTarget;
 };
 
-
-// TODO possibly move "start reaction delay" into an AI class
-Spaceship.prototype.startReflexDelay = function() {
-    this.aiConfig.aiReflex.delayInterval = Math.random() * (this.aiConfig.aiReflex.delayRange.max - this.aiConfig.aiReflex.delayRange.min) + this.aiConfig.aiReflex.delayRange.min;
-    this.aiConfig.aiReflex.currTimestamp = performance.now();
-    this.aiConfig.aiReflex.prevTimestamp = this.aiConfig.aiReflex.currTimestamp;
-    this.aiConfig.aiReflex.reflexState = 1;     // actively pausing to simulate reflex delay
-};
-
-Spaceship.prototype.updateReflex = function() {
-    this.aiConfig.aiReflex.currTimestamp = performance.now();
-    if ((this.aiConfig.aiReflex.currTimestamp - this.aiConfig.aiReflex.prevTimestamp) > this.aiConfig.aiReflex.delayInterval) {
-        this.aiConfig.aiReflex.reflexState = 2; // reflex delay time has elapsed
-    }
-};
-
-Spaceship.prototype.finishReflexDelay = function() {
-    this.aiConfig.aiReflex.reflexState = 0; // reflex state goes back to 0, which means "not started"
-};
-
-Spaceship.prototype.resetAI = function() {
-    // potential optimization: instead of assigning a new array here, pop all elements, instead of "Default"
-    this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
-    this.components["ai"].start();
-};
-
-Spaceship.prototype.resetSpawnClock = function() {
-    this.spawnClock = this.spawnGracePd_s;
-};
-
-
-Spaceship.prototype.createAIStateSelectTarget = function() {
-    var aiStateSelectTarget = new FSMState("SelectTarget");
-
-    aiStateSelectTarget.enter = function(knowledge = null) {
-        // possibly some logic here, like setting hunter/miner profile
-        // NOTE: we're actually overriding a function provided in the FSMState class, which has the same signature. If we don't actually use enter() and exit(), we don't have to implement them.
-        //console.log("Enter state SelectTarget");
-    };
-    aiStateSelectTarget.exit = function(knowledge = null) {
-        //console.log("Exit state SelectTarget");
-    };
-    aiStateSelectTarget.update = function(knowledge, dt_s = null) {
-        // NOTE: objRef will be passed in by the FSM. It will be the gameLogic object, so this state will have access to ships, bullets, and asteroids
-
-        // knowledge is passed in by the state machine
-        // Find the nearest target
-        var parentObj = knowledge["parentObj"];
-        if (parentObj.aiConfig["aiProfile"] == "miner") {
-            // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
-            // TODO possibly wrap the target selection loops inside functions. We're duplicating code here
-            var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
-
-            var minSqrDistAst = Number.MAX_SAFE_INTEGER;
-            var potentialAstTarget = null;
-            for (var asteroid of astMgr.components["asteroidPS"].particles) {
-                // Blah, why did I make the asteroids a subclass of particles?
-                if (asteroid.alive) {
-                    var sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
-                    if (sqDistAst < minSqrDistAst) {
-                        minSqrDistAst = sqDistAst;
-                        potentialAstTarget = asteroid;
-                    }
-                }
-            }
-
-            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
-            var potentialShipTarget = null;
-            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
-                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
-                if (parentObj.objectID != shipDictIDKey) {
-                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
-                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
-
-                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
-                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
-                    if (sqDistShip < minSqrDistShip) {
-                        minSqrDistShip = sqDistShip;
-                        potentialShipTarget = shipRef;
-                    }
-                }
-            }
-            
-            // Target the nearest asteroid, unless a ship is closer
-            parentObj.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
-
-        } else if (parentObj.aiConfig["aiProfile"] == "hunter") {
-            // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
-            var minSqrDistShip = Number.MAX_SAFE_INTEGER;
-
-            var sqDistShip = 0;
-            var potentialShipTarget = null;
-            for (var shipDictIDKey in knowledge["gameLogic"].shipDict) {
-                // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
-                if (parentObj.objectID != shipDictIDKey) {
-                    var gameObjIDName = knowledge["gameLogic"].shipDict[shipDictIDKey];
-                    var shipRef = knowledge["gameLogic"].gameObjs[gameObjIDName];
-
-                    // TODO - add some kind of after-death delay so we don't target a ship that just respawned
-                    sqDistShip = vec2.sqrDist(parentObj.components["physics"].currPos, shipRef.components["physics"].currPos);
-                    if (sqDistShip < minSqrDistShip) {
-                        minSqrDistShip = sqDistShip;
-                        potentialShipTarget = shipRef;
-                    }
-                }
-            }
-            // Target the nearest ship
-            parentObj.aiConfig["target"] =  potentialShipTarget;
-
-            // If the nearest ship is outside the hunt radius, then go for asteroids
-            if (minSqrDistShip >= parentObj.aiConfig["aiHuntRadius"] * parentObj.aiConfig["aiHuntRadius"]) {
-                var astMgr = knowledge["gameLogic"].gameObjs["astMgr"];
-
-                var minSqrDistAst = Number.MAX_SAFE_INTEGER;
-                var sqDistAst = 0;
-                var potentialAstTarget = null;
-                for (var asteroid of astMgr.components["asteroidPS"].particles) {
-                    // Blah, why did I make the asteroids a subclass of particles?
-                    if (asteroid.alive) {
-                        sqDistAst = vec2.sqrDist(parentObj.components["physics"].currPos, asteroid.components["physics"].currPos);
-                        if (sqDistAst < minSqrDistAst) {
-                            minSqrDistAst = sqDistAst;
-                            potentialAstTarget = asteroid;
-                        }
-                    }
-                }
-                // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
-                parentObj.aiConfig["target"] =  potentialAstTarget;
-            }
-        }
-    };  // end update() func
-    var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
-    aiStateSelectTarget.addTransition(aiTransSelectToAttack);
-
-    return aiStateSelectTarget;
-};
