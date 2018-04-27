@@ -12,7 +12,6 @@ function Spaceship() {
     this.addComponent("thrustPE", new ParticleEmitter());           // Particle emitter for rocket/thruster exhaust particle system
     this.addComponent("gunPE", new ParticleEmitter());              // Particle emitter for bullet/guns particle system
     this.addComponent("collision", new CollisionComponentAABB());
-    this.addComponent("ai", new FSM());
 
     var thrustPE = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
     thrustPE.setVelocityRange(150.0, 300.0);
@@ -68,6 +67,9 @@ Spaceship.prototype.initialize = function(configObj) {
 
     if(configObj.hasOwnProperty("isAI") && true == configObj["isAI"]) {
         this.aiControlled = true;
+        //this.addComponent("ai", new FSM());   // TODO delete
+        // Initialize an AI obj with a reference to this ship, and a reference to the gameLogic obj
+        this.addComponent("ai", new SpaceshipAI(this, configObj["knowledge"]));
 
         this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
         this.aiConfig["aiProfile"] = configObj.hasOwnProperty("aiProfile") ? configObj["aiProfile"] : "miner";  // default to miner behavior profile if we forget to specify
@@ -294,58 +296,53 @@ Spaceship.prototype.disableFireA = function() {
 
 Spaceship.prototype.initializeAI = function(knowledgeObj) {
     // Initialize state machine
-    var aiFsm = this.components["ai"];
-    aiFsm.initialize(knowledgeObj); // the input to the AI is the entire game logic object)
-
-    // NOTE: It's probably not the best idea to pass the entire game logic object into this ship's
-    // AI FSM, but it's the quickest/easiest way, given the implementation details of this game.
-
-    // TODO move ship state machine into its own file
-    // Note/question: In JS, if I (1) create an object (say, newObj)while inside a function, then (2) assign that object to container object (so, e.g. containerObj["someLabel"] = newObj; -- does newObj still exist after the function exits?
-    // In C/C++, the answer would depend on how I created newObj -- if i just statically declared newObj, it would be gone; I'd have to new/malloc the obj, to have a pointer to it in heap space.
-    // But in JS (I tested this in Firefox developer console) - the objects stick around. JS must already be doing some kind of heap allocation (which I guess makes sense, for a garbage-collected language)
-    // TODO maybe give fsm states a reference to the fsm's knowledge. I can imagine the states having a use for knowledge in the enter() and exit() functions
-    // TODO while we're at it, we need to decide: should the states and conditions each store their own reference to the machine's knowledge object, or should they not (and the machine passes its reference everywhere it's needed?)
-
-    // TODO add avoid states (because we're not doing any hierchical state machine stuff, we're going to have 2 avoid states -- one that transitions back "pursue", and one that transitions back to "attack"
-
-    var aiStateSelectTarget = this.createAIStateSelectTarget();
-    var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
-    aiStateSelectTarget.addTransition(aiTransSelectToAttack);
-    aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
+    this.components["ai"].setDefaultStateFunc(this.aiBehaviorSelectTarget);
 
 
-    var aiStatePursueTarget = this.createAIStatePursueTarget();
-    // NOTE: We're presuming that if a target becomes not-alive during pursuit, that means we didn't kill it; something else did
-    var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
-    var aiTransPursueToSelect = new FSMTransition("SelectTarget", aiCondPursueToSelect);
-    aiStatePursueTarget.addTransition(aiTransPursueToSelect);
-    
-    var aiCondPursueToAttack = new FSMConditionLTE(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
-    var aiTransPursueToAttack = new FSMTransition("AttackTarget", aiCondPursueToAttack);
-    aiStatePursueTarget.addTransition(aiTransPursueToAttack);
+    ////// Initialize state machine
+    ////var aiFsm = this.components["ai"];
+    ////aiFsm.initialize(knowledgeObj); // the input to the AI is the entire game logic object)
 
-    var aiCondPursueToAvoidA;
-    // TODO make an avoid state, and nearly finish it, but don't add conditions. Then, deep-copy it, so we have 2 separate states, but with the exact-same-everything (including update()). Then, after deep-copy, assign transitions/conditions, so that one transitions back to PursueTarget, and the other transitions back to AttackTarget. Use the nearest threat computed in the spacehip's update() procedure
-    // ^^ Actually.. we might need to look into a proper alarming mechanism (like in Game AI Programming by Ian Millington). E.g., consider what happens if, e.g. with the design above, the target ship gets shot during the pursuer's asteroid/arena avoidance phase? with the design above, now, the state machine would get confused. I think both Avoid and TargetLost should be alarms or triggers to change behavior
-    aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
+    ////// NOTE: It's probably not the best idea to pass the entire game logic object into this ship's
+    ////// AI FSM, but it's the quickest/easiest way, given the implementation details of this game.
+
+    ////var aiStateSelectTarget = this.createAIStateSelectTarget();
+    ////var aiTransSelectToAttack = new FSMTransition("AttackTarget", new FSMConditionReturnTrue()); // No condition; always transition from SelectTarget to AttackTarget
+    ////aiStateSelectTarget.addTransition(aiTransSelectToAttack);
+    ////aiFsm.addState(aiStateSelectTarget);  // Add fsm state object to machine
 
 
-    var aiStateAttackTarget = this.createAIStateAttackTarget();
-    var aiCondAttackToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
-    var aiTransAttackToSelect = new FSMTransition("SelectTarget", aiCondAttackToSelect);
-    aiStateAttackTarget.addTransition(aiTransAttackToSelect);
+    ////var aiStatePursueTarget = this.createAIStatePursueTarget();
+    ////// NOTE: We're presuming that if a target becomes not-alive during pursuit, that means we didn't kill it; something else did
+    ////var aiCondPursueToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    ////var aiTransPursueToSelect = new FSMTransition("SelectTarget", aiCondPursueToSelect);
+    ////aiStatePursueTarget.addTransition(aiTransPursueToSelect);
+    ////
+    ////var aiCondPursueToAttack = new FSMConditionLTE(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
+    ////var aiTransPursueToAttack = new FSMTransition("AttackTarget", aiCondPursueToAttack);
+    ////aiStatePursueTarget.addTransition(aiTransPursueToAttack);
 
-    var aiCondAttackToPursue = new FSMConditionGT(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
-    var aiTransAttackToPursue = new FSMTransition("PursueTarget", aiCondAttackToPursue);
-    aiStateAttackTarget.addTransition(aiTransAttackToPursue);
-    
-    var aiCondAttackToAvoidB;   // TODO make this condition essentially the same as (if not exactly the same as) aiCondAttackToAvoidA
-    aiFsm.addState(aiStateAttackTarget);  // Add fsm state object to machine
+    ////var aiCondPursueToAvoidA;
+    ////// TODO make an avoid state, and nearly finish it, but don't add conditions. Then, deep-copy it, so we have 2 separate states, but with the exact-same-everything (including update()). Then, after deep-copy, assign transitions/conditions, so that one transitions back to PursueTarget, and the other transitions back to AttackTarget. Use the nearest threat computed in the spacehip's update() procedure
+    ////// ^^ Actually.. we might need to look into a proper alarming mechanism (like in Game AI Programming by Ian Millington). E.g., consider what happens if, e.g. with the design above, the target ship gets shot during the pursuer's asteroid/arena avoidance phase? with the design above, now, the state machine would get confused. I think both Avoid and TargetLost should be alarms or triggers to change behavior
+    ////aiFsm.addState(aiStatePursueTarget);  // Add fsm state object to machine
 
 
-    aiFsm.setInitState("SelectTarget");        // Set initial state by name
-    aiFsm.start();
+    ////var aiStateAttackTarget = this.createAIStateAttackTarget();
+    ////var aiCondAttackToSelect = new FSMConditionEQ(aiFsm.knowledge, "ref", "parentObj.aiConfig.target.alive", "const", false);   // TODO! Find a way to identify if a spaceship is alive. Using .alive works for particles (asteroids); maybe just add an alive member to the spaceship
+    ////var aiTransAttackToSelect = new FSMTransition("SelectTarget", aiCondAttackToSelect);
+    ////aiStateAttackTarget.addTransition(aiTransAttackToSelect);
+
+    ////var aiCondAttackToPursue = new FSMConditionGT(aiFsm.knowledge, "calc", ["sqrDist", "parentObj.components.physics.currPos", "parentObj.aiConfig.target.components.physics.currPos"], "const", this.aiConfig["aiSqrAttackDist"]);
+    ////var aiTransAttackToPursue = new FSMTransition("PursueTarget", aiCondAttackToPursue);
+    ////aiStateAttackTarget.addTransition(aiTransAttackToPursue);
+    ////
+    ////var aiCondAttackToAvoidB;   // TODO make this condition essentially the same as (if not exactly the same as) aiCondAttackToAvoidA
+    ////aiFsm.addState(aiStateAttackTarget);  // Add fsm state object to machine
+
+
+    ////aiFsm.setInitState("SelectTarget");        // Set initial state by name
+    ////aiFsm.start();
 
 
 };
@@ -721,3 +718,171 @@ Spaceship.prototype.createAIStateAttackTarget = function() {
     return aiStateAttackTarget;
 };
 
+
+
+
+
+// ============================================================================
+// "New-style" AI functions
+// The following functions implement an AI state machine, but remove the overhead of a
+// node/graph-based machine. There will be "actions", which are functions that represent
+// states; and conditions. The current state/action will be maintained in a var (a queue..
+// maybe even a priority-based queue, so we can interrupt the current state/action with a 
+// more important one (ooh yeahh, I like that).
+// The queue will contain a reference to the action function to execute. Yeah. I like this
+// ============================================================================
+
+// TODO eventually break the SpaceshipAI object to its own file?
+function SpaceshipAI(parentObj, knowledge) {
+    GameObject.call(this);
+
+    this.parentObj = parentObj; // The spaceship that has this AI obj
+    this.knowledge = knowledge; // The rest of the "knowledge" (i.e. the gameLogic object)
+    this.defaultState = null;
+
+    // a JS array object, to be used as a queue of actions (FIFO)
+    // In JS, enqueue with push() (i.e. add to tail); remove with shift() (i.e. pop from head)
+    // each "action" will actually be a reference to a function to execute
+    // This queue is a basic JS "queue". For a fancier, more heavily-engineered queue idea, see the MessageQueue
+    this.actionQueue = [];
+
+}
+
+SpaceshipAI.prototype = Object.create(GameObject.prototype);
+SpaceshipAI.prototype.constructor = SpaceshipAI;
+
+// Set the function that constitutes the AI's default state
+SpaceshipAI.prototype.setDefaultStateFunc = function(defaultState) {
+    // defaultState is a function reference. This AI will call the functions
+    this.defaultState = defaultState;
+};
+
+SpaceshipAI.prototype.update = function(dt_s, config = null) {
+    // Call action function on the spaceship that is this AI's parent object
+
+    if (this.actionQueue.length == 0) {
+        this.actionQueue.push(this.defaultState);
+    }
+
+    if (this.actionQueue[0]) {
+        this.actionQueue[0].call(this.parentObj);
+    }
+};
+
+
+
+Spaceship.prototype.aiBehaviorSelectTarget = function() {
+    // NOTE: in the original state machine-based AI, the knowledge obj was a dict/Object, with property "parentObj" == the spaceship, and property "knowledge" = the gameLogic obj. In this function, parentObj is the "this" reference
+
+    var knowledge = this.components["ai"].knowledge;
+
+    // Find the nearest target
+    if (this.aiConfig["aiProfile"] == "miner") {
+        // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
+        // TODO possibly wrap the target selection loops inside functions. We're duplicating code here
+        var astMgr = knowledge.gameObjs["astMgr"];
+
+        var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+        var potentialAstTarget = null;
+        for (var asteroid of astMgr.components["asteroidPS"].particles) {
+            // Blah, why did I make the asteroids a subclass of particles?
+            if (asteroid.alive) {
+                var sqDistAst = vec2.sqrDist(this.components["physics"].currPos, asteroid.components["physics"].currPos);
+                if (sqDistAst < minSqrDistAst) {
+                    minSqrDistAst = sqDistAst;
+                    potentialAstTarget = asteroid;
+                }
+            }
+        }
+
+        var minSqrDistShip = Number.MAX_SAFE_INTEGER;
+        var potentialShipTarget = null;
+        for (var shipDictIDKey in knowledge.shipDict) {
+            // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+            if (this.objectID != shipDictIDKey) {
+                var gameObjIDName = knowledge.shipDict[shipDictIDKey];
+                var shipRef = knowledge.gameObjs[gameObjIDName];
+
+                // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                sqDistShip = vec2.sqrDist(this.components["physics"].currPos, shipRef.components["physics"].currPos);
+                if (sqDistShip < minSqrDistShip) {
+                    minSqrDistShip = sqDistShip;
+                    potentialShipTarget = shipRef;
+                }
+            }
+        }
+        
+        // Target the nearest asteroid, unless a ship is closer
+        this.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
+
+    } else if (this.aiConfig["aiProfile"] == "hunter") {
+        // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
+        var minSqrDistShip = Number.MAX_SAFE_INTEGER;
+
+        var sqDistShip = 0;
+        var potentialShipTarget = null;
+        for (var shipDictIDKey in knowledge.shipDict) {
+            // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
+            if (this.objectID != shipDictIDKey) {
+                var gameObjIDName = knowledge.shipDict[shipDictIDKey];
+                var shipRef = knowledge.gameObjs[gameObjIDName];
+
+                // TODO - add some kind of after-death delay so we don't target a ship that just respawned
+                sqDistShip = vec2.sqrDist(this.components["physics"].currPos, shipRef.components["physics"].currPos);
+                if (sqDistShip < minSqrDistShip) {
+                    minSqrDistShip = sqDistShip;
+                    potentialShipTarget = shipRef;
+                }
+            }
+        }
+        // Target the nearest ship
+        this.aiConfig["target"] =  potentialShipTarget;
+
+        // If the nearest ship is outside the hunt radius, then go for asteroids
+        if (minSqrDistShip >= this.aiConfig["aiHuntRadius"] * this.aiConfig["aiHuntRadius"]) {
+            var astMgr = knowledge.gameObjs["astMgr"];
+
+            var minSqrDistAst = Number.MAX_SAFE_INTEGER;
+            var sqDistAst = 0;
+            var potentialAstTarget = null;
+            for (var asteroid of astMgr.components["asteroidPS"].particles) {
+                // Blah, why did I make the asteroids a subclass of particles?
+                if (asteroid.alive) {
+                    sqDistAst = vec2.sqrDist(this.components["physics"].currPos, asteroid.components["physics"].currPos);
+                    if (sqDistAst < minSqrDistAst) {
+                        minSqrDistAst = sqDistAst;
+                        potentialAstTarget = asteroid;
+                    }
+                }
+            }
+            // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
+            this.aiConfig["target"] =  potentialAstTarget;
+        }
+    }
+
+    //// Transitions
+    //if (this.aiReadyToTransitionToAlign()) {
+    //    // Transition to align state
+    //} else if (this.aiReadyToTransitionToThrust()) {
+    //    // Transition to thrust state
+    //} else if (this.aiReadyToTransitionToAttack()) {
+    //    // Transition to attack state
+    //}
+
+};
+
+// Align to a specified direction
+// TODO decide whether to take in the target var as a param, or if it should be a var within the spaceship's AI "brain"
+Spaceship.prototype.aiBehaviorAlign = function(knowledgeObj) {
+
+};
+
+// Engage or Disengage Thrust
+Spaceship.prototype.aiBehaviorThrust = function(knowledgeObj) {
+
+};
+
+// Attack a target (fire weapon)
+Spaceship.prototype.aiBehaviorAttack = function(knowledgeObj) {
+
+};

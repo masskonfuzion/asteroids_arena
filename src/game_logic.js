@@ -83,14 +83,10 @@ GameLogic.prototype.initialize = function() {
     shipRef = this.gameObjs["ship1"];
 
 
-    var knowledgeObj = { "parentObj": shipRef,
-                         "gameLogic": this
-                       };
-
     shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship1"].imgObj,
                       "initialPos": [50, 225],
                       "isAI": true,
-                      "knowledge": knowledgeObj,
+                      "knowledge": this,
                       "aiProfile": "miner"
                     };
     // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
@@ -111,14 +107,10 @@ GameLogic.prototype.initialize = function() {
     this.addGameObject("ship2", new Spaceship());
     shipRef = this.gameObjs["ship2"];
 
-    var knowledgeObj = { "parentObj": shipRef,
-                         "gameLogic": this
-                       };
-
     shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship2"].imgObj,
                       "initialPos": [750, 225],
                       "isAI": true,
-                      "knowledge": knowledgeObj,
+                      "knowledge": this,
                       "aiProfile": "hunter",
                       "aiHuntRadius": 500
                     };
