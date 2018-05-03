@@ -71,7 +71,6 @@ Spaceship.prototype.initialize = function(configObj) {
         // Initialize an AI obj with a reference to this ship, and a reference to the gameLogic obj
         this.addComponent("ai", new SpaceshipAI(this, configObj["knowledge"]));
 
-        this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
         this.aiConfig["aiProfile"] = configObj.hasOwnProperty("aiProfile") ? configObj["aiProfile"] : "miner";  // default to miner behavior profile if we forget to specify
         this.aiConfig["aiHuntRadius"] = configObj.hasOwnProperty("aiHuntRadius") ? configObj["aiHuntRadius"] : null;
         this.aiConfig["aiMaxLinearVel"] = 50;
@@ -84,6 +83,8 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiConfig["aiAlignVelocityDriftThreshold"] = 60;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["aiAlignVelocityCorrectThreshold"] = 5;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["target"] = null;
+        this.aiConfig["vecToTargetPos"] = vec2.create();        // vec2 from ship position to target position
+        this.aiConfig["currVel"] = vec2.create();
         this.aiConfig["aiReflex"] = { "delayRange": {"min": 150, "max": 250},
                                       "delayInterval": 0,
                                       "currTimestamp": 0,
@@ -241,6 +242,7 @@ Spaceship.prototype.enableThrust = function() {
     // Set acceleration vector
     var myPhysComp = this.components["physics"];
     vec2.set(myPhysComp.acceleration, Math.cos( glMatrix.toRadian(myPhysComp.angle) ), Math.sin( glMatrix.toRadian(myPhysComp.angle) ));
+    // TODO don't hardcode the acceleration vector
     vec2.scale(myPhysComp.acceleration, myPhysComp.acceleration, 210);
 
     var myThrustPE = this.components["thrustPE"];
@@ -296,7 +298,7 @@ Spaceship.prototype.disableFireA = function() {
 
 Spaceship.prototype.initializeAI = function(knowledgeObj) {
     // Initialize state machine
-    this.components["ai"].setDefaultStateFunc(this.aiBehaviorSelectTarget);
+    this.components["ai"].initialize(this, knowledgeObj);
 
 
     ////// Initialize state machine
@@ -369,8 +371,7 @@ Spaceship.prototype.finishReflexDelay = function() {
 
 Spaceship.prototype.resetAI = function() {
     // potential optimization: instead of assigning a new array here, pop all elements, instead of "Default"
-    this.aiConfig["aiBehavior"] = ["Default"];      // Use an array of behaviors as a stack (used for implementing "humanizing" reflex delay)
-    this.components["ai"].start();
+    this.components["ai"].reset();
 };
 
 Spaceship.prototype.resetSpawnClock = function() {
@@ -733,61 +734,164 @@ Spaceship.prototype.createAIStateAttackTarget = function() {
 // ============================================================================
 
 // TODO eventually break the SpaceshipAI object to its own file?
-function SpaceshipAI(parentObj, knowledge) {
+function SpaceshipAI() {
     GameObject.call(this);
 
-    this.parentObj = parentObj; // The spaceship that has this AI obj
-    this.knowledge = knowledge; // The rest of the "knowledge" (i.e. the gameLogic object)
+    this.parentObj = null;  // The spaceship that has this AI obj
+    this.knowledge = null;  // The rest of the "knowledge" (i.e. the gameLogic object)
     this.defaultState = null;
 
     // a JS array object, to be used as a queue of actions (FIFO)
     // In JS, enqueue with push() (i.e. add to tail); remove with shift() (i.e. pop from head)
     // each "action" will actually be a reference to a function to execute
-    // This queue is a basic JS "queue". For a fancier, more heavily-engineered queue idea, see the MessageQueue
+
+    // This queue is a basic JS "queue". (it's an array object)
+    // For a fancier, more heavily-engineered queue idea, see the MessageQueue
     this.actionQueue = [];
+
+    // And now, the actions/behaviors.
+    // Each aiState is a simple JS object, with a priority level and a function to call
+    // Priority 0 is the highest/most important priority level.
+    // The functions are members of this SpaceshipAI class -- each aiState obj will
+    // store a reference to the function
+
+    this.aiStateSelectTarget = { "priority": 2, "function": this.aiBehaviorSelectTarget };
+    this.aiStateAlignToTarget = { "priority": 2, "function": this.aiBehaviorAlignToTarget };
+    this.aiStateThrustToTarget = { "priority": 2, "function": this.aiBehaviorThrustToTarget };
+    this.aiStateAttackTarget = { "priority": 2, "function": this.aiBehaviorAttackTarget };
+
+    this.aiStateAlignToEvadeThreat = { "priority": 1, "function": this.aiBehaviorAlignToEvadeThreat }; // TODO: write this function.. Same as AlignToTarget, but will use a different vector
+    this.aiStateThrustToEvadeThreat = { "priority": 1, "function": this.aiBehaviorThrustToEvadeThreat };  // TODO write this function.. essentially the same as ThrustToTarget, but with different transitions
+
+    // TODO write these functions, too
+    this.aiStateAlignToReduceVelocity = { "priority": 0, "function": this.aiBehaviorAlignToReduceVelocity };
+    this.aiStateThrustToReduceVelocity = { "priority": 0, "function": this.aiBehaviorThrustToReduceVelocity };
 
 }
 
 SpaceshipAI.prototype = Object.create(GameObject.prototype);
 SpaceshipAI.prototype.constructor = SpaceshipAI;
 
-// Set the function that constitutes the AI's default state
-SpaceshipAI.prototype.setDefaultStateFunc = function(defaultState) {
-    // defaultState is a function reference. This AI will call the functions
-    this.defaultState = defaultState;
+SpaceshipAI.prototype.initialize = function(parentObj, knowledge) {
+    // Set default state (a reference to the function itself, which is defined on the prototype)
+    this.defaultState = this.aiStateSelectTarget;
+    this.parentObj = parentObj;
+    this.knowledge = knowledge;
+};
+
+SpaceshipAI.prototype.reset = function() {
+    this.parentObj.aiConfig["target"] = null;
+    this.actionQueue = [];
 };
 
 SpaceshipAI.prototype.update = function(dt_s, config = null) {
     // Call action function on the spaceship that is this AI's parent object
 
+    // Update any info needed for computations that will be done as part af AI
+    // e.g., update the ship's knowledge of its vector to target, etc.
+    this.processKnowledge();
+
     if (this.actionQueue.length == 0) {
-        this.actionQueue.push(this.defaultState);
+        this.actionQueue.enqueue(this.defaultState);
     }
 
     if (this.actionQueue[0]) {
-        this.actionQueue[0].call(this.parentObj);
+        this.actionQueue[0]["function"].call(this);
     }
 };
 
 
+// deqeueue current state/action/behavior and enqueue the given one
+// (the given state is a reference to the function to execute)
+SpaceshipAI.prototype.dequeueCurrentEnqueueNew = function(behavior) {
+    // Note - we can build on this design if we want
+    // Have transitions enqueue a fromState_Exit() and toState_Enter() action.. all that
+    // We can even update the queue to be a priority queue, and have some actions preempt others, or whatever.
+    this.dequeue();
+    this.enqueue(behavior)
+    // NOTE: a behavior is an object with a "priority" property and a "function" reference
+    // The function actually executes the behavior
+};
 
-Spaceship.prototype.aiBehaviorSelectTarget = function() {
+SpaceshipAI.prototype.dequeue = function() {
+    // dequeue the current state, but do not enqueue anything
+    // Useful for, e.g., simulating delay, due to reflexes. A preceding state can enqueue 2
+    // actions: pause, and then do some behavior
+    // The pause state can be dequeued, leaving whatever the 2nd action was as the active
+    // state.
+    this.actionQueue.shift();           // dequeue the current state/action/behavior
+};
+
+SpaceshipAI.prototype.enqueue = function(behavior) {
+    // Enqueue, with priority
+    // i.e., insert the incoming behavior as the last item of whatever priority level it's at
+
+    if (this.actionQueue.length == 0) {
+        // if the actionQueue is empty, simply push() the behavior onto the end
+        this.actionQueue.push(behavior);
+    } else if (behavior.priority < this.actionQueue[0].priority) {
+        // Peek at the first item in the queue. If its priority level is higher than the incoming
+        // behavior's, then we can simply insert the incoming behavior at the head of the queue
+        this.actionQueue.unshift(behavior); // unshift() inserts one or more items at the front of an array
+    } else {
+        // otherwise, we have to find a place to put the incoming behavior
+        // (linear search.. can we do better?)
+        var i = 1;
+        for (var i = 1; i < this.actionQueue.length; i++) {
+            if (this.actionQueue[i].priority > behavior.priority) {
+                // If we're here, then we've reached an item in the queue with a higher priority
+                // number (which actually means a less-important priority level)
+                // In that case, mark where we are, and insert the incoming behavior _before_
+                // that item
+                break;
+            }
+        }
+        // splice() will insert an item before the item at index #i
+        // (the 0 in the 2nd parameter means "delete 0 items")
+        // if the for loop (linear search) above didn't find a hit, then i will be the end of
+        // the array. in that case, the splice() will be equivalent to push()
+        this.actionQueue.splice(i, 0, behavior);
+    }
+};
+
+
+// This state is essentially the AI's "thinking" step
+// i.e., it has "knowledge" (maybe the "knowledge" var should be called "awareness". The ship
+// is "aware" of things around it. The processKnowledge function is responsible for "thinking" --
+// processing objects it's aware of, and updating vars that represent the AI's understanding
+// of the situation
+SpaceshipAI.prototype.processKnowledge = function() {
+    var parentShip = this.parentObj;
+
+    // update current velocity (approximate... because of Verlet stuff)
+    vec2.sub(parentShip.aiConfig["currVel"], parentShip.components["physics"].currPos, parentShip.components["physics"].prevPos);
+
+    if (parentShip.aiConfig["target"]) {
+        var target = parentShip.aiConfig["target"];
+
+        // Update vector from ship's current position to target's current position
+        vec2.sub(parentShip.aiConfig["vecToTargetPos"], target.components["physics"].currPos, parentShip.components["physics"].currPos);
+        vec2.normalize(parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["vecToTargetPos"]);
+    }
+
+};
+
+SpaceshipAI.prototype.aiBehaviorSelectTarget = function() {
     // NOTE: in the original state machine-based AI, the knowledge obj was a dict/Object, with property "parentObj" == the spaceship, and property "knowledge" = the gameLogic obj. In this function, parentObj is the "this" reference
-
-    var knowledge = this.components["ai"].knowledge;
+    var parentShip = this.parentObj;
 
     // Find the nearest target
-    if (this.aiConfig["aiProfile"] == "miner") {
+    if (parentShip.aiConfig["aiProfile"] == "miner") {
         // find nearest object - prefer asteroids, but attack a ship if it's closer than the nearest asteroid
         // TODO possibly wrap the target selection loops inside functions. We're duplicating code here
-        var astMgr = knowledge.gameObjs["astMgr"];
+        var astMgr = this.knowledge.gameObjs["astMgr"];
 
         var minSqrDistAst = Number.MAX_SAFE_INTEGER;
         var potentialAstTarget = null;
         for (var asteroid of astMgr.components["asteroidPS"].particles) {
             // Blah, why did I make the asteroids a subclass of particles?
             if (asteroid.alive) {
-                var sqDistAst = vec2.sqrDist(this.components["physics"].currPos, asteroid.components["physics"].currPos);
+                var sqDistAst = vec2.sqrDist(parentShip.components["physics"].currPos, asteroid.components["physics"].currPos);
                 if (sqDistAst < minSqrDistAst) {
                     minSqrDistAst = sqDistAst;
                     potentialAstTarget = asteroid;
@@ -797,14 +901,14 @@ Spaceship.prototype.aiBehaviorSelectTarget = function() {
 
         var minSqrDistShip = Number.MAX_SAFE_INTEGER;
         var potentialShipTarget = null;
-        for (var shipDictIDKey in knowledge.shipDict) {
+        for (var shipDictIDKey in this.knowledge.shipDict) {
             // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
-            if (this.objectID != shipDictIDKey) {
-                var gameObjIDName = knowledge.shipDict[shipDictIDKey];
-                var shipRef = knowledge.gameObjs[gameObjIDName];
+            if (parentShip.objectID != shipDictIDKey) {
+                var gameObjIDName = this.knowledge.shipDict[shipDictIDKey];
+                var shipRef = this.knowledge.gameObjs[gameObjIDName];
 
                 // TODO - add some kind of after-death delay so we don't target a ship that just respawned
-                sqDistShip = vec2.sqrDist(this.components["physics"].currPos, shipRef.components["physics"].currPos);
+                sqDistShip = vec2.sqrDist(parentShip.components["physics"].currPos, shipRef.components["physics"].currPos);
                 if (sqDistShip < minSqrDistShip) {
                     minSqrDistShip = sqDistShip;
                     potentialShipTarget = shipRef;
@@ -813,22 +917,22 @@ Spaceship.prototype.aiBehaviorSelectTarget = function() {
         }
         
         // Target the nearest asteroid, unless a ship is closer
-        this.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
+        parentShip.aiConfig["target"] = sqDistAst <= sqDistShip ? potentialAstTarget : potentialShipTarget;
 
-    } else if (this.aiConfig["aiProfile"] == "hunter") {
+    } else if (parentShip.aiConfig["aiProfile"] == "hunter") {
         // find nearest ship and go after it. Only prefer an asteroid if there are no ships within the hunt radius
         var minSqrDistShip = Number.MAX_SAFE_INTEGER;
 
         var sqDistShip = 0;
         var potentialShipTarget = null;
-        for (var shipDictIDKey in knowledge.shipDict) {
+        for (var shipDictIDKey in this.knowledge.shipDict) {
             // Iterate over ships that aren't my ship ("I" am an AI, not a ship)
-            if (this.objectID != shipDictIDKey) {
-                var gameObjIDName = knowledge.shipDict[shipDictIDKey];
-                var shipRef = knowledge.gameObjs[gameObjIDName];
+            if (parentShip.objectID != shipDictIDKey) {
+                var gameObjIDName = this.knowledge.shipDict[shipDictIDKey];
+                var shipRef = this.knowledge.gameObjs[gameObjIDName];
 
                 // TODO - add some kind of after-death delay so we don't target a ship that just respawned
-                sqDistShip = vec2.sqrDist(this.components["physics"].currPos, shipRef.components["physics"].currPos);
+                sqDistShip = vec2.sqrDist(parentShip.components["physics"].currPos, shipRef.components["physics"].currPos);
                 if (sqDistShip < minSqrDistShip) {
                     minSqrDistShip = sqDistShip;
                     potentialShipTarget = shipRef;
@@ -836,11 +940,11 @@ Spaceship.prototype.aiBehaviorSelectTarget = function() {
             }
         }
         // Target the nearest ship
-        this.aiConfig["target"] =  potentialShipTarget;
+        parentShip.aiConfig["target"] =  potentialShipTarget;
 
         // If the nearest ship is outside the hunt radius, then go for asteroids
-        if (minSqrDistShip >= this.aiConfig["aiHuntRadius"] * this.aiConfig["aiHuntRadius"]) {
-            var astMgr = knowledge.gameObjs["astMgr"];
+        if (minSqrDistShip >= parentShip.aiConfig["aiHuntRadius"] * parentShip.aiConfig["aiHuntRadius"]) {
+            var astMgr = this.knowledge.gameObjs["astMgr"];
 
             var minSqrDistAst = Number.MAX_SAFE_INTEGER;
             var sqDistAst = 0;
@@ -848,7 +952,7 @@ Spaceship.prototype.aiBehaviorSelectTarget = function() {
             for (var asteroid of astMgr.components["asteroidPS"].particles) {
                 // Blah, why did I make the asteroids a subclass of particles?
                 if (asteroid.alive) {
-                    sqDistAst = vec2.sqrDist(this.components["physics"].currPos, asteroid.components["physics"].currPos);
+                    sqDistAst = vec2.sqrDist(parentShip.components["physics"].currPos, asteroid.components["physics"].currPos);
                     if (sqDistAst < minSqrDistAst) {
                         minSqrDistAst = sqDistAst;
                         potentialAstTarget = asteroid;
@@ -856,33 +960,179 @@ Spaceship.prototype.aiBehaviorSelectTarget = function() {
                 }
             }
             // If we're here, we want to target the nearest asteroid, even though we're a "hunter"
-            this.aiConfig["target"] =  potentialAstTarget;
+            parentShip.aiConfig["target"] =  potentialAstTarget;
         }
     }
 
-    //// Transitions
-    //if (this.aiReadyToTransitionToAlign()) {
-    //    // Transition to align state
-    //} else if (this.aiReadyToTransitionToThrust()) {
-    //    // Transition to thrust state
-    //} else if (this.aiReadyToTransitionToAttack()) {
-    //    // Transition to attack state
-    //}
+    // Transitions
+    if (this.aiReadyToTransitionToAlign()) {
+        // Transition to align state
+        this.dequeueCurrentEnqueueNew(this.aiBehaviorAlignToTarget);
+    } else if (this.aiReadyToTransitionToThrust()) {
+        // Transition to thrust state
+        this.dequeueCurrentEnqueueNew(this.aiBehaviorThrustToTarget);
+    } else if (this.aiReadyToTransitionToAttack()) {
+        // Transition to attack state
+        this.dequeueCurrentEnqueueNew(this.aiBehaviorAttackTarget);
+    }
 
 };
 
 // Align to a specified direction
 // TODO decide whether to take in the target var as a param, or if it should be a var within the spaceship's AI "brain"
-Spaceship.prototype.aiBehaviorAlign = function(knowledgeObj) {
+SpaceshipAI.prototype.aiReadyToTransitionToAlign = function() {
+    var parentShip = this.parentObj;
+    var enemy = parentShip.aiConfig["target"];
+
+    if (!enemy) {
+        return false;
+    }
+
+    // already normalized by the physics component; we can simply grab a reference to this vector
+    var shipHeading = parentShip.components["physics"].angleVec;
+
+    // return true if ship has a target, and heading is NOT yet aligned to target
+    return this.isVectorAligned(shipHeading, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignHeadingThreshold"]) == false;
+};
+
+SpaceshipAI.prototype.aiReadyToTransitionToThrust = function() {
+    var parentShip = this.parentObj;
+    var enemy = parentShip.aiConfig["target"];
+
+    if (!enemy) {
+        return false;
+    }
+
+    // already normalized by the physics component; we can simply grab a reference to this vector
+    var shipHeading = parentShip.components["physics"].angleVec;
+
+    // Compute the ship-to-target vector
+
+    var shipPos = parentShip.components["physics"].currPos;
+    var enemyPos = enemy.components["physics"].currPos;
+
+    // TODO factor these calculations into something else? Some state transitions are repeating the same calculations 
+    return this.isVectorAligned(shipHeading, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignHeadingThreshold"]) == true &&
+           this.isWithinRange(shipPos, enemyPos, parentShip.aiConfig["aiSqrAttackDist"]) == false;
+};
+
+SpaceshipAI.prototype.aiReadyToTransitionToAttack = function() {
+    var parentShip = this.parentObj;
+    var enemy = parentShip.aiConfig["target"];
+
+    if (!enemy) {
+        return false;
+    }
+
+    // already normalized by the physics component; we can simply grab a reference to this vector
+    var shipHeading = vec2.clone( parentShip.components["physics"].angleVec );
+
+    // Compute the ship-to-target vector
+    var shipToTarget = vec2.create();
+    vec2.sub(shipToTarget, parentShip.aiConfig["target"].components["physics"].currPos, parentShip.components["physics"].currPos);
+    vec2.normalize(shipToTarget, shipToTarget);
+
+    var shipPos = parentShip.components["physics"].currPos;
+    var enemyPos = enemy.components["physics"].currPos;
+
+    // TODO factor these calculations into something else? Some state transitions are repeating the same calculations 
+    return this.isVectorAligned(shipHeading, shipToTarget, parentShip.aiConfig["aiAlignHeadingThreshold"]) == true &&
+           this.isWithinRange(shipPos, enemyPos, parentShip.aiConfig["aiSqrAttackDist"]) == true;
+
 
 };
 
-// Engage or Disengage Thrust
-Spaceship.prototype.aiBehaviorThrust = function(knowledgeObj) {
 
+// Return true if the the angle between vecA and vecB is within the tolerance
+// tolerance is a half-angle, in degrees
+// i.e., if tolerance is 5, then it's actual +/- 5 degrees; a 10 degree window
+SpaceshipAI.prototype.isVectorAligned = function(vecA, vecB, tolerance) {
+    // angleBetween returns radians -- convert that to degrees
+    var angBtwn = MathUtils.angleBetween(vecA, vecB) * (180.0 / Math.PI);
+    return (Math.abs(angBtwn) <= Math.abs(tolerance))
+};
+
+
+// posA and posB are glMatrix vec2d objects
+SpaceshipAI.prototype.isWithinRange = function(posA, posB, sqDistThreshold) {
+    return vec2.sqrDist(posA, posB) <= sqDistThreshold;
+};
+
+
+//SpaceshipAI.prototype.isTargetAcquired = function() {
+//    return 
+//};
+
+
+// Align to target (target info is stored within the ship/AI object
+SpaceshipAI.prototype.aiBehaviorAlignToTarget = function() {
+    // TODO - update this function. Pull out any calculations that can be used by other behaviors into the processKnowledge function. Update transition logic to follow the ai_take_07 diagram
+    var parentShip = this.parentObj;
+    var enemy = parentShip.aiConfig["target"];  //TODO maybe call it "target", instead of "enemy"
+
+    if (enemy) {
+        // already normalized by the physics component; we can simply grab a reference to this vector
+
+        // Compute the angle between the ship's heading and the vector from ship pos to target pos
+        // Both vectors are already normalized. angleBetween returns radians, but our AI thresholds are in degrees, so we convert
+        var angBtwn = MathUtils.angleBetween(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"]) * 180.0 / Math.PI;
+
+        // Adjust turn/heading
+        if (angBtwn > glMatrix.toRadian(parentShip.aiConfig["aiAlignHeadingThreshold"])) {
+            // In the HTML5 Canvas coordinate system, a + rotation is to the right
+            // But it might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
+            parentShip.enableTurnRight();
+        } else if (angBtwn < glMatrix.toRadian(-parentShip.aiConfig["aiAlignHeadingThreshold"])) {
+            parentShip.enableTurnLeft();
+        } else {
+            // NOTE: if you're here, you're ready to transition out of the state
+            parentShip.disableTurn();
+        }
+
+        // transitions out of this state
+        if (!enemy.alive) {
+            // target lost (i.e. target is not alive anymore) --> select target
+            this.dequeueCurrentEnqueueNew(this.aiBehaviorSelectTarget);
+        } else if this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignHeadingThreshold"]) == true &&
+                  !this.isWithinRange(parentShip.components["physics"].currPos, enemy.components["physics"].currPos, parentShip.aiConfig["aiSqrAttackDist"]) {
+            // target acquired, aligned to target, not within firing range --> thrust
+            this.dequeueCurrentEnqueueNew(this.aiBehaviorThrustToTarget);
+        } else if this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignHeadingThreshold"]) == true &&
+                  this.isWithinRange(parentShip.components["physics"].currPos, enemy.components["physics"].currPos, parentShip.aiConfig["aiSqrAttackDist"]) {
+            // target acquired, aligned to target, within firing range --> attack
+            this.dequeueCurrentEnqueueNew(this.aiBehaviorAttackTarget);
+        }
+    } else {
+        // if the ship doesn't have an enemy/target selected, then select one
+        this.dequeueCurrentEnqueueNew(this.aiBehaviorSelectTarget);
+    }
+};
+
+// Thrust to target
+SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
+    // TODO rework this function -- make it thrust specifically towards target.  Pull out anything that can be used by other behavior functions, into processKnowledge
+    // The thrust state can either engage or disengage thrust. 
+    // Thrust is disengaged if the ship has reached its speed limit, but the AI will stay in this
+    // state until something causes a transition out to another state/behavior
+    var parentShip = this.parentObj;
+    var shipPhysComp = parentShip.components["physics"];
+
+    if (vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"]) {
+        //console.log("ThrustToPursueTarget, vel magnitude: " + vec2.len(currVel) / game.fixed_dt_s, "Vec: ", currVel, "align to:", parentShip.aiConfig["aiVelCorrectDir"]);
+        parentShip.enableThrust();
+    } else {
+        // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
+        // Otherwise, work to reduce the velocity component that is doing more to take the ship away from its desired heading, and then get back to AlignToTarget (which will re-align the ship for thrusting)
+        parentShip.disableThrust();
+    }
+
+    // TODO make an update() function in the ship's AI that updates "important" metrics, like shipHeading, shipVelo, angBetween those 2 things, and whatever else we need. Then, use those metrics to determine how to behave / transition into/out of states
+
+
+    // Transitions
 };
 
 // Attack a target (fire weapon)
-Spaceship.prototype.aiBehaviorAttack = function(knowledgeObj) {
+SpaceshipAI.prototype.aiBehaviorAttackTarget = function(knowledgeObj) {
 
 };
