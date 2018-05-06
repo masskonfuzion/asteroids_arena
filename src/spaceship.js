@@ -79,7 +79,7 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiConfig["aiSqrDistToTarget"] = 0;          // Current squared distance to target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees
         this.aiConfig["aiVelCorrectDir"] = vec2.create();
-        this.aiConfig["aiAlignHeadingThreshold"] = 10;     // Align-heading-towards-target threshold; a half-angle, in degrees
+        this.aiConfig["aiAlignHeadingThreshold"] = 5;     // Align-heading-towards-target threshold; a half-angle, in degrees
         this.aiConfig["aiAlignVelocityPursueThreshold"] = 45;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["aiAlignVelocityDriftThreshold"] = 60;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["aiAlignVelocityCorrectThreshold"] = 5;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
@@ -485,13 +485,27 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
 
     if (parentShip.aiConfig["target"]) {
         var target = parentShip.aiConfig["target"];
-        // Update vector from ship's current position to target's current position
-        vec2.sub(parentShip.aiConfig["vecToTargetPos"], target.components["physics"].currPos, parentShip.components["physics"].currPos);
-        vec2.normalize(parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["vecToTargetPos"]);
 
-        // Update Squared dist to target
-        parentShip.aiConfig["aiSqrDistToTarget"] = vec2.sqrDist(parentShip.components["physics"].currPos, target.components["physics"].currPos);
+        // Determine whether we still have a target or not.
+        // Asteroids have an "alive" property (because they derive from particles, which have "alive")
+        // Spaceships do not have the "alive" property. They have an ableState
+        var stillHaveTarget = (target.hasOwnProperty("alive") && target.alive) ||
+                              (target.hasOwnProperty("ableState") && target.ableState != SpaceshipAbleStateEnum.disabled);
 
+        // If we still have a target, do certain stuff
+        if (stillHaveTarget) {
+            // Update vector from ship's current position to target's current position
+            vec2.sub(parentShip.aiConfig["vecToTargetPos"], target.components["physics"].currPos, parentShip.components["physics"].currPos);
+            vec2.normalize(parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["vecToTargetPos"]);
+
+            // Update Squared dist to target
+            parentShip.aiConfig["aiSqrDistToTarget"] = vec2.sqrDist(parentShip.components["physics"].currPos, target.components["physics"].currPos);
+        }
+        else {
+            // If we no longer have a target, then remove it from the ship's knowledge
+            // This will cause a state transition to select a new target
+            parentShip.aiConfig["target"] = null;
+        }
     }
 
     // Update the velocity correction dir vector. For now, we'll naively just choose the
@@ -578,7 +592,7 @@ SpaceshipAI.prototype.aiBehaviorSelectTarget = function() {
         parentShip.aiConfig["target"] =  potentialShipTarget;
 
         // If the nearest ship is outside the hunt radius, then go for asteroids
-        if (minSqrDistShip >= parentShip.aiConfig["aiHuntRadius"] * parentShip.aiConfig["aiHuntRadius"]) {
+        if (minSqrDistShip >= parentShip.aiConfig["aiHuntRadius"] ** 2) {
             var astMgr = this.knowledge.gameObjs["astMgr"];
 
             var minSqrDistAst = Number.MAX_SAFE_INTEGER;
@@ -652,11 +666,11 @@ SpaceshipAI.prototype.aiBehaviorAlignToTarget = function() {
         var angBtwn = MathUtils.angleBetween(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"]) * 180.0 / Math.PI;
 
         // Adjust turn/heading
-        if (angBtwn > glMatrix.toRadian(parentShip.aiConfig["aiAlignHeadingThreshold"])) {
+        if (angBtwn > parentShip.aiConfig["aiAlignHeadingThreshold"]) {
             // In the HTML5 Canvas coordinate system, a + rotation is to the right (as opposed to school/paper where pos rotation is to the left (i.e. from +x towards +y, which goes from facing right to facing up)
             // It might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
             parentShip.enableTurnRight();
-        } else if (angBtwn < glMatrix.toRadian(-parentShip.aiConfig["aiAlignHeadingThreshold"])) {
+        } else if (angBtwn < -parentShip.aiConfig["aiAlignHeadingThreshold"]) {
             parentShip.enableTurnLeft();
         } else {
             // NOTE: if you're here, you're aligned to target, ready to transition out of the state

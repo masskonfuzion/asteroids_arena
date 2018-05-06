@@ -112,7 +112,7 @@ GameLogic.prototype.initialize = function() {
                       "isAI": true,
                       "knowledge": this,
                       "aiProfile": "hunter",
-                      "aiHuntRadius": 500
+                      "aiHuntRadius": 600
                     };
     // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);
@@ -650,6 +650,7 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
     if (queryObj.hasOwnProperty("aiControlled") && queryObj.aiControlled) {
         queryObj.disableThrust();
         queryObj.disableTurn();
+        queryObj.disableFireA();
         queryObj.resetAI();
     }
 
