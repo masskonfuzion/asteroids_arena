@@ -2,6 +2,12 @@ var SpaceshipAbleStateEnum = { "disabled": 0,
                                "enabled": 1,
                                "spawning": 2
                              };
+
+var ReflexDelayStateEnum = { "notstarted": 0,
+                             "active": 1,
+                             "completed": 2
+                           };
+
 function Spaceship() {
     // Inherit GameObject properties, includinga components dict
     GameObject.call(this);
@@ -372,6 +378,7 @@ function SpaceshipAI() {
     // The functions are members of this SpaceshipAI class -- each aiState obj will
     // store a reference to the function
 
+    this.aiStateDelayNextAction = { "priority": 2, "function": this.aiBehaviorDelayNextAction };
     this.aiStateSelectTarget = { "priority": 2, "function": this.aiBehaviorSelectTarget };
     this.aiStateAlignToTarget = { "priority": 2, "function": this.aiBehaviorAlignToTarget };
     this.aiStateThrustToTarget = { "priority": 2, "function": this.aiBehaviorThrustToTarget };
@@ -619,16 +626,19 @@ SpaceshipAI.prototype.aiBehaviorSelectTarget = function() {
         if (parentShip.aiConfig["decisionLogic"].alignedToTargetVector) {
             if (parentShip.aiConfig["decisionLogic"].withinAttackRange) {
                 // ship has target and is aligned to target and is within attack range -> attack
-                this.dequeueCurrentEnqueueNew(this.aiStateAttackTarget);
+                this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+                this.enqueue(this.aiStateAttackTarget);
             }
             else {
                 // ship has target and is aligned to target and is NOT within attack range -> thrust to target
-                this.dequeueCurrentEnqueueNew(this.aiStateThrustToTarget);
+                this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+                this.enqueue(this.aiStateThrustToTarget);
             }
         }
         else {
             // ship has target and is not aligned to target -> align to target
-            this.dequeueCurrentEnqueueNew(this.aiStateAlignToTarget);
+            this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+            this.enqueue(this.aiStateAlignToTarget);
         }
     }
 };
@@ -682,16 +692,19 @@ SpaceshipAI.prototype.aiBehaviorAlignToTarget = function() {
             // transitions out of this state
             if (parentShip.aiConfig["decisionLogic"].withinAttackRange) {
                 // have target and aligned to target and within attack range -> attack target
-                this.dequeueCurrentEnqueueNew(this.aiStateAttackTarget);
+                this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+                this.enqueue(this.aiStateAttackTarget);
             }
             else {
                 // have target and aligned to target an not within attack range -> thrust to target
-                this.dequeueCurrentEnqueueNew(this.aiStateThrustToTarget);
+                this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+                this.enqueue(this.aiStateThrustToTarget);
             }
         }
     } else {
         // if the ship doesn't have an enemy/target selected, then select one
-        this.dequeueCurrentEnqueueNew(this.aiStateSelectTarget);
+        this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+        this.enqueue(this.aiStateSelectTarget);
     }
 };
 
@@ -720,7 +733,8 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
         if (parentShip.aiConfig["decisionLogic"].alignedToTargetVector) {
             if (parentShip.aiConfig["decisionLogic"].withinAttackRange) {
                 // have target and aligned to target and within attack range -> attack target
-                this.dequeueCurrentEnqueueNew(this.aiStateAttackTarget);
+                this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+                this.enqueue(this.aiStateAttackTarget);
             }
 
             // If the above condition isn't true, then we probably:
@@ -729,18 +743,20 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
         }
         else {
             // have target and not aligned to target -> align to target
-            this.dequeueCurrentEnqueueNew(this.aiStateAlignToTarget);
+            this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+            this.enqueue(this.aiStateAlignToTarget);
         }
     }
     else {
         // if the ship doesn't have an enemy/target selected, then select one
-        this.dequeueCurrentEnqueueNew(this.aiStateSelectTarget);
+        this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+        this.enqueue(this.aiStateSelectTarget);
     }
 
 };
 
 // Attack a target (fire weapon)
-SpaceshipAI.prototype.aiBehaviorAttackTarget = function(knowledgeObj) {
+SpaceshipAI.prototype.aiBehaviorAttackTarget = function() {
     var parentShip = this.parentObj;
     var target = parentShip.aiConfig["target"];
 
@@ -753,18 +769,53 @@ SpaceshipAI.prototype.aiBehaviorAttackTarget = function(knowledgeObj) {
             if (parentShip.aiConfig["withinAttackRange"] == false) {
                 // has target and is aligned to target and is out of attack range -> thrust to target
                 parentShip.disableFireA();
-                this.dequeueCurrentEnqueueNew(this.aiStateThrustToTarget);
+                this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+                this.enqueue(this.aiStateThrustToTarget);
             }
         }
         else {
             // has target and is not aligned to target -> align to target
             parentShip.disableFireA();
-            this.dequeueCurrentEnqueueNew(this.aiStateAlignToTarget);
+            this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+            this.enqueue(this.aiStateAlignToTarget);
         }
     }
     else {
         // target lost -> select a new one
         parentShip.disableFireA();
-        this.dequeueCurrentEnqueueNew(this.aiStateSelectTarget);
+        this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
+        this.enqueue(this.aiStateSelectTarget);
+    }
+};
+
+
+SpaceshipAI.prototype.aiBehaviorDelayNextAction = function() {
+    var parentShip = this.parentObj;
+
+
+    // Note: when exiting this state, we do a simple dequeue. This state assumes it was enqueued
+    // along with the state it is delaying, so dequeueing will leave the next state as active
+
+    // TODO move reflex delay (among other things) from the Spaceship class to the SpaceshipAI class
+    switch(parentShip.aiConfig["aiReflex"].reflexState) {
+        case ReflexDelayStateEnum.notstarted:
+            parentShip.aiConfig.aiReflex.delayInterval = Math.random() * (parentShip.aiConfig.aiReflex.delayRange.max - parentShip.aiConfig.aiReflex.delayRange.min) + parentShip.aiConfig.aiReflex.delayRange.min;
+            parentShip.aiConfig.aiReflex.currTimestamp = performance.now();
+            parentShip.aiConfig.aiReflex.prevTimestamp = parentShip.aiConfig.aiReflex.currTimestamp;
+            parentShip.aiConfig.aiReflex.reflexState = ReflexDelayStateEnum.active;     // actively pausing to simulate reflex delay
+            break;
+
+        case ReflexDelayStateEnum.active:
+            parentShip.aiConfig.aiReflex.currTimestamp = performance.now();
+            if ((parentShip.aiConfig.aiReflex.currTimestamp - parentShip.aiConfig.aiReflex.prevTimestamp) > parentShip.aiConfig.aiReflex.delayInterval) {
+                parentShip.aiConfig.aiReflex.reflexState = ReflexDelayStateEnum.completed; // reflex delay time has elapsed
+            }
+            break;
+
+        case ReflexDelayStateEnum.completed:
+            // Simple dequeue. We assume that the state being delayed is next in the queue, so we
+            // don't need to enqueue any following states
+            this.dequeue(); 
+            break;
     }
 };
