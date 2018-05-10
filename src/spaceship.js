@@ -769,6 +769,7 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
         if (parentShip.aiConfig["decisionLogic"].alignedToTargetVector) {
             if (parentShip.aiConfig["decisionLogic"].withinAttackRange) {
                 // have target and aligned to target and within attack range -> attack target
+                parentShip.disableThrust();
                 this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
                 this.enqueue(this.aiStateAttackTarget);
             }
@@ -779,12 +780,14 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
         }
         else {
             // have target and not aligned to target -> align to target
+            parentShip.disableThrust();
             this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
             this.enqueue(this.aiStateAlignToTarget);
         }
     }
     else {
         // if the ship doesn't have an enemy/target selected, then select one
+        parentShip.disableThrust();
         this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
         this.enqueue(this.aiStateSelectTarget);
     }
