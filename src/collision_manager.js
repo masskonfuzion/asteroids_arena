@@ -31,10 +31,10 @@ CollisionManager.prototype.addCollider = function(collider) {
 CollisionManager.prototype.removeCollider = function(id) {
     if (id in this.colliders && this.colliders.hasOwnProperty(id)) {
         delete(this.colliders[id]);
-        console.log("Removed collider # " + id + " from CollisionManager.colliders");
+        //console.log("Removed collider # " + id + " from CollisionManager.colliders");
     } else {
         //throw new Error("Attempted to remove from CollisionManager.colliders an item (id # " + id + " that does not exist");
-        console.log("Attempted to remove from CollisionManager.colliders an item (id # " + id + " that does not exist. TODO investigate how this is happening (maybe quadtree insertion problems?)");
+        //console.log("Attempted to remove from CollisionManager.colliders an item (id # " + id + " that does not exist. TODO investigate how this is happening (maybe quadtree insertion problems?)");
     }
 };
 

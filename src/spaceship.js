@@ -380,18 +380,19 @@ function SpaceshipAI() {
     // The functions are members of this SpaceshipAI class -- each aiState obj will
     // store a reference to the function
 
-    this.aiStateDelayNextAction = { "priority": 2, "function": this.aiBehaviorDelayNextAction };    // TODO probably make this 0-level (highest) priority
-    this.aiStateSelectTarget = { "priority": 2, "function": this.aiBehaviorSelectTarget };
-    this.aiStateAlignToTarget = { "priority": 2, "function": this.aiBehaviorAlignToTarget };
-    this.aiStateThrustToTarget = { "priority": 2, "function": this.aiBehaviorThrustToTarget };
-    this.aiStateAttackTarget = { "priority": 2, "function": this.aiBehaviorAttackTarget };
-
-    this.aiStateAlignToEvadeThreat = { "priority": 1, "function": this.aiBehaviorAlignToEvadeThreat }; // TODO: write this function.. Same as AlignToTarget, but will use a different vector
-    this.aiStateThrustToEvadeThreat = { "priority": 1, "function": this.aiBehaviorThrustToEvadeThreat };  // TODO write this function.. essentially the same as ThrustToTarget, but with different transitions
+    this.aiStateDelayNextAction = { "priority": 0, "function": this.aiBehaviorDelayNextAction };
 
     // TODO write these functions, too
-    this.aiStateAlignToReduceVelocity = { "priority": 0, "function": this.aiBehaviorAlignToReduceVelocity };
-    this.aiStateThrustToReduceVelocity = { "priority": 0, "function": this.aiBehaviorThrustToReduceVelocity };
+    this.aiStateAlignToReduceVelocity = { "priority": 1, "function": this.aiBehaviorAlignToReduceVelocity };
+    this.aiStateThrustToReduceVelocity = { "priority": 1, "function": this.aiBehaviorThrustToReduceVelocity };
+
+    this.aiStateAlignToEvadeThreat = { "priority": 2, "function": this.aiBehaviorAlignToEvadeThreat }; // TODO: write this function.. Same as AlignToTarget, but will use a different vector
+    this.aiStateThrustToEvadeThreat = { "priority": 2, "function": this.aiBehaviorThrustToEvadeThreat };  // TODO write this function.. essentially the same as ThrustToTarget, but with different transitions
+
+    this.aiStateSelectTarget = { "priority": 3, "function": this.aiBehaviorSelectTarget };
+    this.aiStateAlignToTarget = { "priority": 3, "function": this.aiBehaviorAlignToTarget };
+    this.aiStateThrustToTarget = { "priority": 3, "function": this.aiBehaviorThrustToTarget };
+    this.aiStateAttackTarget = { "priority": 3, "function": this.aiBehaviorAttackTarget };
 
 }
 
@@ -400,6 +401,7 @@ SpaceshipAI.prototype.constructor = SpaceshipAI;
 
 SpaceshipAI.prototype.initialize = function(parentObj, knowledge) {
     // Set default state (a reference to the function itself, which is defined on the prototype)
+    console.log("Initializing AI. actionQueue: ", Object.assign({}, this.actionQueue));  // Make a copy of the queue because, by default, console.log() will echo a reference to the object, which is mutable (yuck!!! but we're debugging)
     this.defaultState = this.aiStateSelectTarget;
     this.parentObj = parentObj;
     this.knowledge = knowledge;
@@ -443,7 +445,10 @@ SpaceshipAI.prototype.dequeue = function() {
     // actions: pause, and then do some behavior
     // The pause state can be dequeued, leaving whatever the 2nd action was as the active
     // state.
-    this.actionQueue.shift();           // dequeue the current state/action/behavior
+    var behavior = this.actionQueue.shift();           // dequeue the current state/action/behavior
+    console.log("Dequeueing behavior: ", behavior);
+    console.log("actionQueue: ", Object.assign({}, this.actionQueue));
+
 };
 
 SpaceshipAI.prototype.enqueue = function(behavior) {
@@ -452,11 +457,15 @@ SpaceshipAI.prototype.enqueue = function(behavior) {
 
     if (this.actionQueue.length == 0) {
         // if the actionQueue is empty, simply push() the behavior onto the end
+        console.log("Inserting behavior at tail of queue: ", behavior);
         this.actionQueue.push(behavior);
+        console.log("actionQueue: ", Object.assign({}, this.actionQueue));
     } else if (behavior.priority < this.actionQueue[0].priority) {
         // Peek at the first item in the queue. If its priority level is higher than the incoming
         // behavior's, then we can simply insert the incoming behavior at the head of the queue
+        console.log("Inserting behavior at head of queue: ", behavior);
         this.actionQueue.unshift(behavior); // unshift() inserts one or more items at the front of an array
+        console.log("actionQueue: ", Object.assign({}, this.actionQueue));
     } else {
         // otherwise, we have to find a place to put the incoming behavior
         // (linear search.. can we do better?)
@@ -473,7 +482,9 @@ SpaceshipAI.prototype.enqueue = function(behavior) {
         // (the 0 in the 2nd parameter means "delete 0 items")
         // if the for loop (linear search) above didn't find a hit, then i will be the end of
         // the array. in that case, the splice() will be equivalent to push()
+        console.log("Inserting behavior at element " + i + ": ", behavior);
         this.actionQueue.splice(i, 0, behavior);
+        console.log("actionQueue: ", Object.assign({}, this.actionQueue));
     }
 };
 
@@ -542,7 +553,7 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
     parentShip.aiConfig["decisionLogic"].currVelAlignedToDesiredVel = this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignVelocityPursueThreshold"]);
 
     parentShip.aiConfig["decisionLogic"].alignedToEvadeVector = false;  // TODO compute
-    parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector = this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["aiVelCorrectDir"], parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]);
+    parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector = this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]);
     parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit = vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s > parentShip.aiConfig["aiMaxLinearVel"];
     parentShip.aiConfig["decisionLogic"].withinAttackRange = parentShip.aiConfig["aiSqrDistToTarget"] <= parentShip.aiConfig["aiSqrAttackDist"];
     parentShip.aiConfig["withinEvadeRange"] = false;    // TODO compute
@@ -689,17 +700,6 @@ SpaceshipAI.prototype.aiBehaviorAlignToTarget = function() {
     // First, check for any pre-empting conditions (i.e, manually test whether to switch to a
     // higher-priority/alarm behavior
 
-//    // TODO consider only pre-empting the thrust state with velocity correction. In theory, we only NEED to pre-empt thrust actions -- that's the only thing that can send us over the speed limit
-    if (vec2.len(parentShip.aiConfig["currVel"]) > 0 && parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector == false) {
-        // If current vel is not within an allowed deviation from the desired direction, correct it
-        // We're switching to a pre-empting behavior, so we simply enqueue it at the correct
-        // priority level, but we do not dequeue the current behavior
-        // (see SpaceshipAI.prototype.enqueue)
-        //this.enqueue(this.aiStateDelayNextAction);  // TODO probably make aiStateDelayNextAction the highest priority action (it always goes in front of the current action.. Maybe do some kind of test to make sure there aren't 2 in a row? Possibly move every other action level to one level lower-priority? Then uncomment this line?
-
-        this.enqueue(this.aiStateAlignToReduceVelocity);
-    }
-
     var target = parentShip.aiConfig["target"];
 
     if (target) {
@@ -743,10 +743,13 @@ SpaceshipAI.prototype.aiBehaviorAlignToTarget = function() {
 // Thrust to target
 SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
     var parentShip = this.parentObj;
-    if (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == true && parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector == false) {
-        //this.enqueue(this.aiStateDelayNextAction);  // TODO probably make aiStateDelayNextAction the highest priority action (it always goes in front of the current action.. Maybe do some kind of test to make sure there aren't 2 in a row? Possibly move every other action level to one level lower-priority? Then uncomment this line?
-        this.enqueue(this.aiStateAlignToReduceVelocity);
-    }
+
+    //// Test whether we're at max speed and need to correct velocity
+    //if (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == true && parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector == false) {
+    //    // Enqueue delay -- it's a highest-priority task, so it always goes to the head of the queue
+    //    //this.enqueue(this.aiStateDelayNextAction);    // TODO fix funky behavior due to priority-level queueing
+    //    this.enqueue(this.aiStateAlignToReduceVelocity);
+    //}
 
     // The thrust state can either engage or disengage thrust. 
     // Thrust is disengaged if the ship has reached its speed limit, but the AI will stay in this
@@ -757,7 +760,8 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
     // Do state/behavior update
     if (target) {
         // TODO maybe do the division by game.fixed_dt_s in updateDecisionLogic (where currVel is updated)
-        if (vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"]) {
+        //if (vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s <= parentShip.aiConfig["aiMaxLinearVel"]) {    // TODO delete this line?
+        if (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == false) {
             parentShip.enableThrust();
         } else {
             // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
@@ -797,10 +801,6 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
 // Attack a target (fire weapon)
 SpaceshipAI.prototype.aiBehaviorAttackTarget = function() {
     var parentShip = this.parentObj;
-    if (vec2.len(parentShip.aiConfig["currVel"]) > 0 && parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector == false) {
-        //this.enqueue(this.aiStateDelayNextAction);  // TODO probably make aiStateDelayNextAction the highest priority action (it always goes in front of the current action.. Maybe do some kind of test to make sure there aren't 2 in a row? Possibly move every other action level to one level lower-priority? Then uncomment this line?
-        this.enqueue(this.aiStateAlignToReduceVelocity);
-    }
 
     var target = parentShip.aiConfig["target"];
     if (target) {
@@ -833,7 +833,6 @@ SpaceshipAI.prototype.aiBehaviorAttackTarget = function() {
 
 SpaceshipAI.prototype.aiBehaviorDelayNextAction = function() {
     var parentShip = this.parentObj;
-
 
     // Note: when exiting this state, we do a simple dequeue. This state assumes it was enqueued
     // along with the state it is delaying, so dequeueing will leave the next state as active
@@ -868,25 +867,30 @@ SpaceshipAI.prototype.aiBehaviorDelayNextAction = function() {
 // thrust is applied
 SpaceshipAI.prototype.aiBehaviorAlignToReduceVelocity = function() {
     var parentShip = this.parentObj;
-    // Note: this state/behavior is a level-0 behavior (i.e. highest priority)
-    var angBtwn = MathUtils.angleBetween(parentShip.components["physics"].angleVec, parentShip.aiConfig["aiVelCorrectThreshold"]) * 180.0 / Math.PI;
+    
+    // If the ship is thrusting, stop it (entry action)
+    parentShip.disableThrust();
+
+    // Note: this state/behavior is a higher-level behavior than the "normal' select/pursue/attack target states
+    var angBtwn = MathUtils.angleBetween(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"]) * 180.0 / Math.PI;
+
 
     // Adjust turn/heading
-    if (angBtwn > parentShip.aiConfig["aiAlignHeadingThreshold"]) {
+    if (angBtwn > parentShip.aiConfig["aiVelCorrectThreshold"]) {
         // In the HTML5 Canvas coordinate system, a + rotation is to the right (as opposed to school/paper where pos rotation is to the left (i.e. from +x towards +y, which goes from facing right to facing up)
         // It might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
         parentShip.enableTurnRight();
-    } else if (angBtwn < -parentShip.aiConfig["aiAlignHeadingThreshold"]) {
+    } else if (angBtwn < -parentShip.aiConfig["aiVelCorrectThreshold"]) {
         parentShip.enableTurnLeft();
     } else {
         // NOTE: if you're here, you're aligned to target, ready to transition out of the state
         parentShip.disableTurn();
 
         // Transitions out of this state (there's really only 1 - thrust)
+        // TODO -- remove this condition? If you're in this state, the vel vector must be aligned "enough" with the desired vel
         if (parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector) {
             this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);
             this.enqueue(this.aiStateThrustToReduceVelocity);
-            // TODO 2018-05-07 - write the transitions into this state. 
         }
     }
 };

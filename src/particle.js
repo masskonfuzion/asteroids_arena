@@ -61,9 +61,9 @@ Particle.prototype.update = function(dt_s, config = null) {
 // Disable particle
 Particle.prototype.disable = function(transfer = null) {
     // TODO delete debug
-    if (this.constructor.name != "Particle") {
-        console.log("Disabling particle (alive = " + this.alive + ")", this);
-    }
+    //if (this.constructor.name != "Particle") {
+    //    console.log("Disabling particle (alive = " + this.alive + ")", this);
+    //}
 
     this.alive = false;
 
