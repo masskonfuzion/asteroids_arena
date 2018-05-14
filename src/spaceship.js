@@ -81,18 +81,19 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiConfig["aiHuntRadius"] = configObj.hasOwnProperty("aiHuntRadius") ? configObj["aiHuntRadius"] : null;
         this.aiConfig["aiMaxLinearVel"] = 50;
         this.aiConfig["aiMinVelCorrectThreshold"] = 10;    // Speed above which we still need to slow down
-        this.aiConfig["aiSqrAttackDist"] = Math.pow(140, 2);     // Squared distance within which a ship will attack a target
+        this.aiConfig["aiSqrAttackDist"] = Math.pow(200, 2);     // Squared distance within which a ship will attack a target
         this.aiConfig["aiSqrDistToTarget"] = 0;          // Current squared distance to target
         this.aiConfig["aiPrevSqrDistToTarget"] = 0;          // Prev squared distance to target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees
         this.aiConfig["aiVelCorrectDir"] = vec2.create();
         this.aiConfig["aiAlignHeadingThreshold"] = 5;     // Align-heading-towards-target threshold; a half-angle, in degrees
-        this.aiConfig["aiAlignVelocityPursueThreshold"] = 45;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
+        this.aiConfig["aiAlignVelocityPursueThreshold"] = 22;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["aiAlignVelocityDriftThreshold"] = 60;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["aiAlignVelocityCorrectThreshold"] = 5;     // Align-velocity-to-desired-direction threshold; a half-angle, in degrees
         this.aiConfig["target"] = null;
         this.aiConfig["vecToTargetPos"] = vec2.create();        // vec2 from ship position to target position
         this.aiConfig["currVel"] = vec2.create();
+        this.aiConfig["currVelDir"] = vec2.create();
         this.aiConfig["aiReflex"] = { "delayRange": {"min": 150, "max": 250},
                                       "delayInterval": 0,
                                       "currTimestamp": 0,
@@ -108,6 +109,7 @@ Spaceship.prototype.initialize = function(configObj) {
                                            "alignedToEvadeVector": false,
                                            "alignedToVelCorrectVector": false,
                                            "exceedingSpeedLimit": false,
+                                           "movingGenerallyTowardsTarget": false,
                                            "currVelAlignedToDesiredVel": false,
                                            "distToTargetIncreasing": false,
                                            "withinAttackRange": false,
@@ -503,6 +505,7 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
 
     // update current velocity (approximate... because of Verlet stuff)
     vec2.sub(parentShip.aiConfig["currVel"], parentShip.components["physics"].currPos, parentShip.components["physics"].prevPos);
+    vec2.normalize(parentShip.aiConfig["currVelDir"], parentShip.aiConfig["currVel"]);
 
     if (parentShip.aiConfig["target"]) {
         // NOTE: at this point, we've only established that the target object exists. But we have
@@ -552,6 +555,9 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
     // TODO consider pre-computing 180.0 / Math.PI and storing it in MathUtils
     parentShip.aiConfig["decisionLogic"].alignedToTargetVector = parentShip.aiConfig["target"] != null &&
                                                                  this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignHeadingThreshold"]);
+
+    parentShip.aiConfig["decisionLogic"].movingGenerallyTowardsTarget = parentShip.aiConfig["target"] != null &&
+                                                                        this.isVectorAligned(parentShip.aiConfig["currVelDir"], parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignVelocityPursueThreshold"]);
 
     parentShip.aiConfig["decisionLogic"].distToTargetIncreasing = parentShip.aiConfig["target"] != null &&
                                                                   (parentShip.aiConfig["aiSqrDistToTarget"] > parentShip.aiConfig["aiPrevSqrDistToTarget"]);
@@ -751,7 +757,7 @@ SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
     var parentShip = this.parentObj;
 
     // Test whether we're at max speed and need to correct velocity
-    if ( (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == true && parentShip.aiConfig["decisionLogic"].alignedToTargetVector == false) ||
+    if ( (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == true && parentShip.aiConfig["decisionLogic"].movingGenerallyTowardsTarget == false) ||
          parentShip.distToTargetIncreasing ) {
 
         // If the ship is thrusting, stop the thrust
