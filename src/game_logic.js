@@ -79,7 +79,6 @@ GameLogic.prototype.initialize = function() {
     this.shipDict[shipRef.objectID] = "ship0";
 
 
-    /* -------- TODO uncomment this section: Miner ship
     this.addGameObject("ship1", new Spaceship());
     shipRef = this.gameObjs["ship1"];
 
@@ -103,7 +102,6 @@ GameLogic.prototype.initialize = function() {
 
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship1";
-    */
 
 
     this.addGameObject("ship2", new Spaceship());
@@ -138,12 +136,10 @@ GameLogic.prototype.initialize = function() {
     }
 
 
-    /* TODO uncomment asteroid manager
     // ----- Initialize Asteroid Manager
     this.addGameObject("astMgr", new AsteroidManager());
     var astMgrRef = this.gameObjs["astMgr"];
     astMgrRef.initialize(1, 64);
-    */
 
     // ----- Initialize Arena
     this.addGameObject("arena", new Arena());
