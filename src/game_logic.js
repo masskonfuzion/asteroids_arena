@@ -114,7 +114,7 @@ GameLogic.prototype.initialize = function() {
                       "isAI": true,
                       "knowledge": this,
                       "aiProfile": "hunter",
-                      "aiHuntRadius": 600
+                      "aiHuntRadius": 800
                     };
     // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);

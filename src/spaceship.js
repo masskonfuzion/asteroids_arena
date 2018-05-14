@@ -80,9 +80,10 @@ Spaceship.prototype.initialize = function(configObj) {
         this.aiConfig["aiProfile"] = configObj.hasOwnProperty("aiProfile") ? configObj["aiProfile"] : "miner";  // default to miner behavior profile if we forget to specify
         this.aiConfig["aiHuntRadius"] = configObj.hasOwnProperty("aiHuntRadius") ? configObj["aiHuntRadius"] : null;
         this.aiConfig["aiMaxLinearVel"] = 50;
-        this.aiConfig["aiVelCorrectThreshold"] = 10;    // Speed above which we still need to slow down
+        this.aiConfig["aiMinVelCorrectThreshold"] = 10;    // Speed above which we still need to slow down
         this.aiConfig["aiSqrAttackDist"] = Math.pow(140, 2);     // Squared distance within which a ship will attack a target
         this.aiConfig["aiSqrDistToTarget"] = 0;          // Current squared distance to target
+        this.aiConfig["aiPrevSqrDistToTarget"] = 0;          // Prev squared distance to target
         this.aiConfig["aiFireHalfAngle"] = 3;           // degrees
         this.aiConfig["aiVelCorrectDir"] = vec2.create();
         this.aiConfig["aiAlignHeadingThreshold"] = 5;     // Align-heading-towards-target threshold; a half-angle, in degrees
@@ -108,6 +109,7 @@ Spaceship.prototype.initialize = function(configObj) {
                                            "alignedToVelCorrectVector": false,
                                            "exceedingSpeedLimit": false,
                                            "currVelAlignedToDesiredVel": false,
+                                           "distToTargetIncreasing": false,
                                            "withinAttackRange": false,
                                            "withinEvadeRange": false
                                          };
@@ -520,6 +522,7 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
             vec2.normalize(parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["vecToTargetPos"]);
 
             // Update Squared dist to target
+            parentShip.aiConfig["aiPrevSqrDistToTarget"] = parentShip.aiConfig["aiSqrDistToTarget"];
             parentShip.aiConfig["aiSqrDistToTarget"] = vec2.sqrDist(parentShip.components["physics"].currPos, target.components["physics"].currPos);
         }
         else {
@@ -531,9 +534,9 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
 
     // Update the velocity correction dir vector. For now, we'll naively just choose the
     // inverse of the ship's heading. 
-
-    if (this.actionQueue[0] && this.actionQueue[0].priority != 0) {
-        // When the current behavior's priority is NOT level 0 (highest), we are in some state
+    if (this.actionQueue[0] && this.actionQueue[0].priority > this.aiStateThrustToReduceVelocity.priority) {
+        // When the current behavior's priority is NOT the same as the align/thrust to reduce
+        // velocity actions, we are in some state
         // not related to correcting velocity. In those cases, we want to update aiVelCorrectDir.
         // But if we're in one of those states (align-to-vel-correction-dir or
         // thrust-to-reduce-vel, we don't want to update; we want that value to stay what it is
@@ -550,10 +553,13 @@ SpaceshipAI.prototype.updateDecisionLogic = function() {
     parentShip.aiConfig["decisionLogic"].alignedToTargetVector = parentShip.aiConfig["target"] != null &&
                                                                  this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignHeadingThreshold"]);
 
+    parentShip.aiConfig["decisionLogic"].distToTargetIncreasing = parentShip.aiConfig["target"] != null &&
+                                                                  (parentShip.aiConfig["aiSqrDistToTarget"] > parentShip.aiConfig["aiPrevSqrDistToTarget"]);
+
     parentShip.aiConfig["decisionLogic"].currVelAlignedToDesiredVel = this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignVelocityPursueThreshold"]);
 
     parentShip.aiConfig["decisionLogic"].alignedToEvadeVector = false;  // TODO compute
-    parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector = this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"], parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]);
+    parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector = this.isVectorAligned(parentShip.components["physics"].angleVec, parentShip.aiConfig["aiVelCorrectDir"], parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]);
     parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit = vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s > parentShip.aiConfig["aiMaxLinearVel"];
     parentShip.aiConfig["decisionLogic"].withinAttackRange = parentShip.aiConfig["aiSqrDistToTarget"] <= parentShip.aiConfig["aiSqrAttackDist"];
     parentShip.aiConfig["withinEvadeRange"] = false;    // TODO compute
@@ -744,12 +750,18 @@ SpaceshipAI.prototype.aiBehaviorAlignToTarget = function() {
 SpaceshipAI.prototype.aiBehaviorThrustToTarget = function() {
     var parentShip = this.parentObj;
 
-    //// Test whether we're at max speed and need to correct velocity
-    //if (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == true && parentShip.aiConfig["decisionLogic"].alignedToVelCorrectVector == false) {
-    //    // Enqueue delay -- it's a highest-priority task, so it always goes to the head of the queue
-    //    //this.enqueue(this.aiStateDelayNextAction);    // TODO fix funky behavior due to priority-level queueing
-    //    this.enqueue(this.aiStateAlignToReduceVelocity);
-    //}
+    // Test whether we're at max speed and need to correct velocity
+    if ( (parentShip.aiConfig["decisionLogic"].exceedingSpeedLimit == true && parentShip.aiConfig["decisionLogic"].alignedToTargetVector == false) ||
+         parentShip.distToTargetIncreasing ) {
+
+        // If the ship is thrusting, stop the thrust
+        parentShip.disableThrust();
+
+        // Enqueue delay -- it's a highest-priority task, so it always goes to the head of the queue
+        //this.dequeueCurrentEnqueueNew(this.aiStateDelayNextAction);   // TODO reinstate when ready
+        this.enqueue(this.aiStateAlignToReduceVelocity);
+        return;     // Exit early because we've been pre-empted
+    }
 
     // The thrust state can either engage or disengage thrust. 
     // Thrust is disengaged if the ship has reached its speed limit, but the AI will stay in this
@@ -868,19 +880,15 @@ SpaceshipAI.prototype.aiBehaviorDelayNextAction = function() {
 SpaceshipAI.prototype.aiBehaviorAlignToReduceVelocity = function() {
     var parentShip = this.parentObj;
     
-    // If the ship is thrusting, stop it (entry action)
-    parentShip.disableThrust();
-
     // Note: this state/behavior is a higher-level behavior than the "normal' select/pursue/attack target states
-    var angBtwn = MathUtils.angleBetween(parentShip.components["physics"].angleVec, parentShip.aiConfig["vecToTargetPos"]) * 180.0 / Math.PI;
-
+    var angBtwn = MathUtils.angleBetween(parentShip.components["physics"].angleVec, parentShip.aiConfig["aiVelCorrectDir"]) * 180.0 / Math.PI;
 
     // Adjust turn/heading
-    if (angBtwn > parentShip.aiConfig["aiVelCorrectThreshold"]) {
+    if (angBtwn > parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]) {
         // In the HTML5 Canvas coordinate system, a + rotation is to the right (as opposed to school/paper where pos rotation is to the left (i.e. from +x towards +y, which goes from facing right to facing up)
         // It might be worth (at some point? if I feel like it?) renaming enableTurnRight/Left to enableTurnPos/Neg
         parentShip.enableTurnRight();
-    } else if (angBtwn < -parentShip.aiConfig["aiVelCorrectThreshold"]) {
+    } else if (angBtwn < -parentShip.aiConfig["aiAlignVelocityCorrectThreshold"]) {
         parentShip.enableTurnLeft();
     } else {
         // NOTE: if you're here, you're aligned to target, ready to transition out of the state
@@ -910,7 +918,7 @@ SpaceshipAI.prototype.aiBehaviorThrustToReduceVelocity = function() {
     // so we simply dequeue it and resume from whatever state was active before the pre-emption.
 
     var parentShip = this.parentObj;
-    if (vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s >= parentShip.aiConfig["aiMaxLinearVel"]) {
+    if (vec2.len(parentShip.aiConfig["currVel"]) / game.fixed_dt_s >= parentShip.aiConfig["aiMinVelCorrectThreshold"]) {
         parentShip.enableThrust();
     } else {
         // If ship heading is within an acceptable offset from shipToTarget, then disableThrust and just drift
