@@ -39,6 +39,8 @@ GameLogic.prototype.initialize = function() {
                                                "death": -100
                                              };
 
+    // Begin initializing game subsystems. Note that the order of operations is important
+
     // ----- Initialize collision manager
     // NOTE: Collision Manager is initialized first, so that other items can access it and register their collision objects with it
     this.addCollisionManager();
@@ -54,6 +56,16 @@ GameLogic.prototype.initialize = function() {
     this.addGameObject("bulletMgr", new BulletManager());
     var bulletMgrRef = this.gameObjs["bulletMgr"];
     bulletMgrRef.initialize(256);
+
+    // ----- Initialize Arena
+    this.addGameObject("arena", new Arena());
+    var arenaRef = this.gameObjs["arena"];
+    arenaRef.initialize();
+
+    // ----- Initialize Asteroid Manager
+    this.addGameObject("astMgr", new AsteroidManager());
+    var astMgrRef = this.gameObjs["astMgr"];
+    astMgrRef.initialize(1, 32);
 
     // ----- Initialize spaceships
     // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
@@ -79,6 +91,7 @@ GameLogic.prototype.initialize = function() {
     this.shipDict[shipRef.objectID] = "ship0";
 
 
+    /*
     this.addGameObject("ship1", new Spaceship());
     shipRef = this.gameObjs["ship1"];
 
@@ -127,6 +140,7 @@ GameLogic.prototype.initialize = function() {
 
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship2";
+    */
 
 
     // Create score keeping object
@@ -134,17 +148,6 @@ GameLogic.prototype.initialize = function() {
         var shipName = this.shipDict[shipIDKey];
         this.gameStats[shipName] = new GameScoresAndStats();
     }
-
-
-    // ----- Initialize Asteroid Manager
-    this.addGameObject("astMgr", new AsteroidManager());
-    var astMgrRef = this.gameObjs["astMgr"];
-    astMgrRef.initialize(1, 32);
-
-    // ----- Initialize Arena
-    this.addGameObject("arena", new Arena());
-    var arenaRef = this.gameObjs["arena"];
-    arenaRef.initialize();
 
 };
 
