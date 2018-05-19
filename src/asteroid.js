@@ -30,11 +30,6 @@ Asteroid.prototype.setSize = function(size) {
 
 // Disable asteroid
 Asteroid.prototype.disable = function(transfer = null) {
-    // TODO delete debug
-    //if (this.constructor.name != "Asteroid") {
-    //    console.log("Disabling particle (alive = " + this.alive + ")", this);
-    //}
-
     this.alive = false;
 
     var myCollider = this.components["collision"];

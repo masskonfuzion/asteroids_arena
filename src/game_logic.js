@@ -91,7 +91,6 @@ GameLogic.prototype.initialize = function() {
     this.shipDict[shipRef.objectID] = "ship0";
 
 
-    /*
     this.addGameObject("ship1", new Spaceship());
     shipRef = this.gameObjs["ship1"];
 
@@ -140,7 +139,6 @@ GameLogic.prototype.initialize = function() {
 
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship2";
-    */
 
 
     // Create score keeping object
@@ -395,6 +393,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
     var gameObjBType = msg.colliderB.parentObj.constructor.name;
 
     // TODO Possibly restructure collision event if/then cases into their own individual function calls; maybe use function callbacks
+    // TODO put some data into collision objects to determine which objects should collide with which others. Objects certain types might not need to collide with each other (e.g. arena walls with other arena walls; bullets fired by a ship with the ship itself)
 
     var cmdMsg = {}
 
@@ -415,6 +414,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         // The collision can only count if the spaceship is both alived and "enabled" (i.e., not in the middle of a respawn)
         if (spaceshipRef.ableState == SpaceshipAbleStateEnum.enabled) {
             var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
+            // TODO hmmm..... initialize fragRefDir
 
             // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
             // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the GameLogic obj, so the caller can simply put the GameCommand out
@@ -447,10 +447,6 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             bulletRef = msg.colliderA.parentObj;
         }
 
-        var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
-        vec2.sub(fragRefDir, bulletRef.components["physics"].currPos, bulletRef.components["physics"].prevPos);         // make the fragment ref dir the bullet's velocity dir
-        vec2.normalize(fragRefDir, fragRefDir);
-
         // NOTE: We have to increment players' scores before destroying the bullets
         var shooterObjectID = this.lookupObjectID(bulletRef.emitterID, "Spaceship");
         // TODO keep scores for all the ships, including computer-controlled
@@ -467,6 +463,18 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                 break;
         }
 
+        var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
+        vec2.sub(fragRefDir, bulletRef.components["physics"].currPos, bulletRef.components["physics"].prevPos);         // make the fragment ref dir the bullet's velocity dir
+        vec2.normalize(fragRefDir, fragRefDir);
+
+        // Disable bullet first (before doing any asteroid disabling stuff. This is to get the bullet "off the books" so it doesn't factor into the any asteroid interactions
+        cmdMsg = { "topic": "GameCommand",
+                   "command": "disableBullet",
+                   "targetObj": this.gameObjs["bulletMgr"],
+                   "params": { "bulletToDisable": bulletRef }
+                 };
+        this.messageQueue.enqueue(cmdMsg);
+
 
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
         cmdMsg = { "topic": "GameCommand",
@@ -476,17 +484,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                "numToSpawn": 2,
                                "fragRefDir": fragRefDir }
                  };
-
         this.messageQueue.enqueue(cmdMsg);  // NOTE: we enqueue here, and not in the next outer scope because we only want to enqueue a message onto the message queue if an actionable collision occurred
-
-        cmdMsg = { "topic": "GameCommand",
-                   "command": "disableBullet",
-                   "targetObj": this.gameObjs["bulletMgr"],
-                   "params": { "bulletToDisable": bulletRef }
-                 };
-
-        this.messageQueue.enqueue(cmdMsg);
-
 
     } else if (gameObjAType == "Bullet" && gameObjBType == "Spaceship" || gameObjBType == "Bullet" && gameObjAType == "Spaceship") {
         var bulletRef = null;
@@ -590,6 +588,7 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
 
     var spawnPosIsValid = false;
 
+    // TODO process banned locations - see AsteroidManager
     while (!spawnPosIsValid) {
 
         var spawnPos = vec2.create();

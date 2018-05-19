@@ -20,8 +20,8 @@ function AsteroidManager () {
     this.collisionMgrRef = null;
 
     // REPLACE ALL THIS NONSENSE (note: we're pretty much copying from particle_emitter.js.. But Asteroids should not be particles
-    this.asteroidSpawnParams = { "minSpeed": 5.0,
-                                 "maxSpeed": 15.0
+    this.asteroidSpawnParams = { "minSpeed": 3.0,
+                                 "maxSpeed": 9.0
                                }
 }
 
@@ -43,7 +43,7 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
     this.collisionMgrRef = this.parentObj.collisionMgr;
 
     // Spawn some Asteroids, taking "banned locations" into account
-    var bannedLocations = this.createBannedLocationsList(150);  // The parameter is the radius from each banned location, within which asteroids cannot be spawned
+    var bannedLocations = this.createBannedLocationsList(70);  // The parameter is the radius from each banned location, within which asteroids cannot be spawned
     for (var i = 0; i < initAsteroids; i++) {
         // Note the "funcCalls" property - "params" is a list that, when passed into a function.apply() call, is "splatted" into individual parameters, similar to Python *args
         var configObj = { "renderCompType": "image",
@@ -54,26 +54,24 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
         // Spawn an asteroid with the given config. Note that the config tells the asteroid which image to use for its render component
         // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
         this.spawnNewAsteroid(game.fixed_dt_s, configObj);
-        this.activeAsteroids[2] += 1;  // Track # of active asteroids (when an asteroid is initialized, it is size 2 (large))
     }
 };
 
 AsteroidManager.prototype.update = function(dt_s, config = null) {
+    var freeSpacesNeeded = this.activeAsteroids[2] * 4 + this.activeAsteroids[1] * 2 + this.activeAsteroids[0];
+    // freeSpacesNeeded is like a "reservation" for the number of array slots needed to store all possible asteroids/fragments that could come from 1 asteroid
     // 4 is a magic number -- the # of asteroids that can possibly result from shooting 1 large asteroid
-    var freeSpacesNeeded = this.activeAsteroids[2] * 4 + this.activeAsteroids[1] * 2;
     var totalAsteroids = this.activeAsteroids[2] + this.activeAsteroids[1] + this.activeAsteroids[0];
-    if (this.maxAsteroids - totalAsteroids > freeSpacesNeeded) {
-        // NOTE: the asteroid spawning in this function will occur when asteroids are destroyed because they left the arena
+    if (this.maxAsteroids - freeSpacesNeeded >= 4) {
         // TODO add some kind of level manager? (i.e. max # of asteroids that will be spawned in this level? Or, otherwise make this game a pure deathmatch, ending when ships are destroyed? Or, just play for time? I don't know what this game should be)
 
-        var bannedLocations = this.createBannedLocationsList(150);
+        var bannedLocations = this.createBannedLocationsList(70);
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
                           "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ],
                           "bannedLocations": bannedLocations
                         };
         this.spawnNewAsteroid(dt_s, configObj);
-        this.activeAsteroids[2] += 1;  // Track # of active asteroids (when an asteroid is initialized, it is size 2 (large))
     }
 
     // Iterate over all asteroids and call update
@@ -117,6 +115,7 @@ AsteroidManager.prototype.disableAsteroids = function(params) {
         // NOTE: Another (better?) way to particles access to the collision manager that manages their colliders is to simply give the particles a reference to the particle system they belong to
         astToDisable.disable( {"collisionMgrRef": this.collisionMgrRef} ); 
         this.activeAsteroids[astToDisable.size] -= 1;
+        if (this.activeAsteroids[astToDisable.size] < 0) { throw new Error("activeAsteroids reached negative count"); }
         // TODO trigger a particle explosion
     }
 };
@@ -139,18 +138,20 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
 
         // Note: there should be as many launchData items as params.numToSpawn  // TODO maybe launchData should be passed in?
         // NOTE: we/re dividing the velocity multiplier by game.fixed_dt_s because in this computation, we're dealing with velocity over 1 frame; the physicsComponent's setPosAndVel function assumes we're working with velocity over a full second, so we're dividing by dt, to compensate
-        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 40},
-                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 40} ];
+        // We use 25 for posMult to create an offset far enough so that the 2 newly spawned asteroid fragments aren't colliding with each other
+        var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 25},
+                           { "ang": glMatrix.toRadian(-45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 25} ];
 
         // Disable asteroid
         astToDisable.disable({"collisionMgrRef": this.collisionMgrRef});
         this.activeAsteroids[astToDisable.size] -= 1;
+        if (this.activeAsteroids[astToDisable.size] < 0) { throw new Error("activeAsteroids reached negative count"); }
 
-        var bannedLocations = this.createBannedLocationsList(150);
+        var bannedLocations = this.createBannedLocationsList(70);
         // TODO trigger a particle explosion
         if (astToDisable.size > 0) {
             var newSize = astToDisable.size - 1;
-            var newSizeStr = this.asteroidSizeMap[astToDisable.size - 1];
+            var newSizeStr = this.asteroidSizeMap[newSize];
 
             for (var i = 0; i < params.numToSpawn; i++) {
                 // Compute launch data based on asteroid velocity
@@ -175,7 +176,6 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
                                 };
 
                 this.spawnNewAsteroid(game.fixed_dt_s, configObj);
-                this.activeAsteroids[newSize] += 1;
                 // Notes about the configObj:
                 // Because the images are already loaded by the ImageManager (in the GameLogic object), all we have to do is reference it
                 // Also note: this approach requires the ParticleSystem to be configured to create Particles with an image/sprite render component
@@ -332,6 +332,7 @@ AsteroidManager.prototype.spawnNewAsteroid = function(dt_s, config) {
 
         newAsteroid.alive = true;
         newAsteroid.autoExpire = false;    // TODO evaluate -- might not need autoExpire anymore
+        this.activeAsteroids[newAsteroid.size] += 1;
 
         // Compute a launch velocity (don't use Math.floor() because we want floating point results
         var launchVel = vec2.create();
@@ -362,12 +363,12 @@ AsteroidManager.prototype.getAvailableAsteroidFromPool = function() {
     var i = (this.lastUsedIndex + 1) % this.asteroids.length;
 
     while (this.asteroids[i].alive) {
+        i = (i + 1) % this.asteroids.length;
         if (i == this.lastUsedIndex) {
             // If we're here, then every asteroid in the pool is currently active
             return null;
         }
     }
-    i = (i + 1) % this.asteroids.length;
 
     this.lastUsedIndex = i;
     return this.asteroids[i];
