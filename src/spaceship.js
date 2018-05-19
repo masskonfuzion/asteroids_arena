@@ -821,7 +821,11 @@ SpaceshipAI.prototype.aiBehaviorAttackTarget = function() {
 
     var target = parentShip.aiConfig["target"];
     if (target) {
-        parentShip.enableFireA();   // TODO add secondary weapons?
+
+        // Allow the spaceship to fire only if it is "enabled" (i.e. not currently in the spawning/recovery state)
+        if (parentShip.ableState == SpaceshipAbleStateEnum.enabled) {
+            parentShip.enableFireA();   // TODO add secondary weapons?
+        }
 
         // Transitions
         if (parentShip.aiConfig["decisionLogic"].alignedToTargetVector) {
