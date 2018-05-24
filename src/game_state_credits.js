@@ -3,7 +3,7 @@ function GameStateCredits() {
     this.uiItems = [];
 
     // TODO maybe keep a 2nd list of "selectable UI items". Then, change the uiItems.push call into a call that encapsulates adding the item to the displayable UI items list, vs the selectable UI items list. (i.e., some items are meant to be displayed only)
-    this.uiItems.push( new uiItemText("Mass KonFuzion did everything...", "32px", "MenuFont", "white", 0.5, 0.75, "center", "middle") );  // Currently, stateName is the name of the state obj (var) in the global scope
+    this.uiItems.push( new uiItemText("Mass KonFuzion did everything...", "32px", "MenuFont", "white", 0.5, 0.72, "center", "middle") );  // Currently, stateName is the name of the state obj (var) in the global scope
     this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 
     this.activeItemIndex = 0;

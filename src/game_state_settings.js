@@ -1,17 +1,9 @@
-function GameStateHowToPlay() {
+function GameStateSettings() {
     GameStateBase.call(this);
     this.uiItems = [];
 
     // TODO maybe keep a 2nd list of "selectable UI items". Then, change the uiItems.push call into a call that encapsulates adding the item to the displayable UI items list, vs the selectable UI items list. (i.e., some items are meant to be displayed only). And/or implement other UI items (i.e., pictures)
-    this.uiItems.push( new uiItemText("Controls", "32px", "MenuFont", "white", 0.3, 0.10, "center", "middle") );
-    this.uiItems.push( new uiItemText("W: Thrust", "28px", "MenuFont", "white", 0.5, 0.16, "center", "middle") );
-    this.uiItems.push( new uiItemText("A: Turn left", "28px", "MenuFont", "white", 0.5, 0.22, "center", "middle") );
-    this.uiItems.push( new uiItemText("D: Turn right", "28px", "MenuFont", "white", 0.5, 0.28, "center", "middle") );
-    this.uiItems.push( new uiItemText("L Shift: Fire", "28px", "MenuFont", "white", 0.5, 0.34, "center", "middle") );
-    this.uiItems.push( new uiItemText("Objectives", "32px", "MenuFont", "white", 0.3, 0.5, "center", "middle") );
-    this.uiItems.push( new uiItemText("Blow up the most stuff", "28px", "MenuFont", "white", 0.5, 0.56, "center", "middle") );
-    this.uiItems.push( new uiItemText("Score the most points", "28px", "MenuFont", "white", 0.5, 0.62, "center", "middle") );
-    this.uiItems.push( new uiItemText("Win", "28px", "MenuFont", "white", 0.5, 0.68, "center", "middle") );
+    this.uiItems.push( new uiItemText("TBD / Still TODO", "32px", "MenuFont", "white", 0.5, 0.5, "center", "middle") );
     this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 
     this.activeItemIndex = 0;
@@ -21,10 +13,10 @@ function GameStateHowToPlay() {
 
 }
 
-GameStateHowToPlay.prototype = Object.create(GameStateBase.prototype);
-GameStateHowToPlay.prototype.constructor = GameStateHowToPlay;
+GameStateSettings.prototype = Object.create(GameStateBase.prototype);
+GameStateSettings.prototype.constructor = GameStateSettings;
 
-GameStateHowToPlay.prototype.initialize = function(transferObj = null) {
+GameStateSettings.prototype.initialize = function(transferObj = null) {
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
@@ -33,10 +25,10 @@ GameStateHowToPlay.prototype.initialize = function(transferObj = null) {
     this.activeItem = this.uiItems[this.activeItemIndex];
 };
 
-GameStateHowToPlay.prototype.cleanup = function() {
+GameStateSettings.prototype.cleanup = function() {
 };
 
-GameStateHowToPlay.prototype.render = function(canvasContext, dt_s) {
+GameStateSettings.prototype.render = function(canvasContext, dt_s) {
     canvasContext.save();
     canvasContext.setTransform(1,0,0,1,0,0);    // Reset transformation (similar to OpenGL loadIdentity() for matrices)
 
@@ -64,11 +56,11 @@ GameStateHowToPlay.prototype.render = function(canvasContext, dt_s) {
     canvasContext.restore();
 };
 
-GameStateHowToPlay.prototype.postRender = function(canvasContext, dt_s) {
+GameStateSettings.prototype.postRender = function(canvasContext, dt_s) {
     this.processMessages(dt_s);
 };
 
-GameStateHowToPlay.prototype.handleKeyboardInput = function(evt) {
+GameStateSettings.prototype.handleKeyboardInput = function(evt) {
     if (evt.type == "keydown") {
         // haven't decided what (if anything) to do on keydown
     } else if (evt.type == "keyup") {
@@ -94,7 +86,7 @@ GameStateHowToPlay.prototype.handleKeyboardInput = function(evt) {
 };
 
 
-GameStateHowToPlay.prototype.processMessages = function(dt_s) {
+GameStateSettings.prototype.processMessages = function(dt_s) {
     // dt_s is not used specifically by processMessages, but is passed in in case functions called by processMessages need it
     //console.log('MessageQueue has ' + this.messageQueue.numItems() + ' items in it');
 
@@ -115,7 +107,7 @@ GameStateHowToPlay.prototype.processMessages = function(dt_s) {
 };
 
 
-GameStateHowToPlay.prototype.doUICommand = function(msg) {
+GameStateSettings.prototype.doUICommand = function(msg) {
     // Take action on a message with topic, "UICommand"
     // UICommand messages contain a command, a targetObj (i.e. who's going to execute the command), and a params list
     // The command is most likely to call a function. This is not quite a function callback, because we are not storing a pre-determined function ptr

@@ -6,10 +6,9 @@ function GameStateMainMenu() {
 
     // NOTE: game is a global object
     this.uiItems.push( new uiItemText("Play Game", "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "Playing"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
-    this.uiItems.push( new uiItemText("Settings", "32px", "MenuFont", "white", 0.5, 0.55, "center", "middle") );
+    this.uiItems.push( new uiItemText("Settings", "32px", "MenuFont", "white", 0.5, 0.55, "center", "middle", {"command": "changeState", "params": {"stateName": "Settings"}}) );
     this.uiItems.push( new uiItemText("How to Play", "32px", "MenuFont", "white", 0.5, 0.65, "center", "middle", {"command": "changeState", "params": {"stateName": "HowToPlay"}}) );
     this.uiItems.push( new uiItemText("Credits", "32px", "MenuFont", "white", 0.5, 0.75, "center", "middle", {"command": "changeState", "params": {"stateName": "Credits"}}) );
-    this.uiItems.push( new uiItemText("Quit", "32px", "MenuFont", "white", 0.5, 0.85, "center", "middle") );
 
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
