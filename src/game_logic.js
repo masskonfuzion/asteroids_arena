@@ -70,7 +70,7 @@ GameLogic.prototype.initialize = function() {
 
     var xplodPERef = this.components["xplodPE"];
     xplodPERef.registerParticleSystem(this.gameObjs["xplodPS"]);
-    xplodPERef.setVelocityRange(40.0, 60.0);
+    xplodPERef.setVelocityRange(10.0, 80.0);
     xplodPERef.setTTLRange(0.5, 1.0);         // seconds
     xplodPERef.setLaunchDir(1.0, 0.0);        // launch base dir is the vector [1,0]
     xplodPERef.setAngleRange(0.0, 359.0);     // rotate the base launch dir by some amount
@@ -719,9 +719,12 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
             continue;
         }
 
-        // Set the position of the query object (e.g. a Spaceship)
+        // Set the spawnAtPos of the query object (e.g. a Spaceship)
+        //vec2.set(queryObj.spawnAtPos, spawnPos[0], spawnPos[1]);
+
         var physComp = queryObj.components["physics"];
         physComp.setPosition(spawnPos[0], spawnPos[1]);
+        // Note: we don't set the position just yet; instead we set the spawnAtPos. The spaceship will set its own position after a short pause
         physComp.setAcceleration(0, 0);
         physComp.angle = 0.0;
 
@@ -775,8 +778,9 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
         queryObj.resetAI();
     }
 
-    // Set the "queryObj's" ableState to spawning
-    queryObj.ableState = SpaceshipAbleStateEnum.spawning;
+    // Set the "queryObj's" ableState to preSpawn
+    //queryObj.ableState = SpaceshipAbleStateEnum.preSpawn;
+    queryObj.ableState = SpaceshipAbleStateEnum.postSpawn;
     queryObj.resetSpawnClock();
 }
 
