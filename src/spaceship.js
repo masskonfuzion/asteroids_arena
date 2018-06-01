@@ -1,7 +1,6 @@
 var SpaceshipAbleStateEnum = { "disabled": 0,
                                "enabled": 1,
-                               "preSpawn": 2,
-                               "postSpawn": 3
+                               "spawning": 2
                              };
 
 var ReflexDelayStateEnum = { "notstarted": 0,
@@ -37,9 +36,9 @@ function Spaceship() {
 
 
     this.fireAState = false;        // To be used in AI/logic or whatever, to tell the game that this spaceship is firing its guns
-    this.ableState = SpaceshipAbleStateEnum.enabled;
+    this.ableState = SpaceshipAbleStateEnum.disabled;
     this.spawnGracePd_s = 2;    // spawn grace period, in seconds
-    this.spawnClock = 0;        // time remaining during preSpawn/postSpawn abaleStates, before switching to fully enabled
+    this.spawnClock = 0;        // time remaining during spawning abaleState, before switching to fully enabled
 
     // Populate the command map (this.commandMap is part of the GameObject base class, which this Spaceship derives from)
     this.commandMap["setThrustOn"] = this.enableThrust;
@@ -53,7 +52,6 @@ function Spaceship() {
     this.aiControlled = false;
     this.aiConfig = {};
     this.aiNearestObj = [];
-    this.spawnAtPos = vec2.create();    // Store the spawn location to be used after a death (given to us by teh gameLogic object
 }
 
 
@@ -70,7 +68,7 @@ Spaceship.prototype.initialize = function(configObj) {
     // NOTE: can't set particle emitter IDs in the constructor because the objectID for this object has not been set at that point
     this.components["gunPE"].setEmitterID(this.constructor.name + this.objectID.toString() + "." + "gunPE");
 
-    this.ableState = SpaceshipAbleStateEnum.postSpawn;
+    this.ableState = SpaceshipAbleStateEnum.spawning;
     this.resetSpawnClock();
 
     if(configObj.hasOwnProperty("isAI") && true == configObj["isAI"]) {
@@ -141,22 +139,6 @@ Spaceship.prototype.update = function(dt_s, config = null) {
     //    }
     //}
 
-    /////// If in preSpawn state, literally do nothing (the ship just got blown up. We're taking a break)
-    /////if (this.ableState == SpaceshipAbleStateEnum.preSpawn) {
-    /////    // A short delay where nothing (literally nothing) happens
-    /////    this.spawnClock -= dt_s;
-
-    /////    if (this.spawnClock <= 0) {
-    /////        this.resetSpawnClock();
-    /////        // Set new position, and switch to postSpawn
-    /////        this.components["physics"].setPosition(this.spawnAtPos[0], this.spawnAtPos[1]);
-    /////        this.ableState = SpaceshipAbleStateEnum.postSpawn;
-    /////    }
-
-    /////    // The return is the key -- exit the function before any other updates can happen
-    /////    return;
-    /////}
-
     // Iterate over all components and call their respective update() function
     for (var compName in this.components) {
         if (this.components.hasOwnProperty(compName)) {
@@ -222,8 +204,8 @@ Spaceship.prototype.update = function(dt_s, config = null) {
     }
 
 
-    // If in postSpawn state, the ship is "partially enabled", except collisions are not processed (see game_logic.js)
-    if (this.ableState == SpaceshipAbleStateEnum.postSpawn) {
+    // If in spawning state, the ship is "partially enabled", except collisions are not processed (see game_logic.js)
+    if (this.ableState == SpaceshipAbleStateEnum.spawning) {
         this.spawnClock -= dt_s;
 
         if (this.spawnClock <= 0) {
@@ -256,7 +238,7 @@ Spaceship.prototype.draw = function(canvasContext) {
     canvasContext.restore(); // similar to glPopMatrix
 
     // Draw an indicator if the ship is protected, because it just respawned
-    if (this.ableState == SpaceshipAbleStateEnum.postSpawn) {
+    if (this.ableState == SpaceshipAbleStateEnum.spawning) {
         // draw a circle
         canvasContext.strokeStyle = "yellow";
         canvasContext.lineWidth = 1;

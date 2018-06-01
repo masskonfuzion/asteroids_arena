@@ -710,6 +710,7 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
     var spawnPosIsValid = false;
 
     while (!spawnPosIsValid) {
+        // TODO rework this loop so we only generate positions; then, once we have a valid position, do all of the various assignments
 
         var spawnPos = vec2.create();
         vec2.set(spawnPos, Math.floor(Math.random() * 700) + 50, Math.floor(Math.random() * 300) + 50);   // TODO don't hardcode these values. Instead, maybe take in min/max x/y, based on arena dimensions
@@ -719,12 +720,8 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
             continue;
         }
 
-        // Set the spawnAtPos of the query object (e.g. a Spaceship)
-        //vec2.set(queryObj.spawnAtPos, spawnPos[0], spawnPos[1]);
-
         var physComp = queryObj.components["physics"];
         physComp.setPosition(spawnPos[0], spawnPos[1]);
-        // Note: we don't set the position just yet; instead we set the spawnAtPos. The spaceship will set its own position after a short pause
         physComp.setAcceleration(0, 0);
         physComp.angle = 0.0;
 
@@ -778,9 +775,8 @@ GameLogic.prototype.spawnAtNewLocation = function(queryObj, cushionDist) {
         queryObj.resetAI();
     }
 
-    // Set the "queryObj's" ableState to preSpawn
-    //queryObj.ableState = SpaceshipAbleStateEnum.preSpawn;
-    queryObj.ableState = SpaceshipAbleStateEnum.postSpawn;
+    // Set the "queryObj's" ableState to spawning
+    queryObj.ableState = SpaceshipAbleStateEnum.spawning;
     queryObj.resetSpawnClock();
 }
 
