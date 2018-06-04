@@ -49,6 +49,12 @@ GameLogic.prototype.initialize = function() {
                                                "kill": 200,
                                                "death": -100
                                              };
+    //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy
+    this.settings["visible"]["gameMode"] = { "matchType": "deathmatch",
+                                             "shipKills": 15,
+                                             "gunsEnabled": "yes"
+                                           }
+    // ^^ Figure out what the right settings should be. e.g., gunsEnabled is there because I have a thought to make a kamikaze mode, where you can only attack by ramming into targets :-D :-D
 
     // Begin initializing game subsystems. Note that the order of operations is important
 
@@ -385,6 +391,23 @@ GameLogic.prototype.update = function(dt_s, config = null) {
 
     // Process AI (if any/still TODO)
     // NOTE that user input is handled via event handler in the web browser
+
+
+    // TODO wrap this end-of-game detection into a function. Handle various game modes
+    for (var shipName in this.gameStats) {
+        var scoreObj = this.gameStats[shipName];
+
+        if (scoreObj.kills == this.settings.visible.gameMode.shipKills) {
+            console.log(shipName + " wins!!");
+
+            cmdMsg = { "topic": "UICommand",
+                       "targetObj": this,
+                       "command": "changeState",
+                       "params": {"stateName": "MainMenu"}
+                     };
+            this.messageQueue.enqueue(cmdMsg);
+        }
+    }
 };
 
 GameLogic.prototype.sendCmdToGameObj = function(msg) {
