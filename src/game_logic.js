@@ -387,11 +387,7 @@ GameLogic.prototype.update = function(dt_s, config = null) {
         this.collisionMgr.update(dt_s);
     }
 
-    // Play sound effects
-
-    // Process AI (if any/still TODO)
-    // NOTE that user input is handled via event handler in the web browser
-
+    // Play sound effects? (TODO: the sound effects handler/manager should have its own little per-frame queue of sound effects to play. (Make it a set -- only 1 sound effect per cycle. If the event queue has 2 events to play the same sound effect, play only 1)
 
     // TODO wrap this end-of-game detection into a function. Handle various game modes
     for (var shipName in this.gameStats) {
@@ -403,7 +399,8 @@ GameLogic.prototype.update = function(dt_s, config = null) {
             cmdMsg = { "topic": "UICommand",
                        "targetObj": this,
                        "command": "changeState",
-                       "params": {"stateName": "MainMenu"}
+                       "params": {"stateName": "GameOver",
+                                  "transferObj": {"displayMsg": shipName + " wins!!"} }
                      };
             this.messageQueue.enqueue(cmdMsg);
         }
@@ -837,7 +834,9 @@ GameLogic.prototype.doUICommand = function(msg) {
         case "changeState":
             // call the game state manager's changestate function
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
-            gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
+            // TODO note how we're using the transferObj here. It should be like this everywhere we call changeState or pauseState or whatever
+            var transferObj = msg.params.hasOwnProperty("transferObj") ? msg.params.transferObj : null;   // Use msg.params if it exists; else pass null
+            gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName], transferObj);
             break;
     }
 
