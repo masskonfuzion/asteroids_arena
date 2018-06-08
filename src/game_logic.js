@@ -11,6 +11,8 @@ function GameLogic() {
     GameObject.call(this);
 
 // TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
+
+    // TODO add game modes.  Maybe death match (the current default) and timer attack (most kills, or highest score)
     this.collisionMgr = null;   // Placeholder for a collision manager (definition probably belongs in base/interface class)
     this.gameObjs = {};
     this.shipDict = {};     // A mapping of ship GameObject objectIDs (assigned by game engine) to the "nicknames" (assigned by the programmer)
@@ -49,7 +51,7 @@ GameLogic.prototype.initialize = function() {
                                                "kill": 200,
                                                "death": -100
                                              };
-    //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy
+    //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy. Also - this.settings (in game_logic.js) should be passed in from somewhere (e.g. the application object... or actually, that thing's global. Go with that.)
     this.settings["visible"]["gameMode"] = { "matchType": "deathmatch",
                                              "shipKills": 15,
                                              "gunsEnabled": "yes"
@@ -396,6 +398,7 @@ GameLogic.prototype.update = function(dt_s, config = null) {
         if (scoreObj.kills == this.settings.visible.gameMode.shipKills) {
             console.log(shipName + " wins!!");
 
+            // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
             cmdMsg = { "topic": "UICommand",
                        "targetObj": this,
                        "command": "changeState",

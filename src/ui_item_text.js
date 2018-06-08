@@ -19,7 +19,9 @@ uiItemText.prototype.draw = function(canvasContext) {
     canvasContext.fillStyle = this.color;
     canvasContext.textAlign = this.align;
     canvasContext.textBaseline = this.baseline;
-    canvasContext.fillText(this.text, MathUtils.lerp(this.posNDC[0], 0, canvasContext.canvas.width), MathUtils.lerp(this.posNDC[1], 0, canvasContext.canvas.height));
+
+    var textToDisplay = this.text == null ? this.boundObj[this.boundKey].toString() : this.text;
+    canvasContext.fillText(textToDisplay, MathUtils.lerp(this.posNDC[0], 0, canvasContext.canvas.width), MathUtils.lerp(this.posNDC[1], 0, canvasContext.canvas.height));
     
 };
 

@@ -9,6 +9,9 @@ function GameApplication(xSize=512, ySize=512) {
 
     this.timer = null;
     this.fixed_dt_s = 0.015;
+
+    // A settings object that will be modified by, e.g., a settings menu/UI
+    this.settings = { "hidden": {}, "visible": {} };    // hidden settings are, e.g. point values for accomplishing certain goals; visible settings are, e.g. game config options
 }
 
 GameApplication.prototype.initialize = function() {
@@ -25,5 +28,11 @@ GameApplication.prototype.initialize = function() {
     this.context.fillText('If you see only this, something is probably wrong ;-)', this.canvas.width / 8, this.canvas.height / 8);
 
     this.timer = new Timer();
+
+    //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy. 
+    this.settings["visible"]["gameMode"] = { "matchType": "deathmatch",
+                                             "shipKills": 15,
+                                             "gunsEnabled": "yes"
+                                           }
 
 }

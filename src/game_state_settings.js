@@ -1,16 +1,9 @@
 function GameStateSettings() {
     GameStateBase.call(this);
     this.uiItems = [];
-
-    // TODO maybe keep a 2nd list of "selectable UI items". Then, change the uiItems.push call into a call that encapsulates adding the item to the displayable UI items list, vs the selectable UI items list. (i.e., some items are meant to be displayed only). And/or implement other UI items (i.e., pictures)
-    this.uiItems.push( new uiItemText("TBD / Still TODO", "32px", "MenuFont", "white", 0.5, 0.5, "center", "middle") );
-    this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
-
-    this.activeItemIndex = 0;
-    this.activeItem = this.uiItems[this.activeItemIndex];
-
     this.messageQueue = null;
-
+    this.activeItemIndex = 0;
+    this.activeItem = null;
 }
 
 GameStateSettings.prototype = Object.create(GameStateBase.prototype);
@@ -21,11 +14,40 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
-    this.activeItemIndex = this.uiItems.length - 1;   // Select the last item (i.e., the "Return" item -- do this because the credits item is selectable. It shouldn't be, but I'm being lazy... :-D)
+    // TODO maybe keep a 2nd list of "selectable UI items". Then, change the uiItems.push call into a call that encapsulates adding the item to the displayable UI items list, vs the selectable UI items list. (i.e., some items are meant to be displayed only). And/or implement other UI items (i.e., pictures)
+    this.uiItems.push( new uiItemText("General", "32px", "MenuFont", "white", 0.05, 0.05, "left", "left") );
+    this.uiItems.push( new uiItemText("Difficulty", "24px", "MenuFont", "white", 0.05, 0.1, "left", "left") );
+    this.uiItems.push( new uiItemText("DeathMatch Options", "32px", "MenuFont", "white", 0.05, 0.2, "left", "left") );
+
+    this.uiItems.push( new uiItemText("Kills Count", "24px", "MenuFont", "white", 0.05, 0.25, "left", "left") );    // TODO this should actually be a label
+
+    var uiItemKillsCountSetting = new uiItemText(null, "24px", "MenuFont", "white", 0.25, 0.25, "left", "left");
+    uiItemKillsCountSetting.setBoundObj(game.settings.visible.gameMode);
+    uiItemKillsCountSetting.setBoundKey("shipKills");
+    this.uiItems.push( uiItemKillsCountSetting );
+
+    this.uiItems.push( new uiItemText("Timer Attack Options", "32px", "MenuFont", "white", 0.05, 0.35, "left", "left") );    // TODO 2018-06-06 Will we have a timer attack mode?
+    this.uiItems.push( new uiItemText("Time Limit", "24px", "MenuFont", "white", 0.05, 0.40, "left", "left") );
+
+    this.uiItems.push( new uiItemText("Controls", "32px", "MenuFont", "white", 0.55, 0.05, "left", "left") );
+    this.uiItems.push( new uiItemText("Thrust", "24px", "MenuFont", "white", 0.55, 0.1, "left", "left") );
+    this.uiItems.push( new uiItemText("Turn Left", "24px", "MenuFont", "white", 0.55, 0.15, "left", "left") );
+    this.uiItems.push( new uiItemText("Turn Right", "24px", "MenuFont", "white", 0.55, 0.2, "left", "left") );
+
+    this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
+
+    // TODO - configure settings. The settings obj is part of the application object (i.e., game)
+
+
+    //this.uiItems.push( new uiItemPage () ); //TODO 2018-06-06: We probably need to remove the layout/placement from the UI items themselves, and instead, separate that stuff into a layout (object or something)
+    // NOTE: I was thinking about creating nested UI Items, e.g., a "page" that can contain other UI items.. But I don't want to engineer that. We'll do a more naive approach
+
+    this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
 };
 
 GameStateSettings.prototype.cleanup = function() {
+    this.uiItems = [];
 };
 
 GameStateSettings.prototype.render = function(canvasContext, dt_s) {
@@ -42,7 +64,7 @@ GameStateSettings.prototype.render = function(canvasContext, dt_s) {
     }
 
     // Highlight active item
-    // TODO call getWidth() on active item; round up to nearest int (e.g. because measureText() returns float); multiply by 1.5. Make a rect
+    // TODO look at the alignment of the active item - adjust highlight based on left/center/align (actual text rendering position seems to be affected by that)
     var hlItem = this.uiItems[this.activeItemIndex];
     var hlWidth = Math.ceil( hlItem.getWidth(canvasContext) * 1.5 );
     var hlHeight = Math.ceil( hlItem.getHeight(canvasContext) * 1.5);
