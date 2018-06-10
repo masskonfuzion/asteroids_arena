@@ -48,6 +48,9 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
 
 GameStateSettings.prototype.cleanup = function() {
     this.uiItems = [];
+
+    // Save settings to localStorage. We have to JSON.stringify() the object, because localStorage wants key/value pairs of strings (even numbers get saved as strings)
+    localStorage.setItem('settings', JSON.stringify(game.settings));
 };
 
 GameStateSettings.prototype.render = function(canvasContext, dt_s) {
