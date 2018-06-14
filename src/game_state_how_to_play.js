@@ -18,7 +18,6 @@ GameStateHowToPlay.prototype.initialize = function(transferObj = null) {
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
-    // TODO maybe keep a 2nd list of "selectable UI items". Then, change the uiItems.push call into a call that encapsulates adding the item to the displayable UI items list, vs the selectable UI items list. (i.e., some items are meant to be displayed only). And/or implement other UI items (i.e., pictures)
     this.uiItems.push( new uiItemText("Controls", "32px", "MenuFont", "white", 0.3, 0.10, "center", "middle", null) );
     this.uiItems.push( new uiItemText("W: Thrust", "28px", "MenuFont", "white", 0.5, 0.16, "center", "middle", null) );
     this.uiItems.push( new uiItemText("A: Turn left", "28px", "MenuFont", "white", 0.5, 0.22, "center", "middle", null) );
