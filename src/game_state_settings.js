@@ -20,7 +20,7 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
-    // TODO maybe keep a 2nd list of "selectable UI items". Then, change the uiItems.push call into a call that encapsulates adding the item to the displayable UI items list, vs the selectable UI items list. (i.e., some items are meant to be displayed only). And/or implement other UI items (i.e., pictures)
+    // TODO Implement other UI items (i.e., pictures)
     this.uiItems.push( new uiItemText("General", "32px", "MenuFont", "white", 0.05, 0.05, "left", "left") );
     this.uiItems.push( new uiItemText("Difficulty", "24px", "MenuFont", "white", 0.05, 0.1, "left", "left") );
     this.uiItems.push( new uiItemText("DeathMatch Options", "32px", "MenuFont", "white", 0.05, 0.2, "left", "left") );
@@ -46,14 +46,11 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
 
     this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 
-    // TODO - configure settings. The settings obj is part of the application object (i.e., game)
-
-
-    //this.uiItems.push( new uiItemPage () ); //TODO 2018-06-06: We probably need to remove the layout/placement from the UI items themselves, and instead, separate that stuff into a layout (object or something)
-    // NOTE: I was thinking about creating nested UI Items, e.g., a "page" that can contain other UI items.. But I don't want to engineer that. We'll do a more naive approach
-
-    // TODO 2018-06-13 - change highlightedItem and highlightedItemIndex to highlightedItem and highlightedItemIndex everywhere else they appear
-    this.highlightedItemIndex = 0;
+    // highlight the first highlightable item (this code duplicates the ArrorDown key handler. I'm being really lazy/sloppy with the code here)
+    this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
+        this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+    }
     this.highlightedItem = this.uiItems[this.highlightedItemIndex];
 };
 
@@ -61,6 +58,7 @@ GameStateSettings.prototype.cleanup = function() {
     this.uiItems = [];
 
     // Save settings to localStorage. We have to JSON.stringify() the object, because localStorage wants key/value pairs of strings (even numbers get saved as strings)
+    // TODO maybe the localStorage saving shouldn't happen in cleanup(), but in the handler for the return action
     localStorage.setItem('settings', JSON.stringify(game.settings));
 };
 
@@ -144,7 +142,6 @@ GameStateSettings.prototype.handleKeyboardInput = function(evt) {
                 break;
             case "Enter":
             case "Space":
-                // TODO 2018-06-13 - add: if the highlighted UIItem is "selectable", then select it. Otherwise, if the UIItem is not selectable, but is a "command button", execute its command
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
 
                 // If we have an active item, deactivate it
