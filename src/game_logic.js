@@ -19,6 +19,7 @@ function GameLogic() {
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
     this.objectIDToAssign = -1;  // probably belongs in the base class.
+    // NOTE: this.settings (i.e. gameLogic.settings) is DIFFERENT than the settings object stored in localStorage. localStorage has user-configurable settings. gameLogic has settings for the game itself (shouldn't be modified by the player/user
     this.settings = { "hidden": {}, "visible": {} };    // hidden settings are, e.g. point values for accomplishing certain goals; visible settings are, e.g. game config options
     this.gameStats = {};    // store things, e.g. player's score, in-game achievements, state variables, etc.
 
@@ -51,13 +52,6 @@ GameLogic.prototype.initialize = function() {
                                                "kill": 200,
                                                "death": -100
                                              };
-    //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy. Also - this.settings (in game_logic.js) should be passed in from somewhere (e.g. the application object... or actually, that thing's global. Go with that.)
-    this.settings["visible"]["gameMode"] = { "matchType": "deathmatch",
-                                             "shipKills": 15,
-                                             "gunsEnabled": "yes"
-                                           }
-    // ^^ Figure out what the right settings should be. e.g., gunsEnabled is there because I have a thought to make a kamikaze mode, where you can only attack by ramming into targets :-D :-D
-
     // Begin initializing game subsystems. Note that the order of operations is important
 
     // ----- Initialize collision manager
@@ -395,7 +389,11 @@ GameLogic.prototype.update = function(dt_s, config = null) {
     for (var shipName in this.gameStats) {
         var scoreObj = this.gameStats[shipName];
 
-        if (scoreObj.kills == this.settings.visible.gameMode.shipKills) {
+        //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy. Also - this.settings (in game_logic.js) should be passed in from somewhere (e.g. the application object... or actually, that thing's global. Go with that.)
+        // ^^ Figure out what the right settings should be. e.g., gunsEnabled is there because I have a thought to make a kamikaze mode, where you can only attack by ramming into targets :-D :-D
+
+        // TODO fix the path to the deathmatch configs. I think each gamemode should be an object (e.g. game.settings.visible.gameMode.deathMatch.shipKills)
+        if (scoreObj.kills == game.settings.visible.gameMode.shipKills) {
             console.log(shipName + " wins!!");
 
             // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)

@@ -28,7 +28,7 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
     this.uiItems.push( new uiItemText("Kills Count", "24px", "MenuFont", "white", 0.05, 0.25, "left", "left") );    // TODO this should actually be a label
 
     var uiItemKillsCountSetting = new uiItemSpinner(null, "24px", "MenuFont", "white", 0.25, 0.25, "left", "left");
-    uiItemKillsCountSetting.setSelectableValues( [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50] );
+    uiItemKillsCountSetting.setSelectableValues( [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50] );
     // ^^ because I didn't feel like writing a function to initialize the selectable values by using a range (like start=5, end=50, step=1)
     // selectable values must be set before synchronizing bound value to selectable values list
     uiItemKillsCountSetting.setBoundObj(game.settings.visible.gameMode);
@@ -204,8 +204,8 @@ GameStateSettings.prototype.processMessages = function(dt_s) {
 };
 
 
+// Take action on a message with topic, "UICommand"
 GameStateSettings.prototype.doUICommand = function(msg) {
-    // Take action on a message with topic, "UICommand"
     // UICommand messages contain a command, a targetObj (i.e. who's going to execute the command), and a params list
     // The command is most likely to call a function. This is not quite a function callback, because we are not storing a pre-determined function ptr
     //console.log("In doUICommand(), with msg = ", msg);
@@ -216,8 +216,13 @@ GameStateSettings.prototype.doUICommand = function(msg) {
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
             break;
-    }
 
+        case "sendUserInputToActiveItem":
+            if (this.activeItem) {
+                this.sendUserInputToActiveItem(msg.params);
+            }
+            break;
+    }
 };
 
 

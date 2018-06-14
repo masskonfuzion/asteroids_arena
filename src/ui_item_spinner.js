@@ -75,12 +75,14 @@ uiItemSpinner.prototype.handleUserInput = function(params) {
         case "ActiveUIItem_HandleEvent_KeyDown_ArrowRight":
             if (this.boundObj) {
                 this.valueIndex = (this.valueIndex + 1) % this.selectableValues.length
+                this.setBoundValue(this.selectableValues[this.valueIndex]); // setBoundValue is in the base class
             }
             break;
 
         case "ActiveUIItem_HandleEvent_KeyDown_ArrowLeft":
             if (this.boundObj) {
-                this.valueIndex = (this.valueIndex - 1) % this.selectableValues.length
+                this.valueIndex = ((this.valueIndex + this.selectableValues.length) - 1) % this.selectableValues.length
+                this.setBoundValue(this.selectableValues[this.valueIndex]); // setBoundValue is in the base class
             }
             break;
     }

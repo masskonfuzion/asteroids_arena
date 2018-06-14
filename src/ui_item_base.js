@@ -34,8 +34,11 @@ uiItemBase.prototype.setBoundKey = function(key) {
     this.boundKey = key
 };
 
+// Set the value of object bound to this UI item
+// Assumptions:
+// - this.boundObj and this.boundKey are not null
 uiItemBase.prototype.setBoundValue = function(value) {
-    // Set the value
+    // Set the value of the bound object
     this.boundObj[this.boundKey] = value
 };
 
