@@ -1,9 +1,15 @@
 function GameStateSettings() {
     GameStateBase.call(this);
-    this.uiItems = [];
     this.messageQueue = null;
-    this.activeItemIndex = 0;
-    this.activeItem = null;
+
+    // The following members should really be members of a Menu/UI class. Maybe I'll still implement that..
+    this.uiItems = [];
+
+    this.highlightedItemIndex = 0;
+    this.highlightedItem = null;    // Highlighted item, not necessarily selected/active
+
+    this.activeItemIndex = -1;      // -1 means "no active selection"; but probably rely on the value of activeItem itself to determine whether or not the user is interacting with an item
+    this.activeItem = null;         // Active/selected item
 }
 
 GameStateSettings.prototype = Object.create(GameStateBase.prototype);
@@ -21,9 +27,13 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
 
     this.uiItems.push( new uiItemText("Kills Count", "24px", "MenuFont", "white", 0.05, 0.25, "left", "left") );    // TODO this should actually be a label
 
-    var uiItemKillsCountSetting = new uiItemText(null, "24px", "MenuFont", "white", 0.25, 0.25, "left", "left");
+    var uiItemKillsCountSetting = new uiItemSpinner(null, "24px", "MenuFont", "white", 0.25, 0.25, "left", "left");
+    uiItemKillsCountSetting.setSelectableValues( [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,29,30,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50] );
+    // ^^ because I didn't feel like writing a function to initialize the selectable values by using a range (like start=5, end=50, step=1)
+    // selectable values must be set before synchronizing bound value to selectable values list
     uiItemKillsCountSetting.setBoundObj(game.settings.visible.gameMode);
     uiItemKillsCountSetting.setBoundKey("shipKills");
+    uiItemKillsCountSetting.getValueIndexFromBoundValue();  // We have to call this to get the spinner to "know" which of its selectableValues is selected
     this.uiItems.push( uiItemKillsCountSetting );
 
     this.uiItems.push( new uiItemText("Timer Attack Options", "32px", "MenuFont", "white", 0.05, 0.35, "left", "left") );    // TODO 2018-06-06 Will we have a timer attack mode?
@@ -42,8 +52,9 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
     //this.uiItems.push( new uiItemPage () ); //TODO 2018-06-06: We probably need to remove the layout/placement from the UI items themselves, and instead, separate that stuff into a layout (object or something)
     // NOTE: I was thinking about creating nested UI Items, e.g., a "page" that can contain other UI items.. But I don't want to engineer that. We'll do a more naive approach
 
-    this.activeItemIndex = 0;
-    this.activeItem = this.uiItems[this.activeItemIndex];
+    // TODO 2018-06-13 - change highlightedItem and highlightedItemIndex to highlightedItem and highlightedItemIndex everywhere else they appear
+    this.highlightedItemIndex = 0;
+    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
 };
 
 GameStateSettings.prototype.cleanup = function() {
@@ -61,14 +72,14 @@ GameStateSettings.prototype.render = function(canvasContext, dt_s) {
     canvasContext.fillStyle = 'black';
     canvasContext.fillRect(0,0, canvasContext.canvas.width, canvasContext.canvas.height);
 
-    // Draw UI items
+    // Draw UI items. (Should really be part of the render() or draw() method of a Menu/UI class
     for (var item of this.uiItems) {
         item.draw(canvasContext);
     }
 
-    // Highlight active item
-    // TODO look at the alignment of the active item - adjust highlight based on left/center/align (actual text rendering position seems to be affected by that)
-    var hlItem = this.uiItems[this.activeItemIndex];
+    // Draw highlight box around currently highlightedItem (should really be part of a Menu/UI class)
+    // TODO look at the alignment of the highlighted item - adjust highlight position based on left/center/align (actual text rendering position seems to be affected by that)
+    var hlItem = this.uiItems[this.highlightedItemIndex];
     var hlWidth = Math.ceil( hlItem.getWidth(canvasContext) * 1.5 );
     var hlHeight = Math.ceil( hlItem.getHeight(canvasContext) * 1.5);
     var hlX = Math.floor(MathUtils.lerp(hlItem.posNDC[0], 0, canvasContext.canvas.width) - hlWidth/2);
@@ -91,20 +102,81 @@ GameStateSettings.prototype.handleKeyboardInput = function(evt) {
     } else if (evt.type == "keyup") {
         switch(evt.code) {
             case "ArrowUp":
-                this.activeItemIndex = (this.activeItemIndex + this.uiItems.length - 1) % this.uiItems.length;
+                // check if we have an active/selected UI item (this is janky. Again, there should be a class/object to handle this)
+                // The up/down arrows should only move the highlight, which should work only if the menu/form does _not_ have an active/selected UI item
+                if (this.activeItem == null) {
+                    // find previous selectable item (probably should be a function; but also.. a Menu should be an object.. and it's not. So....)
+                    // Because modulo math gets wonky with negative numbers, we'll add the length of the list to the current index, and then subtract an index; then do the mod
+                    this.highlightedItemIndex = ((this.highlightedItemIndex + this.uiItems.length) - 1) % this.uiItems.length;
+                    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
+                        this.highlightedItemIndex = ((this.highlightedItemIndex + this.uiItems.length) - 1) % this.uiItems.length;
+                    }
+                    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
+                }
                 break;
             case "ArrowDown":
-                this.activeItemIndex = (this.activeItemIndex + 1) % this.uiItems.length;
+                // check if we have an active/selected UI item (this is janky. Again, there should be a class/object to handle this)
+                if (this.activeItem == null) {
+                    this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+                    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
+                        this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+                    }
+                    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
+                }
+                break;
+            case "ArrowLeft":
+                var cmdMsg = { "topic": "UICommand",
+                               "targetObj": this,
+                               "command": "sendUserInputToActiveItem",
+                               "params": { "event": "ActiveUIItem_HandleEvent_KeyDown_ArrowLeft" }
+                             };
+                this.messageQueue.enqueue(cmdMsg);
+                break;
+            case "ArrowRight":
+                // NOTE: "ActiveUIItem_HandleEvent_KeyDown_ArrowRight and etc. will be used to trigger function calls in the UI Items.  This object (i.e., the menu/form will need to call the functions on the form's active items.
+                // Side note: I don't like this design. It forces the menu/UI itself to call the functions that make the UI items handle their own internal data. That's ugly. If I ever have to write another UI, I'd have menus be an object in & of themselves. The menu objects would store the menu layout, and also, they'd have the functions necessary to handle user input and pass whatever needs to be passed into UI items.
+                var cmdMsg = { "topic": "UICommand",
+                               "targetObj": this,
+                               "command": "sendUserInputToActiveItem",
+                               "params": { "event": "ActiveUIItem_HandleEvent_KeyDown_ArrowRight" }
+                             };
+                this.messageQueue.enqueue(cmdMsg);
                 break;
             case "Enter":
             case "Space":
+                // TODO 2018-06-13 - add: if the highlighted UIItem is "selectable", then select it. Otherwise, if the UIItem is not selectable, but is a "command button", execute its command
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
-                var cmdMsg = { "topic": "UICommand",
-                               "targetObj": this,
-                               "command": this.uiItems[this.activeItemIndex].actionMsg["command"],
-                               "params": this.uiItems[this.activeItemIndex].actionMsg["params"]
-                             };
-                this.messageQueue.enqueue(cmdMsg);
+
+                // If we have an active item, deactivate it
+                if (this.activeItem) {
+                    this.activeItem.isActive = false;   // The UI Items store their activation state, so the menu can query it and determine how to interact with the UI items, based on user input
+                    this.activeItemIndex = -1;
+                    this.activeItem = null; // Unassign activeItem reference
+                }
+
+                // Else, we need to either select/activate the highlighted item (if it is selectable), or otherwise call the command of the "non-selectable" item
+                else {
+                    if (this.highlightedItem.actionMsg) {
+                        // if the UI item has an actionMsg associated with it, then enqueue that message
+                        var cmdMsg = { "topic": "UICommand",
+                                       "targetObj": this,
+                                       "command": this.uiItems[this.highlightedItemIndex].actionMsg["command"],
+                                       "params": this.uiItems[this.highlightedItemIndex].actionMsg["params"]
+                                     };
+                        this.messageQueue.enqueue(cmdMsg);
+                    }
+                    else {
+                        // Else, select the item (if it's selectable)
+                        if (this.highlightedItem.isSelectable) {
+                            this.activeItemIndex = this.highlightedItemIndex;
+                            this.activeItem = this.uiItems[this.highlightedItemIndex];
+                            this.activeItem.isActive = true;
+                        }
+                        else {
+                            // This case is probably nonsense. I don't think it's possible, given the properties of the UI. But at this point, I'm writing hack'n'slash code, so here is the case, anyway
+                        }
+                    }
+                }
                 break;
         }
     }
@@ -146,4 +218,12 @@ GameStateSettings.prototype.doUICommand = function(msg) {
             break;
     }
 
+};
+
+
+// Send a user input event to the active/selected item in this menu.
+// NOTE: Any GameStates that want to implement a menu/UI must implement this function.
+// Menus/UIs are not structured as objects
+GameStateSettings.prototype.sendUserInputToActiveItem = function(params) {
+    this.activeItem.handleUserInput(params);
 };

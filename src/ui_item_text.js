@@ -8,6 +8,11 @@ function uiItemText(text, size, fontFamily, color, ndcX, ndcY, align, baseline, 
     this.posNDC = [ndcX, ndcY];
     this.text = text;
     this.actionMsg = actionMsg == null ? null : actionMsg;             // A message object that can be enqueued into a message/event queue, and handled when needed (NOTE: the UI must have a message/event handler for this message)
+
+    // If this text item can perform an action, then it is a "button", and is selectable
+    if (this.actionMsg) {
+        this.isSelectable = true;
+    }
 }
 
 uiItemText.prototype = Object.create(uiItemBase.prototype);
