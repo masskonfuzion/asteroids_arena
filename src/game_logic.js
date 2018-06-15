@@ -389,8 +389,9 @@ GameLogic.prototype.update = function(dt_s, config = null) {
     for (var shipName in this.gameStats) {
         var scoreObj = this.gameStats[shipName];
 
-        //TODO un-hardcode game mode -- make it selectable/configurable. Use menus yeeaaahhh boyyyy. Also - this.settings (in game_logic.js) should be passed in from somewhere (e.g. the application object... or actually, that thing's global. Go with that.)
+        //TODO un-hardcode game mode -- make it selectable/configurable.
         // ^^ Figure out what the right settings should be. e.g., gunsEnabled is there because I have a thought to make a kamikaze mode, where you can only attack by ramming into targets :-D :-D
+        // ^^ Then, here, check if gameMode == deathMatch, then the game ends when a player gets the right # of kills; else if gameMode == timeAttack, game ends when time's up, etc.
 
         if (scoreObj.kills == game.settings.visible.gameMode.deathMatch.shipKills) {
             console.log(shipName + " wins!!");
