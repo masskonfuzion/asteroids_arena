@@ -31,7 +31,7 @@ GameStateSettings.prototype.initialize = function(transferObj = null) {
     uiItemKillsCountSetting.setSelectableValues( [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50] );
     // ^^ because I didn't feel like writing a function to initialize the selectable values by using a range (like start=5, end=50, step=1)
     // selectable values must be set before synchronizing bound value to selectable values list
-    uiItemKillsCountSetting.setBoundObj(game.settings.visible.gameMode);
+    uiItemKillsCountSetting.setBoundObj(game.settings.visible.gameMode.deathMatch);
     uiItemKillsCountSetting.setBoundKey("shipKills");
     uiItemKillsCountSetting.getValueIndexFromBoundValue();  // We have to call this to get the spinner to "know" which of its selectableValues is selected
     this.uiItems.push( uiItemKillsCountSetting );
