@@ -195,7 +195,10 @@ Spaceship.prototype.update = function(dt_s, config = null) {
 
                     myGunPEComp.setPosition(pePos[0], pePos[1]);
                     // NOTE: we emit 1 particle per update, but as we add different types of weapons, that can change
-                    updateConfigObj = { "emitPoints": [ {"position": pePos, "direction": launchDir} ] };
+                    var gameLogic = this.parentObj; // parentObj is set by addGameObject in the gameLogic object, during game initialization, when this spaceship is created
+                    updateConfigObj = { "emitPoints": [ {"position": pePos, "direction": launchDir} ],
+                                        "extFuncCalls": [ {"func": SoundPool.prototype.play, "this": gameLogic.bulletSoundPool, "params": []} ]
+                                      };
                     break;
             }
 

@@ -8,6 +8,7 @@ GameStatePlaying.prototype.constructor = GameStatePlaying;
 GameStatePlaying.prototype.initialize = function(transferObj = null) {
     this.gameLogic = new GameLogic();
     this.gameLogic.initialize();
+
 };
 
 GameStatePlaying.prototype.cleanup = function() {

@@ -46,6 +46,7 @@ AsteroidManager.prototype.initialize = function(initAsteroids, maxAsteroids) {
     var bannedLocations = this.createBannedLocationsList(70);  // The parameter is the radius from each banned location, within which asteroids cannot be spawned
     for (var i = 0; i < initAsteroids; i++) {
         // Note the "funcCalls" property - "params" is a list that, when passed into a function.apply() call, is "splatted" into individual parameters, similar to Python *args
+        // funcCalls call functions using the particle (in the particle system) as the "this" reference
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
                           "funcCalls": [ {"func": Asteroid.prototype.setSize, "params": [2]} ],

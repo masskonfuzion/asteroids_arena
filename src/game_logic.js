@@ -25,6 +25,7 @@ function GameLogic() {
     this.addComponent("xplodPE", new ParticleEmitter());
 
     this.commandMap["createExplosion"] = this.createExplosion;
+    this.bulletSoundPool = null;
 }
 
 GameLogic.prototype = Object.create(GameObject.prototype);
@@ -56,6 +57,10 @@ GameLogic.prototype.initialize = function() {
         var minsec = game.settings.visible.gameModeSettings.timeAttack.timeLimit.split(":");
         this.timeAttackSecondsLeft = parseInt(minsec[0]) * 60 + parseInt(minsec[1]);    // Use parseInt() to explicitly convert str to int. JS does this automatically/implicitly, but I prefer the explicit conversion
     }
+
+    this.bulletSoundPool = new SoundPool("assets/raw_do_not_upload/sounds/laser01.mp3", null, 5);   // TODO replace with finalized bullet shot sound! Also -- make resource manager for sounds
+    this.shipExplosionSoundPool = new SoundPool("assets/raw_do_not_upload/sounds/grenade_explosion-soundbible.com.wav", null, 5);
+    this.asteroidExplosionSoundPool = new SoundPool("assets/raw_do_not_upload/sounds/rock_debris_explosion-freesfx.co.uk.mp3", null, 5);
 
     // Begin initializing game subsystems. Note that the order of operations is important
 
@@ -505,6 +510,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
+            this.asteroidExplosionSoundPool.play(); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
 
             numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
 
@@ -517,6 +523,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
+            this.shipExplosionSoundPool.play(); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
 
             var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
             vec2.sub(fragRefDir, spaceshipRef.components["physics"].currPos, spaceshipRef.components["physics"].prevPos);
@@ -589,6 +596,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
+        this.asteroidExplosionSoundPool.play(); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
 
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
         cmdMsg = { "topic": "GameCommand",
@@ -640,6 +648,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                      }
                          };
                 this.messageQueue.enqueue(cmdMsg);
+                this.shipExplosionSoundPool.play();
 
                 cmdMsg = { "topic": "GameCommand",
                            "command": "disableBullet",
@@ -677,6 +686,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
+        this.asteroidExplosionSoundPool.play();
 
         var cmdMsg = { "topic": "GameCommand",
                        "command": "disableAsteroids",
@@ -707,6 +717,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
+        this.shipExplosionSoundPool.play();
 
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
@@ -734,6 +745,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
+            this.shipExplosionSoundPool.play();
 
             var saveShipPos = vec2.clone(spaceshipBRef.components["physics"].currPos);
             cmdMsg = { "topic": "GameCommand",

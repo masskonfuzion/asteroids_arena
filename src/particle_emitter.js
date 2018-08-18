@@ -148,12 +148,23 @@ ParticleEmitter.prototype.emitParticle = function(dt_s, config = null) {
 
             }
 
-            // Do any "post-processing" using any funcCalls defined in the config object
+            // Do any "post-processing" of the particle, using any funcCalls defined in the config object
             if (config.hasOwnProperty("funcCalls")) {
                 for (funcCallDef of config["funcCalls"]) {
                     // apply() takes in a list and applies the items as params to the function (similar to *args in Python)
                     // Passing null into params is equivalent to calling func()
                     funcCallDef["func"].apply(particle, funcCallDef["params"]);
+                }
+            }
+
+            // call an external function (e.g. play a sound)
+            // NOTE: I really hate this design.. My next engine will have better decoupling of events from the objects that generate those events
+            // Also NOTE: Here, if extFuncCalls is used to play a sound effect, it does not queue the sound event the same way that other events are enqueued, to be handled by various handlers.. Because I want to finish this game and I'm cutting corners
+            if (config.hasOwnProperty("extFuncCalls")) {
+                for (funcCallDef of config["extFuncCalls"]) {
+                    // apply() takes in a list and applies the items as params to the function (similar to *args in Python)
+                    // Passing null into params is equivalent to calling func()
+                    funcCallDef["func"].apply(funcCallDef["this"], funcCallDef["params"]);
                 }
             }
 

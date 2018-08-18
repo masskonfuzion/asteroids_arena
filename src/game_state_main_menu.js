@@ -33,6 +33,7 @@ GameStateMainMenu.prototype.initialize = function(transferObj = null) {
 };
 
 GameStateMainMenu.prototype.cleanup = function() {
+    this.bgm.stop();    // TODO move bgm out to a sound/resource manager
 };
 
 GameStateMainMenu.prototype.preRender = function(canvasContext, dt_s) {
