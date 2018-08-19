@@ -196,8 +196,23 @@ Spaceship.prototype.update = function(dt_s, config = null) {
                     myGunPEComp.setPosition(pePos[0], pePos[1]);
                     // NOTE: we emit 1 particle per update, but as we add different types of weapons, that can change
                     var gameLogic = this.parentObj; // parentObj is set by addGameObject in the gameLogic object, during game initialization, when this spaceship is created
+
+                    // Note: below, we're hard-coding references to the player's ship (the "ship0" identifier -- because it's easy..
+                    var sndOptions = {"loop": false};
+                    if (this.objectID == gameLogic.gameObjs["ship0"].objectID) {
+                        // If I am the player's ship, set volume to 1.0
+                        sndOptions.volume = 1.0;
+                    }
+                    else {
+                        // 2250000 in the calculation below is a magic number
+                        // It's 1500**2, which is larger than the square of the hypotenuse of the 1280x720 arena
+                        // (i.e., the largest distance that could separate 2 items in the arena)
+                        // I had planned to make more arenas, but I may just stop at 1 -- taking shortcuts to finish this game
+                        sndOptions.volume = 1.0 - ( vec2.sqrDist(this.components["physics"].currPos, gameLogic.gameObjs["ship0"].components["physics"].currPos) / 2250000.0 );
+                    }
+
                     updateConfigObj = { "emitPoints": [ {"position": pePos, "direction": launchDir} ],
-                                        "extFuncCalls": [ {"func": SoundPool.prototype.play, "this": gameLogic.bulletSoundPool, "params": []} ]
+                                        "extFuncCalls": [ {"func": SoundPool.prototype.play, "this": gameLogic.bulletSoundPool, "params": [ sndOptions ]} ]
                                       };
                     break;
             }

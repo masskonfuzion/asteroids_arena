@@ -498,6 +498,9 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             asteroidRef = msg.colliderB.parentObj;
         }
 
+        var playerShipRef = this.gameObjs["ship0"];     // NOTE: hard-coded reference to the player ship. I'm doing this because I want to finish this game... taking shortcuts now......
+        var sndVol = 1.0 - (vec2.sqrDist(playerShipRef.components["physics"].currPos, spaceshipRef.components["physics"].currPos) / 2250000.0);     // 2250000 = 1500**2 is a magic number -- it's meant to be greater than the hypotenuse of the arena (the largest possible distance that could separate 2 objects) (but it's hardcoded (A) because I'm taking shortcuts, and (B) because I haven't made any additional levels/arenas.. partly because of the shortcuts
+
         // The collision can only count if the spaceship is both alived and "enabled" (i.e., not in the middle of a respawn)
         if (spaceshipRef.ableState == SpaceshipAbleStateEnum.enabled) {
             // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the GameLogic obj, so the caller can simply put the GameCommand out
@@ -510,7 +513,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
-            this.asteroidExplosionSoundPool.play(); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
+            this.asteroidExplosionSoundPool.play( {"volume": sndVol, "loop": false} ); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
 
             numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
 
@@ -523,7 +526,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
-            this.shipExplosionSoundPool.play(); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
+            this.shipExplosionSoundPool.play( {"volume": sndVol, "loop": false} ); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
 
             var fragRefDir = vec2.create();   // Create collision normal out here, and pass into the disableAndSpwan call (so we can get fancy with collision normals, e.g., with spaceship surfaces
             vec2.sub(fragRefDir, spaceshipRef.components["physics"].currPos, spaceshipRef.components["physics"].prevPos);
@@ -596,7 +599,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
-        this.asteroidExplosionSoundPool.play(); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
+
+        var playerShipRef = this.gameObjs["ship0"];     // NOTE: hard-coded reference to the player ship. I'm doing this because I want to finish this game... taking shortcuts now......
+        var sndVol = 1.0 - (vec2.sqrDist(playerShipRef.components["physics"].currPos, asteroidRef.components["physics"].currPos) / 2250000.0);   // 2250000 = 1500**2 is a magic number -- it's meant to be greater than the hypotenuse of the arena (the largest possible distance that could separate 2 objects) (but it's hardcoded (A) because I'm taking shortcuts, and (B) because I haven't made any additional levels/arenas.. partly because of the shortcuts
+        this.asteroidExplosionSoundPool.play( {"volume": sndVol, "loop": false} ); // NOTE: technically, I should enqueue this, for a sound/resource handler to handle.. But I'm trying to finish this game, and I'm taking shortcuts now...
 
         // Note: in params, disableList is a list so we can possibly disable multiple asteroids at once; numToSpawn is the # of asteroids to spawn for each disabled asteroid. Can maybe be controlled by game difficulty level.
         cmdMsg = { "topic": "GameCommand",
@@ -648,7 +654,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                      }
                          };
                 this.messageQueue.enqueue(cmdMsg);
-                this.shipExplosionSoundPool.play();
+
+                var playerShipRef = this.gameObjs["ship0"];     // NOTE: hard-coded reference to the player ship. I'm doing this because I want to finish this game... taking shortcuts now......
+                var sndVol = 1.0 - (vec2.sqrDist(playerShipRef.components["physics"].currPos, spaceshipRef.components["physics"].currPos) / 2250000.0);  // 2250000 = 1500**2 is a magic number -- it's meant to be greater than the hypotenuse of the arena (the largest possible distance that could separate 2 objects) (but it's hardcoded (A) because I'm taking shortcuts, and (B) because I haven't made any additional levels/arenas.. partly because of the shortcuts
+                this.shipExplosionSoundPool.play( {"volume": sndVol, "loop": false} );
 
                 cmdMsg = { "topic": "GameCommand",
                            "command": "disableBullet",
@@ -686,7 +695,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
-        this.asteroidExplosionSoundPool.play();
+
+        var playerShipRef = this.gameObjs["ship0"];     // NOTE: hard-coded reference to the player ship. I'm doing this because I want to finish this game... taking shortcuts now......
+        var sndVol = 1.0 - (vec2.sqrDist(playerShipRef.components["physics"].currPos, asteroidRef.components["physics"].currPos) / 2250000.0);   // 2250000 = 1500**2 is a magic number -- it's meant to be greater than the hypotenuse of the arena (the largest possible distance that could separate 2 objects) (but it's hardcoded (A) because I'm taking shortcuts, and (B) because I haven't made any additional levels/arenas.. partly because of the shortcuts
+        this.asteroidExplosionSoundPool.play( {"volume": sndVol, "loop": false} );
 
         var cmdMsg = { "topic": "GameCommand",
                        "command": "disableAsteroids",
@@ -717,7 +729,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
-        this.shipExplosionSoundPool.play();
+
+        var playerShipRef = this.gameObjs["ship0"];     // NOTE: hard-coded reference to the player ship. I'm doing this because I want to finish this game... taking shortcuts now......
+        var sndVol = 1.0 - (vec2.sqrDist(playerShipRef.components["physics"].currPos, spaceshipRef.components["physics"].currPos) / 2250000.0);  // 2250000 = 1500**2 is a magic number -- it's meant to be greater than the hypotenuse of the arena (the largest possible distance that could separate 2 objects) (but it's hardcoded (A) because I'm taking shortcuts, and (B) because I haven't made any additional levels/arenas.. partly because of the shortcuts
+        this.shipExplosionSoundPool.play( {"volume": sndVol, "loop": false} );
 
         // Note: 75 is a magic number; gives probably enough a cushion around the spaceship when it spawns at some random location
         this.spawnAtNewLocation(spaceshipRef, 75);
@@ -745,7 +760,10 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
-            this.shipExplosionSoundPool.play();
+
+            var playerShipRef = this.gameObjs["ship0"];     // NOTE: hard-coded reference to the player ship. I'm doing this because I want to finish this game... taking shortcuts now......
+            var sndVol = 1.0 - (vec2.sqrDist(playerShipRef.components["physics"].currPos, spaceshipARef.components["physics"].currPos) / 2250000.0);     // 2250000 = 1500**2 is a magic number -- it's meant to be greater than the hypotenuse of the arena (the largest possible distance that could separate 2 objects) (but it's hardcoded (A) because I'm taking shortcuts, and (B) because I haven't made any additional levels/arenas.. partly because of the shortcuts
+            this.shipExplosionSoundPool.play( {"volume": sndVol, "loop": false} );
 
             var saveShipPos = vec2.clone(spaceshipBRef.components["physics"].currPos);
             cmdMsg = { "topic": "GameCommand",
