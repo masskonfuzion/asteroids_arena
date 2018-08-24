@@ -10,8 +10,6 @@ function GameLogic() {
     
     GameObject.call(this);
 
-// TODO: Probably make the GameLogic class implement some interface that has the necessary functions that all GameLogic objects must have
-
     this.collisionMgr = null;   // Placeholder for a collision manager (definition probably belongs in base/interface class)
     this.gameObjs = {};
     this.shipDict = {};     // A mapping of ship GameObject objectIDs (assigned by game engine) to the "nicknames" (assigned by the programmer)
@@ -86,9 +84,8 @@ GameLogic.prototype.initialize = function() {
     xplodPERef.setTTLRange(0.5, 1.0);         // seconds
     xplodPERef.setLaunchDir(1.0, 0.0);        // launch base dir is the vector [1,0]
     xplodPERef.setAngleRange(0.0, 359.0);     // rotate the base launch dir by some amount
-    xplodPERef.setMinColor(128, 128, 128);    // rgb values (TODO set colors based on ship color)
-    xplodPERef.setMaxColor(255, 255, 255);    // rgb values (TODO set colors based on ship color)
-
+    xplodPERef.setMinColor(128, 128, 128);    // rgb values (TODO set colors based on ship color - make a "Character" object that knows key info, e.g. ship color, etc.)
+    xplodPERef.setMaxColor(255, 255, 255);    // rgb values (TODO set colors based on ship color - make a "Character" object that knows key info, e.g. ship color, etc.)
 
 
     // ----- Initialize Bullet Manager system
@@ -108,15 +105,12 @@ GameLogic.prototype.initialize = function() {
     astMgrRef.initialize(1, 32);
 
     // ----- Initialize spaceships
-    // TODO possibly make a Spaceship Manager or something similar - for when we add spaceship bots; or move this into a ship.initialize() function.. something
     // TODO don't hardcode the initial position -- use arena test for containment
-    // TODO don't hardcode the ship names (e.g. ship0); compute/generate those
     this.addGameObject("ship0", new Spaceship());
     var shipRef = this.gameObjs["ship0"];
     var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship0"].imgObj,
                           "initialPos": [400, 225],
                         };
-    // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);
 
     this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
@@ -141,7 +135,6 @@ GameLogic.prototype.initialize = function() {
                       "knowledge": this,
                       "aiProfile": "miner"
                     };
-    // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);
 
     this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
@@ -166,7 +159,6 @@ GameLogic.prototype.initialize = function() {
                       "aiProfile": "hunter",
                       "aiHuntRadius": 800
                     };
-    // TODO update ship.initialize() to take in a reference to the collision mgr and to the particle engines as part of the shipConfigObj being passed in. Then, move that stuff into initialize()
     shipRef.initialize(shipConfigObj);
 
     this.collisionMgr.addCollider(shipRef.components["collision"]);   // Have to do the collision manager registration out here, because the spaceship is fully formed at this point (we can't do it in the spaceship constructor (in its current form) -- the parent obj is not passed in)
@@ -190,7 +182,6 @@ GameLogic.prototype.initialize = function() {
 };
 
 GameLogic.prototype.addGameObject = function(objName, obj) {
-    // TODO assign the current GameLogic.objectIDToAssign to the object (probably add to the GameObject prototype); increment the GameLogic object's objectIDToAssign
     this.objectIDToAssign += 1;
 
     this.gameObjs[objName] = obj;
@@ -212,7 +203,7 @@ GameLogic.prototype.draw = function(canvasContext) {
     canvasContext.fillStyle = 'black';
     canvasContext.fillRect(0,0, game.canvas.width, game.canvas.height);
 
-    // TODO replace with a proper camera class. Update the camera during the update cycle (allow camera to track any given object), then simply apply camera transform here
+    // TODO replace with a proper "camera" class. Update the camera during the update cycle (allow camera to track any given object), then simply apply camera transform here. This should also allow for easier effects, e.g. screen shake
     var camPos = vec2.create();
     var viewportCenter = vec2.create();
     vec2.set(viewportCenter, game.canvas.width / 2, game.canvas.height / 2);
@@ -246,7 +237,6 @@ GameLogic.prototype.processMessages = function(dt_s) {
         //console.log('Iterating over topic: ' + msg.topic);
 
         for (var handler of this.messageQueue._registeredListeners[msg.topic]) {
-            // TODO evaluate why we're storing the listeners as dicts {id: ref}; why not just use a list?
             handler["func"].call(handler["obj"], msg);
         }
     }
@@ -278,7 +268,6 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.keyCtrlMap["thrust"]["state"] = true;
 
         // Note that the payload of messages in the queue can vary depending on context. At a minimum, the message MUST have a topic
-        // TODO keep a reference to the player-controlled obj, instead of hard-coding?
         cmdMsg = { "topic": "GameCommand",
                    "command": "setThrustOn",
                    "targetObj": this.gameObjs["ship0"],
@@ -393,17 +382,10 @@ GameLogic.prototype.update = function(dt_s, config = null) {
         this.collisionMgr.update(dt_s);
     }
 
-    // Play sound effects? (TODO: the sound effects handler/manager should have its own little per-frame queue of sound effects to play. (Make it a set -- only 1 sound effect per cycle. If the event queue has 2 events to play the same sound effect, play only 1)
-
-    // TODO wrap this end-of-game detection into a function. Handle various game modes
     switch (game.settings.visible.gameMode) {
         case "Death Match":
             for (var shipName in this.gameStats) {
                 var scoreObj = this.gameStats[shipName];
-
-                //TODO un-hardcode game mode -- make it selectable/configurable.
-                // ^^ Figure out what the right settings should be. e.g., gunsEnabled is there because I have a thought to make a kamikaze mode, where you can only attack by ramming into targets :-D :-D
-                // ^^ Then, here, check if gameMode == deathMatch, then the game ends when a player gets the right # of kills; else if gameMode == timeAttack, game ends when time's up, etc.
 
                 if (scoreObj.kills == game.settings.visible.gameModeSettings.deathMatch.shipKills) {
                     console.log(shipName + " wins!!");
@@ -413,7 +395,7 @@ GameLogic.prototype.update = function(dt_s, config = null) {
                                "targetObj": this,
                                "command": "changeState",
                                "params": {"stateName": "GameOver",
-                                          "transferObj": {"displayMsg": shipName + " wins!!"} }
+                                          "transferObj": {"displayMsg": shipName + " wins!!"} } // TODO make a Character/Player class (or some object) that can store the name of the ship (instead of ship0, etc)
                              };
                     this.messageQueue.enqueue(cmdMsg);
                 }
@@ -503,7 +485,6 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         // The collision can only count if the spaceship is both alived and "enabled" (i.e., not in the middle of a respawn)
         if (spaceshipRef.ableState == SpaceshipAbleStateEnum.enabled) {
-            // TODO rework GameCommand so that the caller doesn't need to know which object will handle the game command.  Have handlers register with the GameLogic obj, so the caller can simply put the GameCommand out
             numParticles = (asteroidRef.size + 1) * 8;  // The multiplier is a magic number; chosen because it created visually pleasing explosions, without too much performance hit
             cmdMsg = { "topic": "GameCommand",
                        "command": "createExplosion",
@@ -546,7 +527,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             this.spawnAtNewLocation(spaceshipRef, 75);
 
             var shipName = this.shipDict[spaceshipRef.objectID];    // NOTE: I hate that JS doesn't care that spaceshipObjectID is a string, but the keys in the dict/obj are int/float
-            this.gameStats[shipName].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+            this.gameStats[shipName].deaths += 1;
         }
 
     } else if (gameObjAType == "Bullet" && gameObjBType == "Asteroid" || gameObjBType == "Bullet" && gameObjAType == "Asteroid") {
@@ -635,7 +616,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             } else {
                 var shooterObjectID = this.lookupObjectID(bulletRef.emitterID, "Spaceship");
                 var shooterName = this.shipDict[shooterObjectID];  // NOTE: I hate that JS doesn't care that shooterObjectID is a string, but the keys in the dict/obj are int/float
-                    // If ship0 is the shooter, then increment human player's kills (TODO think about scaling up for local multiplayer?)
+                    // If ship0 is the shooter, then increment human player's kills
                 this.gameStats[shooterName].kills += 1;
                 this.gameStats[shooterName].score += this.settings["hidden"]["pointValues"]["kill"];
 
@@ -717,7 +698,6 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             arenaRef = msg.colliderB.parentObj;
             spaceshipRef = msg.colliderA.parentObj;
         }
-        // TODO implement a "spawning" state -- maybe render some cool VFX and do a countdown or something
 
         numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
         var saveShipPos = vec2.clone(spaceshipRef.components["physics"]);
@@ -780,7 +760,7 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             this.spawnAtNewLocation(spaceshipBRef, 75);
 
             var shipName = this.shipDict[spaceshipARef.objectID];    // NOTE: I hate that JS doesn't care that spaceshipObjectID is a string, but the keys in the dict/obj are int/float
-            this.gameStats[shipName].deaths += 1;   // TODO - now that there's a ship list, we need to map the ship ref to the player (either cpu or human)
+            this.gameStats[shipName].deaths += 1;
 
             shipName = this.shipDict[spaceshipBRef.objectID];
             this.gameStats[shipName].deaths += 1;
@@ -909,7 +889,7 @@ GameLogic.prototype.doUICommand = function(msg) {
         case "changeState":
             // call the game state manager's changestate function
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
-            // TODO note how we're using the transferObj here. It should be like this everywhere we call changeState or pauseState or whatever
+            // Note how we're using the transferObj here. It should be like this everywhere we call changeState or pauseState or whatever
             var transferObj = msg.params.hasOwnProperty("transferObj") ? msg.params.transferObj : null;   // Use msg.params if it exists; else pass null
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName], transferObj);
             break;

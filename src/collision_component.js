@@ -90,7 +90,7 @@ CollisionComponentAABB.prototype.draw = function(canvasContext) {
 
 // Recompute the boundaries of the AABB
 CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
-    // TODO instead of querying the parentObj here, have any parent obj pass in data used for refreshing the aabb in, using the obj parameter
+    // TODO instead of querying the parentObj here, have any parent obj pass in data used for refreshing the aabb, using the obj parameter
     var renderComp = this.parentObj.components["render"];
     console.assert(renderComp !== null);
 
@@ -98,7 +98,7 @@ CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
     var physicsComp = this.parentObj.components["physics"];
     console.assert(physicsComp !== null);
 
-    // TODO again -- don't default to using a physics component to set the center here; have the parent object pass in a "config object" that has all the data necessary to recompute the AABB
+    // TODO don't default to using a physics component to set the center here; have the parent object pass in a "config object" that has all the data necessary to recompute the AABB
     this.setCenter(physicsComp.currPos[0], physicsComp.currPos[1]);
 
     // Compute extents
@@ -177,11 +177,6 @@ function CollisionComponentOBB() {
 function CollisionComponentLineSeg() {
     GameObjectComponent.call(this);
     this.type = CollisionComponentTypeEnum.lineseg;
-
-    // TODO decide: do we want to track center/extent AND start/end points? On one hand, that could be a lot of data to store; on the other hand, we're doing that with the AABBs (storing center/extents and also min/max points)
-    //this.center = vec2.create();
-    //this.extents = [0.0];   // The extent in line segment is the half-width from center to each endpoint
-    //// NOTE: storing a list here for consistency with the other collision component types
 
     // could use annoying ternary here, but eh
     this.sPt = vec2.create();
@@ -272,7 +267,7 @@ function CollisionComponentPolygon() {
     this.type = CollisionComponentTypeEnum.polygon;
 
     this.points = [];   // Store points for sure (list of glMatrix.vec2 objects)
-                        // TODO decide whether to store planes also, or to compute them on the fly, for, e.g., separating axis testing
+                        // TODO decide whether to store 2D planes also, or to compute them on the fly, for, e.g., separating axis testing
 }
 
 

@@ -121,24 +121,6 @@ Spaceship.prototype.initialize = function(configObj) {
 
 // Override the default update()
 Spaceship.prototype.update = function(dt_s, config = null) {
-    //if (this.aiControlled) {
-    //    // TODO compute nearest threat (use the quadtree to prune calculations)
-    //    // The quadtree is owned by the gameLogic object, which is also the parent obj of all spaceships
-    //    // NOTE: it would be safer to verify that the gameLogic object has a collisionMgr, but whatever, we know it does..
-    //    var qt = this.parentObj.collisionMgr.quadTree;
-
-    //    var nearObjs = [];
-    //    // Clear the near objs list
-    //    qt.retrieve(nearObjs, this.components["collision"]);
-
-    //    var minDist = Number.MAX_SAFE_INTEGER;
-    //    for (var nearObj of nearObjs) {
-    //        var sqrDist = 0; // TODO standardize a way to get distance to an object -- maybe use closest point or some other math
-    //        // TODO 2018-01-11 - pick up from here
-    //        // TODO 2018-04-12 - Hmmm.... pick up what from here? What was I trying to do? Always keep a reference to the nearest threat, no matter what state the AI is in? Possibly
-    //    }
-    //}
-
     // Iterate over all components and call their respective update() function
     for (var compName in this.components) {
         if (this.components.hasOwnProperty(compName)) {

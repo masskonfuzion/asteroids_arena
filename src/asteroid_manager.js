@@ -64,8 +64,6 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
     // 4 is a magic number -- the # of asteroids that can possibly result from shooting 1 large asteroid
     var totalAsteroids = this.activeAsteroids[2] + this.activeAsteroids[1] + this.activeAsteroids[0];
     if (this.maxAsteroids - freeSpacesNeeded >= 4) {
-        // TODO add some kind of level manager? (i.e. max # of asteroids that will be spawned in this level? Or, otherwise make this game a pure deathmatch, ending when ships are destroyed? Or, just play for time? I don't know what this game should be)
-
         var bannedLocations = this.createBannedLocationsList(70);
         var configObj = { "renderCompType": "image",
                           "imageRef": game.imgMgr.imageMap["astLarge"].imgObj,
@@ -90,7 +88,6 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
 
 
 AsteroidManager.prototype.resetAsteroidField = function() {
-    // TODO revisit what to do when you reset
     // This fn is meant to be called after setting max/init (or maybe we should reset when we initialize? Not sure..
 
 };
@@ -117,12 +114,10 @@ AsteroidManager.prototype.disableAsteroids = function(params) {
         astToDisable.disable( {"collisionMgrRef": this.collisionMgrRef} ); 
         this.activeAsteroids[astToDisable.size] -= 1;
         if (this.activeAsteroids[astToDisable.size] < 0) { throw new Error("activeAsteroids reached negative count"); }
-        // TODO trigger a particle explosion
     }
 };
 
 // Disable passed-in asteroid(s), and spawn new ones
-// TODO consider splitting into separate disable() and spawn() functions? (requires enqueueing 2 messages, instead of 1, when an asteroid is destroyed and a new one needs to be spawned)
 AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
     // params is a dict object
 
@@ -149,7 +144,6 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         if (this.activeAsteroids[astToDisable.size] < 0) { throw new Error("activeAsteroids reached negative count"); }
 
         var bannedLocations = this.createBannedLocationsList(70);
-        // TODO trigger a particle explosion
         if (astToDisable.size > 0) {
             var newSize = astToDisable.size - 1;
             var newSizeStr = this.asteroidSizeMap[newSize];
@@ -332,7 +326,7 @@ AsteroidManager.prototype.spawnNewAsteroid = function(dt_s, config) {
         }
 
         newAsteroid.alive = true;
-        newAsteroid.autoExpire = false;    // TODO evaluate -- might not need autoExpire anymore
+        newAsteroid.autoExpire = false;
         this.activeAsteroids[newAsteroid.size] += 1;
 
         // Compute a launch velocity (don't use Math.floor() because we want floating point results
@@ -346,9 +340,6 @@ AsteroidManager.prototype.spawnNewAsteroid = function(dt_s, config) {
         // Note: we are able to add collision objects to the collision manager at this point, because the asteroids being are already fully formed objects
         // (i.e., we wait until after position and velocity and all that are set, so that the collision component update() call can work right)
         if ("collision" in newAsteroid.components) {
-            // Get a reference to the GameLogic object's collision manager
-            //vec2.copy(newAsteroid.components["collision"].center, spawnPos);    // Set the center of the collision component  // TODO - delete?
-            
             newAsteroid.components["collision"].update(0);     // Do a trivial update to make the collider compute its size and such
             this.collisionMgrRef.addCollider(newAsteroid.components["collision"]);
         }
