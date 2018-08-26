@@ -116,47 +116,16 @@ CollisionManager.prototype.isColliding = function(objA, objB) {
 
     // Polygon-Polygon
     if (objA.type == CollisionComponentTypeEnum.polygon && objB.type == CollisionComponentTypeEnum.polygon) {
-        var foundAnySeparatingAxis = false; // If there is ANY axis with separation, then there is no collision
+        return this.isColliding_Polygon_Polygon(objA, objB);
+    }
 
-        for (var normal in objA.normals) {
-            // For every normal, treat the normal as the potential separating axis; project the points of A (and B, below) onto the axis
-            var tMinA = Number.MAX_VALUE;
-            var tMaxA = -Number.MIN_VALUE;
+    // Polygon-Segment
+    if (objA.type == CollisionComponentTypeEnum.polygon && objB.type == CollisionComponentTypeEnum.lineseg) {
+        return this.isColliding_LineSeg_Polygon(objB, objA);
+    }
 
-            // Compute the locations, along the given normal, of the min and max locations of points in objA
-            for (var point of objA.tpoints) {
-                // point is already stored as a vector object
-                // we can think of point as a 2D vector from the origin to the point's location
-                // then, the location of the projection of the 2D vector ontot the axis is simply given by the dot product of the 2D vector and the axis
-                // the normal is already normalized (part of the polygon's update() function)
-
-                var t = vec2.dot(point, normal);
-                if (t > tMaxA) {
-                    tMaxA = t;
-                }
-                else if (t < tMinA) {
-                    tMinA = t;
-                }
-            }
-
-            // Compute the locations, along the given normal, of the min and max locations of points in objB
-            for (var point of objB.tpoints) {
-                var t = vec2.dot(point, normal);
-                if (t > tMaxB) {
-                    tMaxB = t;
-                }
-                else if (t < tMinB) {
-                    tMinB = t;
-                }
-            }
-
-            if (tMinB > tMaxA || tMinA > tMaxB) {
-                foundAnySeparatingAxis = true;
-                break;
-            }
-        }
-
-        return foundAnySeparatingAxis;
+    if (objA.type == CollisionComponentTypeEnum.lineseg && objB.type == CollisionComponentTypeEnum.polygon) {
+        return this.isColliding_LineSeg_Polygon(objA, objB);
     }
 };
 
@@ -176,7 +145,7 @@ CollisionManager.prototype.isColliding_AABB_AABB = function(objA, objB) {
 
 // Return true if the given aabb and line segment intersect; false otherwise
 CollisionManager.prototype.isColliding_AABB_LineSeg = function(box, seg) {
-    // Implementing a hacked up version of the separating axis theorem (2D simplified version)
+    // Implementing a hacked up intersection test
     // This function is good only for boolean true/false testing.
 
     var segMidPt = vec2.create();
@@ -219,4 +188,70 @@ CollisionManager.prototype.isColliding_LineSeg_LineSeg = function(objA, objB) { 
 
     return (t >= 0 && t <= 1);
 
+};
+
+
+CollisionManager.prototype.isColliding_Polygon_Polygon = function(objA, objB) {
+    var foundAnySeparatingAxis = false; // If there is ANY axis with separation, then there is no collision
+
+    for (var normal in objA.normals) {
+        // For every normal, treat the normal as the potential separating axis; project the points of A (and B, below) onto the axis
+        var tMinA = Number.MAX_VALUE;
+        var tMaxA = -Number.MIN_VALUE;
+        var tMinB = Number.MAX_VALUE;
+        var tMaxB = -Number.MIN_VALUE;
+
+        // Compute the locations, along the given normal, of the min and max locations of points in objA
+        for (var point of objA.tpoints) {
+            // point is already stored as a vector object
+            // we can think of point as a 2D vector from the origin to the point's location
+            // then, the location of the projection of the 2D vector ontot the axis is simply given by the dot product of the 2D vector and the axis
+            // the normal is already normalized (part of the polygon's update() function)
+
+            var t = vec2.dot(point, normal);
+            if (t > tMaxA) {
+                tMaxA = t;
+            }
+            else if (t < tMinA) {
+                tMinA = t;
+            }
+        }
+
+        // Compute the locations, along the given normal, of the min and max locations of points in objB
+        for (var point of objB.tpoints) {
+            var t = vec2.dot(point, normal);
+            if (t > tMaxB) {
+                tMaxB = t;
+            }
+            else if (t < tMinB) {
+                tMinB = t;
+            }
+        }
+
+        if (tMinB > tMaxA || tMinA > tMaxB) {
+            foundAnySeparatingAxis = true;
+            break;
+        }
+    }
+
+    return foundAnySeparatingAxis;
+};
+
+
+CollisionManager.prototype.isColliding_LineSeg_Polygon = function(seg, poly) {
+    // Naive approach: Intersection test of the line segment against all the line segments in the polygon
+    // The polygon "line segments" are constructed on the fly; polygons are stored as points
+
+    for (var i = 0; i < poly.tpoints.length; i++) {
+        var tmpPolySeg = new CollisionComponentLineSeg();
+
+        var j = (i + 1) % poly.tpoints.length;
+
+        tmpPolySeg.setEndPoints(poly.tpoints[i][0], poly.tpoints[i][1], poly.tpoints[j][0], poly.tpoints[j][1]);
+        if (this.isColliding_LineSeg_LineSeg(tmpPolySeg, seg)) {
+            return true;
+        }
+    }
+
+    return false;
 };

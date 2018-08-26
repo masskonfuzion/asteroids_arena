@@ -17,7 +17,7 @@ function Spaceship() {
     this.addComponent("render", new RenderComponentSprite());
     this.addComponent("thrustPE", new ParticleEmitter());           // Particle emitter for rocket/thruster exhaust particle system
     this.addComponent("gunPE", new ParticleEmitter());              // Particle emitter for bullet/guns particle system
-    this.addComponent("collision", new CollisionComponentAABB());
+    this.addComponent("collision", new CollisionComponentPolygon());
 
     var thrustPE = this.components["thrustPE"];  // get a reference to our own component, to shorten the code
     thrustPE.setVelocityRange(150.0, 300.0);
@@ -63,6 +63,21 @@ Spaceship.prototype.initialize = function(configObj) {
     // TODO test for existence of configObj and its properties
     this.components["render"].setImgObj(configObj["imgObj"]);
     this.components["physics"].setPosition(configObj["initialPos"][0], configObj["initialPos"][1]);
+
+    // A janky, hard-coded way to initialize the bounding box for this spaceship, as a bounding box.
+    // TODO replace this with something smarter (ideally a function or a data load from.. file.. or something.. based on the spaceship geometry)
+    this.components["collision"].points.push(vec2.fromValues(-16, 16));     // bottom left
+    this.components["collision"].points.push(vec2.fromValues(16, 16));      // bottom right
+    this.components["collision"].points.push(vec2.fromValues(16, -16));     // top right
+    this.components["collision"].points.push(vec2.fromValues(-16, -16));    // top left
+    this.components["collision"].tpoints.push(vec2.create());               // TODO make a function, addPoint (or something) that adds a new point to points, and also creates an entry in tpoints and normals
+    this.components["collision"].tpoints.push(vec2.create());
+    this.components["collision"].tpoints.push(vec2.create());
+    this.components["collision"].tpoints.push(vec2.create());
+    this.components["collision"].normals.push(vec2.create());               // TODO make a function, addPoint (or something) that adds a new point to points, and also creates an entry in tpoints and normals
+    this.components["collision"].normals.push(vec2.create());
+    this.components["collision"].normals.push(vec2.create());
+    this.components["collision"].normals.push(vec2.create());
     this.components["collision"].update(0);    // Do an update to force the collision component to compute its boundaries
 
     // NOTE: can't set particle emitter IDs in the constructor because the objectID for this object has not been set at that point

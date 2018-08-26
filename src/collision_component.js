@@ -293,6 +293,11 @@ function CollisionComponentPolygon() {
 CollisionComponentPolygon.prototype = Object.create(GameObjectComponent.prototype);
 CollisionComponentPolygon.prototype.constructor = CollisionComponentPolygon;
 
+CollisionComponentPolygon.prototype.setCenter = function(x, y) {
+    this.center[0] = x;
+    this.center[1] = y;
+};
+
 CollisionComponentPolygon.prototype.setMinPt = function(x, y) {
     // NOTE: this function should not be called explicitly. It will be called during update()
     this.minPt[0] = x;
@@ -322,7 +327,7 @@ CollisionComponentPolygon.prototype.getHeight = function() {
 };
 CollisionComponentPolygon.prototype.update = function(dt_s, obj = null) {
     // var renderComp = (this.parentObj && this.parentObj.components.indexOf("render") > -1) ? this.parentObj.components["render"] : null;   // Not sure if I need this var yet (TODO possibly delete)
-    var physicsComp = (this.parentObj && this.parentObj.components.indexOf("physics") > -1) ? this.parentObj.components["render"] : null;   // Not sure if I need this var yet (TODO possibly delete)
+    var physicsComp = (this.parentObj && this.parentObj.components.hasOwnProperty("physics")) ? this.parentObj.components["physics"] : null;
 
     var ang = 0.0;
     var rotMat = mat2.create();
@@ -361,7 +366,7 @@ CollisionComponentPolygon.prototype.update = function(dt_s, obj = null) {
         var faceStartPtIdx = i;
         var faceEndPtIdx = (i + 1) % this.points.length;
         vec2.sub(this.normals[i], this.tpoints[faceStartPtIdx], this.tpoints[faceEndPtIdx]);
-        this.normals[i].set(-this.normals[i][1],this.normals[i][0]);    // Poor man's +90 degree rotation in 2D: x' = -y; y' = x
+        vec2.set(this.normals[i], -this.normals[i][1],this.normals[i][0]);    // Poor man's +90 degree rotation in 2D: x' = -y; y' = x
         vec2.normalize(this.normals[i], this.normals[i]);
     }
     this.setMinPt(minPt[0], minPt[1]);
@@ -380,7 +385,7 @@ CollisionComponentPolygon.prototype.draw = function(canvasContext) {
         canvasContext.stroke();
     }
 
-    canvasContext.endPath();
+    canvasContext.closePath();
 };
 
 
