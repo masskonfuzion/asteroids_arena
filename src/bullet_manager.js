@@ -20,6 +20,24 @@ BulletManager.prototype.initialize = function(maxBullets) {
     // maxBullets is the maximum number of Bullets that could be in play
     var mySystem = this.components["gunPS"];
     mySystem.initialize(maxBullets);
+
+    // Note: the following collider update is super janky -- it's necessary because of the fact that Bullets derive from Particles (even though they shouldn't); so we have a messy collision detection initialization
+    for (var bullet of mySystem.particles) {
+        // TODO don't hardcode the size here -- we should use the radius/size of a bullet as a variable
+        bullet.components["collision"].points.push(vec2.fromValues(-2, 2));     // bottom left
+        bullet.components["collision"].points.push(vec2.fromValues(2, 2));      // bottom right
+        bullet.components["collision"].points.push(vec2.fromValues(2, -2));     // top right
+        bullet.components["collision"].points.push(vec2.fromValues(-2, -2));    // top left
+        bullet.components["collision"].tpoints.push(vec2.create());               // TODO make a function, addPoint (or something) that adds a new point to points, and also creates an entry in tpoints and normals
+        bullet.components["collision"].tpoints.push(vec2.create());
+        bullet.components["collision"].tpoints.push(vec2.create());
+        bullet.components["collision"].tpoints.push(vec2.create());
+        bullet.components["collision"].normals.push(vec2.create());               // TODO make a function, addPoint (or something) that adds a new point to points, and also creates an entry in tpoints and normals
+        bullet.components["collision"].normals.push(vec2.create());
+        bullet.components["collision"].normals.push(vec2.create());
+        bullet.components["collision"].normals.push(vec2.create());
+    }
+
     mySystem.collisionMgrRef = this.parentObj.collisionMgr;     // TODO maybe make a wrapper function, to make a cleaner assignment of collisionMgrRef
 
     // NOTE: Chances are the BulletManager does not have its own emitter; various other things will have emitters (e.g. spaceships). However, the manager will be able to expire bullets when they meet certain conditions (e.g. off-screen, collide with something)

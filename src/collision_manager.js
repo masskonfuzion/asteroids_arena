@@ -127,6 +127,16 @@ CollisionManager.prototype.isColliding = function(objA, objB) {
     if (objA.type == CollisionComponentTypeEnum.lineseg && objB.type == CollisionComponentTypeEnum.polygon) {
         return this.isColliding_LineSeg_Polygon(objA, objB);
     }
+
+    // Circle-Polygon
+    if (objA.type == CollisionComponentTypeEnum.polygon && objB.type == CollisionComponentTypeEnum.circle) {
+        return this.isColliding_Circle_Polygon(objB, objA);
+    }
+
+    if (objA.type == CollisionComponentTypeEnum.circle && objB.type == CollisionComponentTypeEnum.polygon) {
+        return this.isColliding_Circle_Polygon(objA, objB);
+    }
+
 };
 
 
@@ -190,11 +200,62 @@ CollisionManager.prototype.isColliding_LineSeg_LineSeg = function(objA, objB) { 
 
 };
 
-
-CollisionManager.prototype.isColliding_Polygon_Polygon = function(objA, objB) {
+CollisionManager.prototype.isColliding_Circle_Polygon = function(circle, poly) {
+    // TODO finish this
     var foundAnySeparatingAxis = false; // If there is ANY axis with separation, then there is no collision
 
-    for (var normal in objA.normals) {
+    var allTheNormals = [];
+    allTheNormals.concat(objA.normals)
+
+    for (var normal in allTheNormals) {
+        // For every normal, treat the normal as the potential separating axis; project the points of A (and B, below) onto the axis
+        var tMinA = Number.MAX_VALUE;
+        var tMaxA = -Number.MIN_VALUE;
+        var tMinB = Number.MAX_VALUE;
+        var tMaxB = -Number.MIN_VALUE;
+
+        // Compute the locations, along the given normal, of the min and max locations of points in objA
+        for (var point of objA.tpoints) {
+            // point is already stored as a vector object
+            // we can think of point as a 2D vector from the origin to the point's location
+            // then, the location of the projection of the 2D vector ontot the axis is simply given by the dot product of the 2D vector and the axis
+            // the normal is already normalized (part of the polygon's update() function)
+
+            var t = vec2.dot(point, normal);
+            if (t > tMaxA) {
+                tMaxA = t;
+            }
+            else if (t < tMinA) {
+                tMinA = t;
+            }
+        }
+
+        // TODO as of 2018-08-27 - finish this! There is no circle/sphere collision component.. So we have to make one
+        // Compute the locations, along the given normal, of the min and max locations of points in objB
+        for (var point of objB.tpoints) {
+            var t = vec2.dot(point, normal);
+            if (t > tMaxB) {
+                tMaxB = t;
+            }
+            else if (t < tMinB) {
+                tMinB = t;
+            }
+        }
+
+        if (tMinB > tMaxA || tMinA > tMaxB) {
+            foundAnySeparatingAxis = true;
+            break;
+        }
+    }
+
+    return foundAnySeparatingAxis;
+};
+
+
+CollisionManager.prototype.isColliding_Polygon_Polygon = function(objA, objB) {
+    var allTheNormals = new Array().concat(objA.normals, objB.normals);
+
+    for (var normal of allTheNormals) {
         // For every normal, treat the normal as the potential separating axis; project the points of A (and B, below) onto the axis
         var tMinA = Number.MAX_VALUE;
         var tMaxA = -Number.MIN_VALUE;
@@ -229,12 +290,12 @@ CollisionManager.prototype.isColliding_Polygon_Polygon = function(objA, objB) {
         }
 
         if (tMinB > tMaxA || tMinA > tMaxB) {
-            foundAnySeparatingAxis = true;
-            break;
+            // If any separating axis is found, there can be no collision
+            return false;
         }
     }
 
-    return foundAnySeparatingAxis;
+    return true;
 };
 
 

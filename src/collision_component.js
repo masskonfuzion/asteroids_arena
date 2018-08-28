@@ -376,10 +376,11 @@ CollisionComponentPolygon.prototype.update = function(dt_s, obj = null) {
 CollisionComponentPolygon.prototype.draw = function(canvasContext) {
     // draw polygon as a sequence of lines
     canvasContext.strokeStyle = "red";  // TODO don't hardcode strokeStyle
+    canvasContext.lineWidth = 1;
     canvasContext.beginPath();
 
     for (var i = 0; i < this.tpoints.length; i++) {
-        j = (i + 1) % this.tpoints.length;
+        var j = (i + 1) % this.tpoints.length;
         canvasContext.moveTo(this.tpoints[i][0], this.tpoints[i][1]);
         canvasContext.lineTo(this.tpoints[j][0], this.tpoints[j][1]);
         canvasContext.stroke();

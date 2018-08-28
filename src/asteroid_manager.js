@@ -17,12 +17,20 @@ function AsteroidManager () {
                              2: "astLarge"
                            };
 
+    // large asteroids are 32x32
+    // medium asteroids are 16x16
+    // small asteroids are 8x8
+    // asteroid sizes are given as follows: this.size = 2;  // Sizes are: 2=large, 1=medium, 0=small
+    // so we'll make a "halfSize" array that has the appropriate half-sizes we can looken, given the Asteroid's "size" property
+    this.asteroidHalfSizes = [4, 8, 16];   // used when initializing collision components for new asteroids
+
     this.collisionMgrRef = null;
 
     // REPLACE ALL THIS NONSENSE (note: we're pretty much copying from particle_emitter.js.. But Asteroids should not be particles
     this.asteroidSpawnParams = { "minSpeed": 3.0,
                                  "maxSpeed": 9.0
                                }
+
 }
 
 
@@ -321,7 +329,7 @@ AsteroidManager.prototype.spawnNewAsteroid = function(dt_s, config) {
         }
         else {
 
-            // Throw and error if spawnNew was called with no config object. But really, we should have some kind of handling for a situation like this. E.g., reasonable defaults
+            // Throw an error if spawnNew was called with no config object. But really, we should have some kind of handling for a situation like this. E.g., reasonable defaults
             throw new Error("Asteroid spawn function was called with no configuration info.  Don't know how to construct the asteroid");
         }
 
@@ -329,7 +337,7 @@ AsteroidManager.prototype.spawnNewAsteroid = function(dt_s, config) {
         newAsteroid.autoExpire = false;
         this.activeAsteroids[newAsteroid.size] += 1;
 
-        // Compute a launch velocity (don't use Math.floor() because we want floating point results
+        // Compute launch velocity, using speed as given/computed above
         var launchVel = vec2.create();
         vec2.scale(launchVel, asteroidDir, speed);
 
@@ -340,6 +348,27 @@ AsteroidManager.prototype.spawnNewAsteroid = function(dt_s, config) {
         // Note: we are able to add collision objects to the collision manager at this point, because the asteroids being are already fully formed objects
         // (i.e., we wait until after position and velocity and all that are set, so that the collision component update() call can work right)
         if ("collision" in newAsteroid.components) {
+            // SUUUUUPER JANKY -- TODO clean up Asteroid collision component management (create once; after initial creation, only modify)
+            if (newAsteroid.components["collision"].points.length == 0) {   // and, for that matter, if tpoints and normals also have 0 length
+                newAsteroid.components["collision"].points.push(vec2.create());     // bottom left
+                newAsteroid.components["collision"].points.push(vec2.create());     // bottom right
+                newAsteroid.components["collision"].points.push(vec2.create());     // top right
+                newAsteroid.components["collision"].points.push(vec2.create());     // top left
+                newAsteroid.components["collision"].tpoints.push(vec2.create());               // TODO make a function, addPoint (or something) that adds a new point to points, and also creates an entry in tpoints and normals
+                newAsteroid.components["collision"].tpoints.push(vec2.create());
+                newAsteroid.components["collision"].tpoints.push(vec2.create());
+                newAsteroid.components["collision"].tpoints.push(vec2.create());
+                newAsteroid.components["collision"].normals.push(vec2.create());               // TODO make a function, addPoint (or something) that adds a new point to points, and also creates an entry in tpoints and normals
+                newAsteroid.components["collision"].normals.push(vec2.create());
+                newAsteroid.components["collision"].normals.push(vec2.create());
+                newAsteroid.components["collision"].normals.push(vec2.create());
+            }
+
+            vec2.set(newAsteroid.components["collision"].points[0], -this.asteroidHalfSizes[newAsteroid.size], this.asteroidHalfSizes[newAsteroid.size]);       // bottom left
+            vec2.set(newAsteroid.components["collision"].points[1], this.asteroidHalfSizes[newAsteroid.size], this.asteroidHalfSizes[newAsteroid.size]);        // bottom right
+            vec2.set(newAsteroid.components["collision"].points[2], this.asteroidHalfSizes[newAsteroid.size], -this.asteroidHalfSizes[newAsteroid.size]);       // top right
+            vec2.set(newAsteroid.components["collision"].points[3], -this.asteroidHalfSizes[newAsteroid.size], -this.asteroidHalfSizes[newAsteroid.size]);      // top left
+
             newAsteroid.components["collision"].update(0);     // Do a trivial update to make the collider compute its size and such
             this.collisionMgrRef.addCollider(newAsteroid.components["collision"]);
         }
