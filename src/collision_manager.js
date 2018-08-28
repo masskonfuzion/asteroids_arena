@@ -202,13 +202,10 @@ CollisionManager.prototype.isColliding_LineSeg_LineSeg = function(objA, objB) { 
 };
 
 CollisionManager.prototype.isColliding_Circle_Polygon = function(circle, poly) {
-    // TODO finish this
-    var foundAnySeparatingAxis = false; // If there is ANY axis with separation, then there is no collision
+    // TODO as of 2018-08-27 - finish this! There is no circle/sphere collision component.. So we have to make one
+    var allTheNormals = new Array().concat(objA.normals, objB.normals);
 
-    var allTheNormals = [];
-    allTheNormals.concat(objA.normals)
-
-    for (var normal in allTheNormals) {
+    for (var normal of allTheNormals) {
         // For every normal, treat the normal as the potential separating axis; project the points of A (and B, below) onto the axis
         var tMinA = Number.MAX_VALUE;
         var tMaxA = -Number.MIN_VALUE;
@@ -226,30 +223,30 @@ CollisionManager.prototype.isColliding_Circle_Polygon = function(circle, poly) {
             if (t > tMaxA) {
                 tMaxA = t;
             }
-            else if (t < tMinA) {
+            if (t < tMinA) {
                 tMinA = t;
             }
         }
 
-        // TODO as of 2018-08-27 - finish this! There is no circle/sphere collision component.. So we have to make one
         // Compute the locations, along the given normal, of the min and max locations of points in objB
+        // TODO because there are no vertices in a Circle (or Sphere? -- I don't know.. Use whatever name is appropriate, once you actually crete the collider type) collider, project the center down to the normal's line/plane, and then compute the extreme points of the circle from there
         for (var point of objB.tpoints) {
             var t = vec2.dot(point, normal);
             if (t > tMaxB) {
                 tMaxB = t;
             }
-            else if (t < tMinB) {
+            if (t < tMinB) {
                 tMinB = t;
             }
         }
 
         if (tMinB > tMaxA || tMinA > tMaxB) {
-            foundAnySeparatingAxis = true;
-            break;
+            // If any separating axis is found, there can be no collision
+            return false;
         }
     }
 
-    return foundAnySeparatingAxis;
+    return true;
 };
 
 
