@@ -57,6 +57,7 @@ CollisionManager.prototype.update = function(dt_s, configObj) {
         if (this.colliders.hasOwnProperty(collKey)) {
             var collObj = this.colliders[collKey];
             var candidates = [];
+            // TODO - change this code to retrieve all colliders near a fixed point (say, the center of the node). That will save on unnecessary iterations 
             this.quadTree.retrieve(candidates, collObj);
 
             var collObjUniqueID = collObj.parentObj.constructor.name + collObj.objectID.toString();             // ensure the ID is a string
@@ -273,7 +274,7 @@ CollisionManager.prototype.isColliding_Polygon_Polygon = function(objA, objB) {
             if (t > tMaxA) {
                 tMaxA = t;
             }
-            else if (t < tMinA) {
+            if (t < tMinA) {
                 tMinA = t;
             }
         }
@@ -284,7 +285,7 @@ CollisionManager.prototype.isColliding_Polygon_Polygon = function(objA, objB) {
             if (t > tMaxB) {
                 tMaxB = t;
             }
-            else if (t < tMinB) {
+            if (t < tMinB) {
                 tMinB = t;
             }
         }
