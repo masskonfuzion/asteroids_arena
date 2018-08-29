@@ -382,57 +382,9 @@ GameLogic.prototype.update = function(dt_s, config = null) {
         this.collisionMgr.update(dt_s);
     }
 
-    switch (game.settings.visible.gameMode) {
-        case "Death Match":
-            for (var shipName in this.gameStats) {
-                var scoreObj = this.gameStats[shipName];
+    // Do game-over check
+    this.checkForGameOver();
 
-                if (scoreObj.kills == game.settings.visible.gameModeSettings.deathMatch.shipKills) {
-                    console.log(shipName + " wins!!");
-
-                    // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
-                    cmdMsg = { "topic": "UICommand",
-                               "targetObj": this,
-                               "command": "changeState",
-                               "params": {"stateName": "GameOver",
-                                          "transferObj": {"displayMsg": shipName + " wins!!"} } // TODO make a Character/Player class (or some object) that can store the name of the ship (instead of ship0, etc)
-                             };
-                    this.messageQueue.enqueue(cmdMsg);
-                }
-            }
-        break;
-
-        case "Time Attack":
-            this.timeAttackSecondsLeft -= dt_s;
-
-            if (this.timeAttackSecondsLeft <= 0.0) {
-
-                var winner = { "shipName": "",
-                               "kills": 0
-                             };
-
-                for (var shipName in this.gameStats) {
-                    var scoreObj = this.gameStats[shipName];
-
-                    if (scoreObj.kills > winner.kills ) {
-                        winner.shipName = shipName;
-                        winner.kills = scoreObj.kills;
-                    }
-                }
-                console.log(winner.shipName + " wins with " + winner.kills.toString() + " kills in " + game.settings.visible.gameModeSettings.timeAttack.timeLimit + "!!");
-
-                // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
-                // e.g. Most kills, best score, most deaths
-                cmdMsg = { "topic": "UICommand",
-                           "targetObj": this,
-                           "command": "changeState",
-                           "params": {"stateName": "GameOver",
-                                      "transferObj": {"displayMsg": winner.shipName  + " wins with " + winner.kills.toString() + " kills in " + game.settings.visible.gameModeSettings.timeAttack.timeLimit + "!!"} }
-                         };
-                this.messageQueue.enqueue(cmdMsg);
-            }
-        break;
-    }
 };
 
 GameLogic.prototype.sendCmdToGameObj = function(msg) {
@@ -896,3 +848,68 @@ GameLogic.prototype.doUICommand = function(msg) {
     }
 
 };
+
+
+GameLogic.prototype.checkForGameOver = function() {
+    switch (game.settings.visible.gameMode) {
+        case "Death Match":
+            for (var shipName in this.gameStats) {
+                var scoreObj = this.gameStats[shipName];
+
+                if (scoreObj.kills == game.settings.visible.gameModeSettings.deathMatch.shipKills) {
+                    // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
+
+                    var winner = { "shipName": shipName
+                                 }
+                    var gameOverInfo = { "winnerInfo": winner,
+                                         "settings": game.settings["visible"],
+                                         "stats": this.gameStats
+                                       };
+
+                    var cmdMsg = { "topic": "UICommand",
+                                   "targetObj": this,
+                                   "command": "changeState",
+                                   "params": {"stateName": "GameOver",
+                                              "transferObj": gameOverInfo } // TODO make a Character/Player class (or some object) that can store the name of the ship (instead of ship0, etc)
+                                 };
+                    this.messageQueue.enqueue(cmdMsg);
+                }
+            }
+        break;
+
+        case "Time Attack":
+            this.timeAttackSecondsLeft -= dt_s;
+
+            if (this.timeAttackSecondsLeft <= 0.0) {
+
+                var winner = { "shipName": "",
+                               "kills": 0
+                             };
+
+                for (var shipName in this.gameStats) {
+                    var scoreObj = this.gameStats[shipName];
+
+                    if (scoreObj.kills > winner.kills ) {
+                        winner.shipName = shipName;
+                        winner.kills = scoreObj.kills;
+                    }
+                }
+
+                // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
+                // e.g. Most kills, best score, most deaths
+                var gameOverInfo = { "winnerInfo": winner,
+                                     "settings": game.settings["visible"],
+                                     "stats": this.gameStats
+                                   };
+
+                var cmdMsg = { "topic": "UICommand",
+                               "targetObj": this,
+                               "command": "changeState",
+                               "params": {"stateName": "GameOver",
+                                          "transferObj": gameOverInfo }
+                             };
+                this.messageQueue.enqueue(cmdMsg);
+            }
+        break;
+    }
+}

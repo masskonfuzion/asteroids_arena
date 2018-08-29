@@ -16,8 +16,9 @@ GameStateStatsOverlay.prototype.initialize = function(transferObj = null) {
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
-    // Get the message to display from the transfer object, passed in from the game logic object
-    this.uiItems.push( new uiItemText(transferObj.displayMsg, "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
+    // create the end-of-game message display, based on the passed-in object
+    this.createDisplayMessage(transferObj);
+
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
 
@@ -32,6 +33,21 @@ GameStateStatsOverlay.prototype.cleanup = function() {
 GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
 };
 
+// Create the game over display message (using menu/ui items)
+GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
+    switch(infoObj.settings.gameMode) {
+        case "Death Match":
+        // TODO 2018-08-29 - finish here. Borrow the logic from the game_logic object, and display the "winning" message, and the other ships' scores
+        var winMsg = infoObj.winnerInfo.shipName + " wins!";
+        this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
+        break;
+
+        case "Time Attack":
+        var winMsg = infoObj.winnerInfo.shipName  + " wins with " + infoObj.winnerInfo.kills.toString() + " kills in " + game.settings.visible.gameModeSettings.timeAttack.timeLimit + "!!";
+        this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
+        break;
+    }
+};
 
 GameStateStatsOverlay.prototype.render = function(canvasContext, dt_s) {
     // TODO maybe this game stats overlay state should have its own canvas context/object
