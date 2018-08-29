@@ -205,7 +205,7 @@ Spaceship.prototype.update = function(dt_s, config = null) {
                         // It's 1500**2, which is larger than the square of the hypotenuse of the 1280x720 arena
                         // (i.e., the largest distance that could separate 2 items in the arena)
                         // I had planned to make more arenas, but I may just stop at 1 -- taking shortcuts to finish this game
-                        sndOptions.volume = 1.0 - ( vec2.sqrDist(this.components["physics"].currPos, gameLogic.gameObjs["ship0"].components["physics"].currPos) / 2250000.0 );
+                        sndOptions.volume = Math.max(0.1, 1.0 - ( vec2.sqrDist(this.components["physics"].currPos, gameLogic.gameObjs["ship0"].components["physics"].currPos) / 2250000.0 ));
                     }
 
                     updateConfigObj = { "emitPoints": [ {"position": pePos, "direction": launchDir} ],
