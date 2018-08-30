@@ -383,7 +383,7 @@ GameLogic.prototype.update = function(dt_s, config = null) {
     }
 
     // Do game-over check
-    this.checkForGameOver();
+    this.checkForGameOver(dt_s);
 
 };
 
@@ -850,7 +850,7 @@ GameLogic.prototype.doUICommand = function(msg) {
 };
 
 
-GameLogic.prototype.checkForGameOver = function() {
+GameLogic.prototype.checkForGameOver = function(dt_s) {
     switch (game.settings.visible.gameMode) {
         case "Death Match":
             for (var shipName in this.gameStats) {

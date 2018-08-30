@@ -39,13 +39,31 @@ GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
         case "Death Match":
         // TODO 2018-08-29 - finish here. Borrow the logic from the game_logic object, and display the "winning" message, and the other ships' scores
         var winMsg = infoObj.winnerInfo.shipName + " wins!";
-        this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
+        this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.35, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
+
         break;
 
         case "Time Attack":
         var winMsg = infoObj.winnerInfo.shipName  + " wins with " + infoObj.winnerInfo.kills.toString() + " kills in " + game.settings.visible.gameModeSettings.timeAttack.timeLimit + "!!";
-        this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
+        this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.35, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
         break;
+    }
+
+    var i = 0;
+
+    // A couple of vars to control layout. NOTE: next time around, we'll use a layout object of some sort (maybe a JSON layout?)
+    var yNDC = 0.55;
+    var ySpacing = 0.1;
+
+    for (var shipName in infoObj.stats) {
+        this.uiItems.push( new uiItemText(shipName, "20px", "MenuFont", "white", 0.3, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("Kills:", "20px", "MenuFont", "white", 0.4, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(infoObj.stats[shipName].kills.toString(), "20px", "MenuFont", "white", 0.44, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("Deaths:", "20px", "MenuFont", "white", 0.52, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(infoObj.stats[shipName].deaths.toString(), "20px", "MenuFont", "white", 0.57, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("Score:", "20px", "MenuFont", "white", 0.64, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(infoObj.stats[shipName].score.toString(), "20px", "MenuFont", "white", 0.72, yNDC + (i * ySpacing), "center", "middle", null ) );
+        i += 1;
     }
 };
 
