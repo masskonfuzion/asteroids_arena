@@ -29,7 +29,7 @@ GameStateMainMenu.prototype.initialize = function(transferObj = null) {
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
 
-    this.bgm.play({"volume": 0.4});    // TODO move bgm out to a sound/resource manager
+    this.bgm.play({"volume": 0.7});    // TODO move bgm out to a sound/resource manager
 };
 
 GameStateMainMenu.prototype.cleanup = function() {
