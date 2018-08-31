@@ -13,6 +13,7 @@ function GameLogic() {
     this.collisionMgr = null;   // Placeholder for a collision manager (definition probably belongs in base/interface class)
     this.gameObjs = {};
     this.shipDict = {};     // A mapping of ship GameObject objectIDs (assigned by game engine) to the "nicknames" (assigned by the programmer)
+    this.characters = {};   // A mapping of GameObject objectIDs to "character" objects
 	this.keyCtrlMap = {};   // keyboard key state handling (keeping it simple)
     this.messageQueue = null;
     this.objectIDToAssign = -1;  // probably belongs in the base class.
@@ -123,6 +124,9 @@ GameLogic.prototype.initialize = function() {
 
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship0";
+    this.characters[shipRef.objectID] = new Character();    // Note that this assignment happens AFTER we know the spaceship's objectID
+    this.characters[shipRef.objectID].callSign = "MassKonFuzion";
+    // TODO: also add color schemes -- eventually add a character select screen; make color scheme a part of the ship selection
 
 
     this.addGameObject("ship1", new Spaceship());
@@ -147,6 +151,8 @@ GameLogic.prototype.initialize = function() {
 
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship1";
+    this.characters[shipRef.objectID] = new Character();
+    this.characters[shipRef.objectID].callSign = "Olympos";
 
 
     this.addGameObject("ship2", new Spaceship());
@@ -171,7 +177,8 @@ GameLogic.prototype.initialize = function() {
 
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship2";
-
+    this.characters[shipRef.objectID] = new Character();
+    this.characters[shipRef.objectID].callSign = "Artemis";
 
     // Create score keeping object
     for (var shipIDKey in this.shipDict) {
@@ -853,17 +860,21 @@ GameLogic.prototype.doUICommand = function(msg) {
 GameLogic.prototype.checkForGameOver = function(dt_s) {
     switch (game.settings.visible.gameMode) {
         case "Death Match":
-            for (var shipName in this.gameStats) {
+            for (var shipID in this.gameStats) {
                 var scoreObj = this.gameStats[shipName];
 
                 if (scoreObj.kills == game.settings.visible.gameModeSettings.deathMatch.shipKills) {
                     // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
 
-                    var winner = { "shipName": shipName
+                    var shipObjectID = this.gameObjs[shipID].objectID;
+                    var characterName = this.characters[shipObjectID].callSign;
+                    var winner = { "characterName": characterName
                                  }
                     var gameOverInfo = { "winnerInfo": winner,
                                          "settings": game.settings["visible"],
-                                         "stats": this.gameStats
+                                         "stats": this.gameStats,
+                                         "shipDict" : this.shipDict,
+                                         "characters": this.characters
                                        };
 
                     var cmdMsg = { "topic": "UICommand",
@@ -882,15 +893,18 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
 
             if (this.timeAttackSecondsLeft <= 0.0) {
 
-                var winner = { "shipName": "",
+                var winner = { "characterName": "",
                                "kills": 0
                              };
 
-                for (var shipName in this.gameStats) {
-                    var scoreObj = this.gameStats[shipName];
+                for (var shipID in this.gameStats) {
+                    var scoreObj = this.gameStats[shipID];
+
+                    var shipObjectID = this.gameObjs[shipID].objectID;
+                    var characterName = this.characters[shipObjectID].callSign;
 
                     if (scoreObj.kills > winner.kills ) {
-                        winner.shipName = shipName;
+                        winner.characterName= characterName;
                         winner.kills = scoreObj.kills;
                     }
                 }
@@ -899,7 +913,9 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
                 // e.g. Most kills, best score, most deaths
                 var gameOverInfo = { "winnerInfo": winner,
                                      "settings": game.settings["visible"],
-                                     "stats": this.gameStats
+                                     "stats": this.gameStats,
+                                     "shipDict" : this.shipDict,
+                                     "characters": this.characters
                                    };
 
                 var cmdMsg = { "topic": "UICommand",

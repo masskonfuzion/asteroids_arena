@@ -37,13 +37,13 @@ GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
 GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
     switch(infoObj.settings.gameMode) {
         case "Death Match":
-        var winMsg = infoObj.winnerInfo.shipName + " wins!";
+        var winMsg = infoObj.winnerInfo.characterName + " wins!";
         this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.35, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
 
         break;
 
         case "Time Attack":
-        var winMsg = infoObj.winnerInfo.shipName  + " wins with " + infoObj.winnerInfo.kills.toString() + " kills in " + game.settings.visible.gameModeSettings.timeAttack.timeLimit + "!!";
+        var winMsg = infoObj.winnerInfo.characterName  + " wins with " + infoObj.winnerInfo.kills.toString() + " kills in " + game.settings.visible.gameModeSettings.timeAttack.timeLimit + "!!";
         this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.35, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
         break;
     }
@@ -54,14 +54,26 @@ GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
     var yNDC = 0.55;
     var ySpacing = 0.1;
 
-    for (var shipName in infoObj.stats) {
-        this.uiItems.push( new uiItemText(shipName, "20px", "MenuFont", "white", 0.3, yNDC + (i * ySpacing), "center", "middle", null ) );
+    var objectIDForCharacterNameLookup = "";
+    var shipObjectID = "";
+    var characterName = "";
+
+    for (var shipID in infoObj.stats) {
+        // I could use Object.keys() and Object.values()... but I don't trust JavaScript.. O(n**2) lookup it is..
+        for (var shipObjectID in infoObj.shipDict) {
+            if (infoObj.shipDict[shipObjectID] == shipID) {
+                characterName = infoObj.characters[shipObjectID].callSign;
+                break;
+            }
+        }
+
+        this.uiItems.push( new uiItemText(characterName, "20px", "MenuFont", "white", 0.3, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText("Kills:", "20px", "MenuFont", "white", 0.4, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(infoObj.stats[shipName].kills.toString(), "20px", "MenuFont", "white", 0.44, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(infoObj.stats[shipID].kills.toString(), "20px", "MenuFont", "white", 0.44, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText("Deaths:", "20px", "MenuFont", "white", 0.52, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(infoObj.stats[shipName].deaths.toString(), "20px", "MenuFont", "white", 0.57, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(infoObj.stats[shipID].deaths.toString(), "20px", "MenuFont", "white", 0.57, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText("Score:", "20px", "MenuFont", "white", 0.64, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(infoObj.stats[shipName].score.toString(), "20px", "MenuFont", "white", 0.72, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(infoObj.stats[shipID].score.toString(), "20px", "MenuFont", "white", 0.72, yNDC + (i * ySpacing), "center", "middle", null ) );
         i += 1;
     }
 };
