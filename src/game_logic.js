@@ -57,9 +57,9 @@ GameLogic.prototype.initialize = function() {
         this.timeAttackSecondsLeft = parseInt(minsec[0]) * 60 + parseInt(minsec[1]);    // Use parseInt() to explicitly convert str to int. JS does this automatically/implicitly, but I prefer the explicit conversion
     }
 
-    this.bulletSoundPool = new SoundPool("assets/raw_do_not_upload/sounds/laser01.mp3", null, 5);   // TODO replace with finalized bullet shot sound! Also -- make resource manager for sounds
-    this.shipExplosionSoundPool = new SoundPool("assets/raw_do_not_upload/sounds/grenade_explosion-soundbible.com.wav", null, 5);
-    this.asteroidExplosionSoundPool = new SoundPool("assets/raw_do_not_upload/sounds/rock_debris_explosion-freesfx.co.uk.mp3", null, 5);
+    this.bulletSoundPool = new SoundPool("assets/sounds/laser01.mp3", null, 5);   // TODO make resource manager for sounds (and.. other assets, while we're at it?)
+    this.shipExplosionSoundPool = new SoundPool("assets/sounds/grenade_explosion-soundbible.com.wav", null, 5);
+    this.asteroidExplosionSoundPool = new SoundPool("assets/sounds/rock_debris_explosion-freesfx.co.uk.mp3", null, 5);
 
     // Begin initializing game subsystems. Note that the order of operations is important
 
