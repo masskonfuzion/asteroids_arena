@@ -129,7 +129,7 @@ AsteroidManager.prototype.disableAsteroids = function(params) {
 AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
     // params is a dict object
 
-    // TODO figure out why I designed this function to work on a list of asteroids (when I'm passing in only 1 asteroid to disable)
+    // NVM figure out why I designed this function to work on a list of asteroids (when I'm passing in only 1 asteroid to disable)
     for (var astToDisable of params.disableList) {
 
         var spawnPoint = vec2.clone(astToDisable.components["physics"].currPos);
@@ -140,7 +140,7 @@ AsteroidManager.prototype.disableAndSpawnAsteroids = function(params) {
         vec2.sub(astVel, astToDisable.components["physics"].currPos, astToDisable.components["physics"].prevPos);
         vec2.normalize(astVelDir, astVel);
 
-        // Note: there should be as many launchData items as params.numToSpawn  // TODO maybe launchData should be passed in?
+        // Note: there should be as many launchData items as params.numToSpawn  // NVM maybe launchData should be passed in?
         // NOTE: we/re dividing the velocity multiplier by game.fixed_dt_s because in this computation, we're dealing with velocity over 1 frame; the physicsComponent's setPosAndVel function assumes we're working with velocity over a full second, so we're dividing by dt, to compensate
         // We use 25 for posMult to create an offset far enough so that the 2 newly spawned asteroid fragments aren't colliding with each other
         var launchData = [ { "ang": glMatrix.toRadian(45), "dir": vec2.create(), "velMult": 2 / game.fixed_dt_s, "posMult": 25},

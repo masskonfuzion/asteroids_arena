@@ -6,7 +6,7 @@ function GameStateMainMenu() {
 
     this.messageQueue = null;
 
-    // TODO move bgm out to a sound/resource manager. We're just testing here
+    // TODO move bgm out to a sound/resource manager. We're just testing here -- make the BGM/sound manager global (or, at least not actually "global", but visible to all game states)
     this.bgm = new Sound("assets/raw_do_not_upload/sounds/GJ-Disconscient-Creative_Commons.mp4");
 
 }

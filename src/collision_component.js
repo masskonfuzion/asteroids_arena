@@ -1,11 +1,10 @@
 // Global scope
 var CollisionComponentTypeEnum = { "circle": 0,
                                    "aabb": 1,
-                                   "obb": 2,
-                                   "lineseg": 3,
-                                   "group": 4,
-                                   "plane": 5,
-                                   "polygon": 6
+                                   "lineseg": 2,
+                                   "group": 3,
+                                   "plane": 4,
+                                   "polygon": 5
                                  };
 
 
@@ -54,7 +53,7 @@ CollisionComponentAABB.prototype = Object.create(GameObjectComponent.prototype);
 CollisionComponentAABB.prototype.constructor = CollisionComponentAABB;
 
 
-// TODO make setMinPt, getMinPt, and some other functions part of a CollisionComponent base class
+// NVM make setMinPt, getMinPt, and some other functions part of a CollisionComponent base class
 CollisionComponentAABB.prototype.setMinPt = function(x, y) {
     this.minPt[0] = x;
     this.minPt[1] = y;
@@ -84,7 +83,7 @@ CollisionComponentAABB.prototype.getHeight = function() {
 CollisionComponentAABB.prototype.draw = function(canvasContext) {
     var width = this.getWidth();
     var height = this.getHeight();
-    canvasContext.strokeStyle = "red";  // TODO don't hardcode strokeStyle
+    canvasContext.strokeStyle = "red";  // NVM don't hardcode strokeStyle
     canvasContext.lineWidth = 1;
     canvasContext.strokeRect(this.center[0] - width/2, this.center[1] - height/2, width, height)
 };
@@ -92,7 +91,7 @@ CollisionComponentAABB.prototype.draw = function(canvasContext) {
 
 // Recompute the boundaries of the AABB
 CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
-    // TODO instead of querying the parentObj here, have any parent obj pass in data used for refreshing the aabb, using the obj parameter
+    // NVM instead of querying the parentObj here, have any parent obj pass in data used for refreshing the aabb, using the obj parameter
     var renderComp = this.parentObj.components["render"];
     console.assert(renderComp !== null);
 
@@ -100,14 +99,14 @@ CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
     var physicsComp = this.parentObj.components["physics"];
     console.assert(physicsComp !== null);
 
-    // TODO don't default to using a physics component to set the center here; have the parent object pass in a "config object" that has all the data necessary to recompute the AABB
+    // NVM don't default to using a physics component to set the center here; have the parent object pass in a "config object" that has all the data necessary to recompute the AABB
     this.setCenter(physicsComp.currPos[0], physicsComp.currPos[1]);
 
     // Compute extents
     var ang = physicsComp.angle;    // NOTE: angle is stored in degrees
     var rotMat = mat2.create();
     mat2.fromRotation(rotMat, glMatrix.toRadian(physicsComp.angle));
-    // TODO switch from hard-coding using a render component, to using a passed-in object
+    // NVM switch from hard-coding using a render component, to using a passed-in object
     var corners = [ vec2.create(), vec2.create(), vec2.create(), vec2.create() ];
     vec2.set(corners[0], -renderComp.getWidth() / 2, -renderComp.getHeight() / 2);
     vec2.set(corners[1], -renderComp.getWidth() / 2,  renderComp.getHeight() / 2);
@@ -115,7 +114,7 @@ CollisionComponentAABB.prototype.update = function(dt_s, obj = null) {
     vec2.set(corners[3],  renderComp.getWidth() / 2, -renderComp.getHeight() / 2);
 
 
-    // TODO The following loop can be used to calculate min/max points, using a rectangular image (e.g. Image render component).  switch from hard-coding using a render component, to using a passed-in object (e.g., don't need to do this rotation stuff if the render geom we're computing an AABB around is a sphere)
+    // NVM The following loop can be used to calculate min/max points, using a rectangular image (e.g. Image render component).  switch from hard-coding using a render component, to using a passed-in object (e.g., don't need to do this rotation stuff if the render geom we're computing an AABB around is a sphere)
     var maxPt = [-Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER];
     var minPt = [ Number.MAX_SAFE_INTEGER,  Number.MAX_SAFE_INTEGER];
 
@@ -152,25 +151,6 @@ CollisionComponentAABB.prototype.setExtents = function(x, y) {
     this.extents[0] = x;
     this.extents[1] = y;
 };
-
-
-//================================================================================
-//OBB
-//================================================================================
-// You down wit' OBB? Yeah, you know me!
-// TODO finish OBB
-
-function CollisionComponentOBB() {
-    GameObjectComponent.call(this);
-    this.type = CollisionComponentTypeEnum.obb;
-
-    this.center = vec2.create();
-
-    this.axes = [ vec2.create(), vec2.create() ];   // axes/basis vectors for the OBB's coordinate space
-
-    this.extents = [0.0, 0.0];  // extents in an OBB are the half-widths along each axis
-}
-
 
 
 //================================================================================
@@ -326,7 +306,6 @@ CollisionComponentPolygon.prototype.getHeight = function() {
     return this.maxPt[1] - this.minPt[1];
 };
 CollisionComponentPolygon.prototype.update = function(dt_s, obj = null) {
-    // var renderComp = (this.parentObj && this.parentObj.components.indexOf("render") > -1) ? this.parentObj.components["render"] : null;   // Not sure if I need this var yet (TODO possibly delete)
     var physicsComp = (this.parentObj && this.parentObj.components.hasOwnProperty("physics")) ? this.parentObj.components["physics"] : null;
 
     var ang = 0.0;
@@ -375,7 +354,7 @@ CollisionComponentPolygon.prototype.update = function(dt_s, obj = null) {
 
 CollisionComponentPolygon.prototype.draw = function(canvasContext) {
     // draw polygon as a sequence of lines
-    canvasContext.strokeStyle = "red";  // TODO don't hardcode strokeStyle
+    canvasContext.strokeStyle = "red";  // NVM don't hardcode strokeStyle
     canvasContext.lineWidth = 1;
     canvasContext.beginPath();
 
