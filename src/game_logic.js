@@ -126,6 +126,9 @@ GameLogic.prototype.initialize = function() {
     this.shipDict[shipRef.objectID] = "ship0";
     this.characters[shipRef.objectID] = new Character();    // Note that this assignment happens AFTER we know the spaceship's objectID
     this.characters[shipRef.objectID].callSign = "MassKonFuzion";
+    this.characters[shipRef.objectID].colorScheme.light = [249, 23, 23];    // "light" color matches the ship- colors taken using the GIMP color picker tool to the ship's png image file
+    this.characters[shipRef.objectID].colorScheme.medium = [162, 16, 16];   // roughly 2/3 of light
+    this.characters[shipRef.objectID].colorScheme.dark = [81, 8, 8];        // roughly 1/2 of medium
     // TODO: also add color schemes -- eventually add a character select screen; make color scheme a part of the ship selection
 
 
@@ -153,6 +156,9 @@ GameLogic.prototype.initialize = function() {
     this.shipDict[shipRef.objectID] = "ship1";
     this.characters[shipRef.objectID] = new Character();
     this.characters[shipRef.objectID].callSign = "Olympos";
+    this.characters[shipRef.objectID].colorScheme.light = [64, 16, 234];    // admittedly, this "light" color is still a pretty dark blue -- it matches the ship, though - colors taken using the GIMP color picker tool to the ship's png image file
+    this.characters[shipRef.objectID].colorScheme.medium = [48, 12, 158];   // roughly 2/3 of light
+    this.characters[shipRef.objectID].colorScheme.dark = [24, 6, 80];       // roughly 1/2 of medium
 
 
     this.addGameObject("ship2", new Spaceship());
@@ -179,6 +185,9 @@ GameLogic.prototype.initialize = function() {
     this.shipDict[shipRef.objectID] = "ship2";
     this.characters[shipRef.objectID] = new Character();
     this.characters[shipRef.objectID].callSign = "Artemis";
+    this.characters[shipRef.objectID].colorScheme.light = [87, 82, 82]; // "light" it matches the ship - collors taken using the GIMP color picker tool to the ship's png image file
+    this.characters[shipRef.objectID].colorScheme.medium = [29, 26, 26]; // roughly 2/3 of light
+    this.characters[shipRef.objectID].colorScheme.dark = [15, 13, 13];   // roughly 1/2 of medium
 
     // Create score keeping object
     for (var shipIDKey in this.shipDict) {
@@ -445,11 +454,14 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         // The collision can only count if the spaceship is both alived and "enabled" (i.e., not in the middle of a respawn)
         if (spaceshipRef.ableState == SpaceshipAbleStateEnum.enabled) {
             numParticles = (asteroidRef.size + 1) * 8;  // The multiplier is a magic number; chosen because it created visually pleasing explosions, without too much performance hit
+
             cmdMsg = { "topic": "GameCommand",
                        "command": "createExplosion",
                        "targetObj": this,
                        "params": { "numParticles": numParticles,
-                                   "center": [ asteroidRef.components["physics"].currPos[0], asteroidRef.components["physics"].currPos[1] ]
+                                   "center": [ asteroidRef.components["physics"].currPos[0], asteroidRef.components["physics"].currPos[1] ],
+                                   "minColor": [64,64,64],
+                                   "maxColor": [255,255,255]
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
@@ -458,11 +470,15 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
 
             var saveShipPos = vec2.clone(spaceshipRef.components["physics"].currPos);
+            var characterObj = this.characters[spaceshipRef.objectID];
+
             cmdMsg = { "topic": "GameCommand",
                        "command": "createExplosion",
                        "targetObj": this,
                        "params": { "numParticles": numParticles,
-                                   "center": [ saveShipPos[0], saveShipPos[1] ]
+                                   "center": [ saveShipPos[0], saveShipPos[1] ],
+                                   "minColor": characterObj.colorScheme.dark,
+                                   "maxColor": characterObj.colorScheme.light
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
@@ -535,7 +551,9 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                    "command": "createExplosion",
                    "targetObj": this,
                    "params": { "numParticles": numParticles,
-                               "center": [ asteroidRef.components["physics"].currPos[0], asteroidRef.components["physics"].currPos[1] ]
+                               "center": [ asteroidRef.components["physics"].currPos[0], asteroidRef.components["physics"].currPos[1] ],
+                               "minColor": [64,64,64],
+                               "maxColor": [255,255,255]
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -586,11 +604,14 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
                 numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
                 var saveShipPos = vec2.clone(spaceshipRef.components["physics"].currPos);
+                var characterObj = this.characters[spaceshipRef.objectID];
                 cmdMsg = { "topic": "GameCommand",
                            "command": "createExplosion",
                            "targetObj": this,
                            "params": { "numParticles": numParticles,
-                                       "center": [ saveShipPos[0], saveShipPos[1] ]
+                                       "center": [ saveShipPos[0], saveShipPos[1] ],
+                                       "minColor": characterObj.colorScheme.dark,
+                                       "maxColor": characterObj.colorScheme.light
                                      }
                          };
                 this.messageQueue.enqueue(cmdMsg);
@@ -631,7 +652,9 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
                    "command": "createExplosion",
                    "targetObj": this,
                    "params": { "numParticles": numParticles,
-                               "center": [ asteroidRef.components["physics"].currPos[0], asteroidRef.components["physics"].currPos[1] ]
+                               "center": [ asteroidRef.components["physics"].currPos[0], asteroidRef.components["physics"].currPos[1] ],
+                               "minColor": [64,64,64],
+                               "maxColor": [255,255,255]
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -660,11 +683,14 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
 
         numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
         var saveShipPos = vec2.clone(spaceshipRef.components["physics"]);
+        var characterObj = this.characters[spaceshipRef.objectID];
         cmdMsg = { "topic": "GameCommand",
                    "command": "createExplosion",
                    "targetObj": this,
                    "params": { "numParticles": numParticles,
-                               "center": [ saveShipPos[0], saveShipPos[1] ]
+                               "center": [ saveShipPos[0], saveShipPos[1] ],
+                               "minColor": characterObj.colorScheme.dark,
+                               "maxColor": characterObj.colorScheme.light
                              }
                  };
         this.messageQueue.enqueue(cmdMsg);
@@ -691,11 +717,14 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             numParticles = 24;  // 24 particles for a ship explosion. Maybe we shouldn't hardcode this; instead have a setting/config option
 
             var saveShipPos = vec2.clone(spaceshipARef.components["physics"].currPos);
+            var characterObj = this.characters[spaceshipARef.objectID];
             cmdMsg = { "topic": "GameCommand",
                        "command": "createExplosion",
                        "targetObj": this,
                        "params": { "numParticles": numParticles,
-                                   "center": [ saveShipPos[0], saveShipPos[1] ]
+                                   "center": [ saveShipPos[0], saveShipPos[1] ],
+                                   "minColor": characterObj.colorScheme.dark,
+                                   "maxColor": characterObj.colorScheme.light
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
@@ -705,11 +734,14 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
             this.shipExplosionSoundPool.play( {"volume": sndVol, "loop": false} );
 
             var saveShipPos = vec2.clone(spaceshipBRef.components["physics"].currPos);
+            var characterObj = this.characters[spaceshipBRef.objectID];
             cmdMsg = { "topic": "GameCommand",
                        "command": "createExplosion",
                        "targetObj": this,
                        "params": { "numParticles": numParticles,
-                                   "center": [ saveShipPos[0], saveShipPos[1] ]
+                                   "center": [ saveShipPos[0], saveShipPos[1] ],
+                                   "minColor": characterObj.colorScheme.dark,
+                                   "maxColor": characterObj.colorScheme.light
                                  }
                      };
             this.messageQueue.enqueue(cmdMsg);
@@ -824,6 +856,8 @@ GameLogic.prototype.createExplosion = function(params) {
         // "center" is required
         xplodPERef.setPosition(params.center[0], params.center[1]);
         xplodPERef.emitParticle(game.fixed_dt_s);
+        xplodPERef.setMinColor(params.minColor[0], params.minColor[1], params.minColor[2]);
+        xplodPERef.setMaxColor(params.maxColor[0], params.maxColor[1], params.maxColor[2]);
     }
 };
 
