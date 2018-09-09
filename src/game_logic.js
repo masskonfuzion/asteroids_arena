@@ -107,6 +107,7 @@ GameLogic.prototype.initialize = function() {
 
     // ----- Initialize spaceships
     // TODO don't hardcode the initial position -- use arena test for containment
+    // TODO don't hardcode ship image, color scheme, etc.. Pass in from the ShipSelect screen (new as of 2018-09-09)
     this.addGameObject("ship0", new Spaceship());
     var shipRef = this.gameObjs["ship0"];
     var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship0"].imgObj,

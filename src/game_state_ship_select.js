@@ -1,45 +1,46 @@
-function GameStateMainMenu() {
-    // TODO: Menu should be arranged in "levels" or some such. Each level is a tree node. Each level can have 1 or more "pages" of configurable options. uiItems on pages can be mapped to a config item in a "config object" (a dict/associative array or whatever). The menu can have "accepted inputs" for navigation (keyboard keys/mouse/touch controls for navigation, confirming/canceling selections, etc). The uiItems can be configured with function callbacks or something, so that when the user enters various input, the menu takes the appropriate action. The menu should have a messageQueue, like the gameLogic object in the gameplaying state, for accepting input and such. Do it
+function GameStateShipSelect() {
+    // TODO 2018-09-09 - pass ship selection in to game
     GameStateBase.call(this);
 
     this.uiItems = [];
 
     this.messageQueue = null;
 
-    // TODO move bgm out to a sound/resource manager. We're just testing here -- make the BGM/sound manager global (or, at least not actually "global", but visible to all game states)
-    this.bgm = new Sound("assets/raw_do_not_upload/sounds/GJ-Disconscient-Creative_Commons.mp4");
-
+    this.shipSelectMap = {};    // A dict of ships to choose from
+    this.shipSelectIdx = 0;
+    this.numSelectableShips = 0;
 }
 
-GameStateMainMenu.prototype = Object.create(GameStateBase.prototype);
-GameStateMainMenu.prototype.constructor = GameStateMainMenu;
+GameStateShipSelect.prototype = Object.create(GameStateBase.prototype);
+GameStateShipSelect.prototype.constructor = GameStateShipSelect;
 
 
-GameStateMainMenu.prototype.initialize = function(transferObj = null) {
+GameStateShipSelect.prototype.initialize = function(transferObj = null) {
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
     
     // NOTE: game is a global object
-    this.uiItems.push( new uiItemText("Play Game", "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "ShipSelect"}}) );  // stateName is the name of the state obj in the global scope
-    this.uiItems.push( new uiItemText("Settings", "32px", "MenuFont", "white", 0.5, 0.55, "center", "middle", {"command": "changeState", "params": {"stateName": "Settings"}}) );
-    this.uiItems.push( new uiItemText("How to Play", "32px", "MenuFont", "white", 0.5, 0.65, "center", "middle", {"command": "changeState", "params": {"stateName": "HowToPlay"}}) );
-    this.uiItems.push( new uiItemText("Credits", "32px", "MenuFont", "white", 0.5, 0.75, "center", "middle", {"command": "changeState", "params": {"stateName": "Credits"}}) );
+    this.uiItems.push( new uiItemText("Select Ship", "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "Playing"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
+    this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
 
-    this.bgm.play({"volume": 0.7});    // TODO move bgm out to a sound/resource manager
+    this.shipSelectMap = { 0: game.imgMgr.imageMap["ship0"].imgObj, 
+                           1: game.imgMgr.imageMap["ship1"].imgObj,
+                           2: game.imgMgr.imageMap["ship2"].imgObj
+                         };
+    this.numSelectableShips = Object.keys(this.shipSelectMap).length;
 };
 
-GameStateMainMenu.prototype.cleanup = function() {
-    this.bgm.stop();    // TODO move bgm out to a sound/resource manager
+GameStateShipSelect.prototype.cleanup = function() {
 };
 
-GameStateMainMenu.prototype.preRender = function(canvasContext, dt_s) {
+GameStateShipSelect.prototype.preRender = function(canvasContext, dt_s) {
 };
 
-GameStateMainMenu.prototype.render = function(canvasContext, dt_s) {
+GameStateShipSelect.prototype.render = function(canvasContext, dt_s) {
     canvasContext.save();
     canvasContext.setTransform(1,0,0,1,0,0);    // Reset transformation (similar to OpenGL loadIdentity() for matrices)
 
@@ -47,6 +48,17 @@ GameStateMainMenu.prototype.render = function(canvasContext, dt_s) {
     canvasContext.fillStyle = 'black';
     canvasContext.fillRect(0,0, canvasContext.canvas.width, canvasContext.canvas.height);
 
+    // Set the transform for the image
+    canvasContext.save();
+    canvasContext.setTransform(1,0,0,1,400,150);    // Reset transformation (similar to OpenGL loadIdentity() for matrices) TODO maybe don't hardcode image coordinates
+    
+    // Draw the ship
+    var imgObj = this.shipSelectMap[this.shipSelectIdx];
+    canvasContext.drawImage(imgObj, -imgObj.width / 2, -imgObj.height / 2);
+
+    canvasContext.restore();    // "pop" the transform
+
+    // Now, draw UI items
     for (var item of this.uiItems) {
         item.draw(canvasContext);
     }
@@ -67,12 +79,12 @@ GameStateMainMenu.prototype.render = function(canvasContext, dt_s) {
 };
 
 
-GameStateMainMenu.prototype.postRender = function(canvasContext, dt_s) {
+GameStateShipSelect.prototype.postRender = function(canvasContext, dt_s) {
     this.processMessages(dt_s);
 };
 
 
-GameStateMainMenu.prototype.handleKeyboardInput = function(evt) {
+GameStateShipSelect.prototype.handleKeyboardInput = function(evt) {
     if (evt.type == "keydown") {
         // haven't decided what (if anything) to do on keydown
     } else if (evt.type == "keyup") {
@@ -82,6 +94,12 @@ GameStateMainMenu.prototype.handleKeyboardInput = function(evt) {
                 break;
             case "ArrowDown":
                 this.activeItemIndex = (this.activeItemIndex + 1) % this.uiItems.length;
+                break;
+            case "ArrowLeft":
+                this.shipSelectIdx = (this.shipSelectIdx - 1 + this.numSelectableShips) % this.numSelectableShips;
+                break;
+            case "ArrowRight":
+                this.shipSelectIdx = (this.shipSelectIdx + 1) % this.numSelectableShips;
                 break;
             case "Enter":
             case "Space":
@@ -98,7 +116,7 @@ GameStateMainMenu.prototype.handleKeyboardInput = function(evt) {
 };
 
 
-GameStateMainMenu.prototype.processMessages = function(dt_s) {
+GameStateShipSelect.prototype.processMessages = function(dt_s) {
     // dt_s is not used specifically by processMessages, but is passed in in case functions called by processMessages need it
     //console.log('MessageQueue has ' + this.messageQueue.numItems() + ' items in it');
 
@@ -118,7 +136,7 @@ GameStateMainMenu.prototype.processMessages = function(dt_s) {
 };
 
 
-GameStateMainMenu.prototype.doUICommand = function(msg) {
+GameStateShipSelect.prototype.doUICommand = function(msg) {
     // Take action on a message with topic, "UICommand"
     // UICommand messages contain a command, a targetObj (i.e. who's going to execute the command), and a params list
     // The command is most likely to call a function. This is not quite a function callback, because we are not storing a pre-determined function ptr
