@@ -1,5 +1,4 @@
 function GameStateShipSelect() {
-    // TODO 2018-09-09 - pass ship selection in to game
     GameStateBase.call(this);
 
     this.uiItems = [];
@@ -65,7 +64,6 @@ GameStateShipSelect.prototype.render = function(canvasContext, dt_s) {
     }
 
     // Highlight active item
-    // TODO call getWidth() on active item; round up to nearest int (e.g. because measureText() returns float); multiply by 1.5. Make a rect
     var hlItem = this.uiItems[this.activeItemIndex];
     var hlWidth = Math.ceil( hlItem.getWidth(canvasContext) * 1.5 );
     var hlHeight = Math.ceil( hlItem.getHeight(canvasContext) * 1.5);

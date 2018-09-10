@@ -58,7 +58,10 @@ GameStatePlaying.prototype.postRender = function(canvasContext, dt_s) {
         scorePosNDC = [0.80, textPosY];      // NDCs go from 0 to 1 on each axis
 
         canvasContext.font = "18px GameFont";  // Testing
-        canvasContext.fillStyle = jankyListOfScoreColors[i];  // TODO Eventually:  change color to match player ship color (or, store it with a spaceship profile of some sort, which is enabled when the player selects a ship)
+
+        var colorSchemeRef = this.gameLogic.characters[shipObjectID].colorScheme.light;
+        canvasContext.fillStyle = "rgb(" + colorSchemeRef[0] + "," + colorSchemeRef[1] + "," + colorSchemeRef[2] + ")";
+
         // TODO wrap NDC calculation in function
         canvasContext.fillText(characterName, characterNamePosNDC[0] * canvasContext.canvas.width, characterNamePosNDC[1] * canvasContext.canvas.height);
 
@@ -86,6 +89,7 @@ GameStatePlaying.prototype.postRender = function(canvasContext, dt_s) {
         var sSec = iSec < 10 ? iSec.toString().padStart(2, "0") : iSec.toString();    // Use padStart() to 0-pad seconds
         var gameTimeLeft = sMin + ":" + sSec
 
+        canvasContext.fillStyle = "lightgray";
         canvasContext.fillText("Time", timeLabelPosNDC[0] * canvasContext.canvas.width, timeLabelPosNDC[1] * canvasContext.canvas.height);
         canvasContext.fillText(gameTimeLeft, timePosNDC[0] * canvasContext.canvas.width, timePosNDC[1] * canvasContext.canvas.height);
     }

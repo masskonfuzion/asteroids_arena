@@ -4,8 +4,6 @@ function GameScoresAndStats() {
     this.kills = 0;
 }
 
-var jankyListOfScoreColors = ["orangered", "cyan", "darkgray"];
-
 function GameLogic() {
     
     GameObject.call(this);
