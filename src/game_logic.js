@@ -31,7 +31,7 @@ GameLogic.prototype = Object.create(GameObject.prototype);
 GameLogic.prototype.constructor = GameLogic;
 
 
-GameLogic.prototype.initialize = function() {
+GameLogic.prototype.initialize = function(configObj = null) {
     // Key control map is keyed on keypress event "code", e.g. "KeyW" (as opposed to "keyCode", which is a number, like 87)
     // Based on documentation on the Mozilla Developer Network (MDN), "code" is preferred, and "keyCode" is deprecated
     this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
@@ -107,10 +107,10 @@ GameLogic.prototype.initialize = function() {
 
     // ----- Initialize spaceships
     // TODO don't hardcode the initial position -- use arena test for containment
-    // TODO don't hardcode ship image, color scheme, etc.. Pass in from the ShipSelect screen (new as of 2018-09-09)
+    // Note: ship0 is the player's ship
     this.addGameObject("ship0", new Spaceship());
     var shipRef = this.gameObjs["ship0"];
-    var shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship0"].imgObj,
+    var shipConfigObj = { "imgObj": configObj.imgObj,
                           "initialPos": [400, 225],
                         };
     shipRef.initialize(shipConfigObj);
@@ -126,17 +126,14 @@ GameLogic.prototype.initialize = function() {
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship0";
     this.characters[shipRef.objectID] = new Character();    // Note that this assignment happens AFTER we know the spaceship's objectID
-    this.characters[shipRef.objectID].callSign = "MassKonFuzion";
-    this.characters[shipRef.objectID].colorScheme.light = [249, 23, 23];    // "light" color matches the ship- colors taken using the GIMP color picker tool to the ship's png image file
-    this.characters[shipRef.objectID].colorScheme.medium = [162, 16, 16];   // roughly 2/3 of light
-    this.characters[shipRef.objectID].colorScheme.dark = [81, 8, 8];        // roughly 1/2 of medium
-    // TODO: also add color schemes -- eventually add a character select screen; make color scheme a part of the ship selection
+    this.characters[shipRef.objectID].callSign = "MassKonFuzion";   // TODO make a game setting or some thing, where the player can choose a callsign
+    this.characters[shipRef.objectID].colorScheme.light = configObj.colorScheme.light;
+    this.characters[shipRef.objectID].colorScheme.medium = configObj.colorScheme.medium;
+    this.characters[shipRef.objectID].colorScheme.dark = configObj.colorScheme.dark;
 
 
     this.addGameObject("ship1", new Spaceship());
     shipRef = this.gameObjs["ship1"];
-
-
     shipConfigObj = { "imgObj": game.imgMgr.imageMap["ship1"].imgObj,
                       "initialPos": [50, 225],
                       "isAI": true,

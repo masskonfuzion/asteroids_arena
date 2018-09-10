@@ -27,9 +27,10 @@ GameStateShipSelect.prototype.initialize = function(transferObj = null) {
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
 
-    this.shipSelectMap = { 0: game.imgMgr.imageMap["ship0"].imgObj, 
-                           1: game.imgMgr.imageMap["ship1"].imgObj,
-                           2: game.imgMgr.imageMap["ship2"].imgObj
+    // Note: the colorScheme values are hard-coded based on color/pixel analysis of the texture images, using GIMP
+    this.shipSelectMap = { 0: { "imgObj": game.imgMgr.imageMap["ship0"].imgObj, "colorScheme": { "light": [249, 23, 23], "medium": [162, 16, 16], "dark": [81, 8, 8] }},
+                           1: { "imgObj": game.imgMgr.imageMap["ship1"].imgObj, "colorScheme": { "light": [64, 16, 234], "medium": [48, 12, 158], "dark": [24, 6, 80] }},
+                           2: { "imgObj": game.imgMgr.imageMap["ship2"].imgObj, "colorScheme": { "light": [87, 82, 82], "medium": [29, 26, 26], "dark": [15, 13, 13] }}
                          };
     this.numSelectableShips = Object.keys(this.shipSelectMap).length;
 };
@@ -53,7 +54,7 @@ GameStateShipSelect.prototype.render = function(canvasContext, dt_s) {
     canvasContext.setTransform(1,0,0,1,400,150);    // Reset transformation (similar to OpenGL loadIdentity() for matrices) TODO maybe don't hardcode image coordinates
     
     // Draw the ship
-    var imgObj = this.shipSelectMap[this.shipSelectIdx];
+    var imgObj = this.shipSelectMap[this.shipSelectIdx].imgObj;
     canvasContext.drawImage(imgObj, -imgObj.width / 2, -imgObj.height / 2);
 
     canvasContext.restore();    // "pop" the transform
@@ -104,10 +105,19 @@ GameStateShipSelect.prototype.handleKeyboardInput = function(evt) {
             case "Enter":
             case "Space":
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
+
+                // transferObj is used if we are switching into the Playing state.
+                // The hard-coding feels janky here, but it will get the job done
+                var transferObj = null;
+                if (this.uiItems[this.activeItemIndex].actionMsg["params"].stateName == "Playing") {
+                    transferObj = this.shipSelectMap[this.shipSelectIdx];
+                }
+
                 var cmdMsg = { "topic": "UICommand",
                                "targetObj": this,
                                "command": this.uiItems[this.activeItemIndex].actionMsg["command"],
-                               "params": this.uiItems[this.activeItemIndex].actionMsg["params"]
+                               "params": this.uiItems[this.activeItemIndex].actionMsg["params"],
+                               "transferObj": transferObj
                              };
                 this.messageQueue.enqueue(cmdMsg);
                 break;
@@ -146,7 +156,7 @@ GameStateShipSelect.prototype.doUICommand = function(msg) {
         case "changeState":
             // call the game state manager's changestate function
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
-            gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
+            gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName], msg.transferObj);
             break;
     }
 
