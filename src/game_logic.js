@@ -83,8 +83,8 @@ GameLogic.prototype.initialize = function(configObj = null) {
     xplodPERef.setTTLRange(0.5, 1.0);         // seconds
     xplodPERef.setLaunchDir(1.0, 0.0);        // launch base dir is the vector [1,0]
     xplodPERef.setAngleRange(0.0, 359.0);     // rotate the base launch dir by some amount
-    xplodPERef.setMinColor(128, 128, 128);    // rgb values (TODO set colors based on ship color - make a "Character" object that knows key info, e.g. ship color, etc.)
-    xplodPERef.setMaxColor(255, 255, 255);    // rgb values (TODO set colors based on ship color - make a "Character" object that knows key info, e.g. ship color, etc.)
+    xplodPERef.setMinColor(128, 128, 128);    // rgb values (note: placeholder; will be overwritten during gameplay)
+    xplodPERef.setMaxColor(255, 255, 255);    // rgb values (note: placeholder; will be overwritten during gameplay)
 
 
     // ----- Initialize Bullet Manager system
