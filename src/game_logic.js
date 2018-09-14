@@ -32,6 +32,7 @@ GameLogic.prototype.constructor = GameLogic;
 GameLogic.prototype.initialize = function(configObj = null) {
     // Key control map is keyed on keypress event "code", e.g. "KeyW" (as opposed to "keyCode", which is a number, like 87)
     // Based on documentation on the Mozilla Developer Network (MDN), "code" is preferred, and "keyCode" is deprecated
+    // TODO change from using "code" to using "key" (see Mozilla Developers' Network documentation on KeyboardEvents)
     this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
     this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
     this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
@@ -124,7 +125,7 @@ GameLogic.prototype.initialize = function(configObj = null) {
     // NOTE: because of the way the game engine/framework is designed, we have to add individual spaceships as GameObjects (e.g., so they can get assigned an ObjectID), and then if we want to have a "shipDict", we have to have a list of references to the ship GameObjects
     this.shipDict[shipRef.objectID] = "ship0";
     this.characters[shipRef.objectID] = new Character();    // Note that this assignment happens AFTER we know the spaceship's objectID
-    this.characters[shipRef.objectID].callSign = "MassKonFuzion";   // TODO make a game setting or some thing, where the player can choose a callsign
+    this.characters[shipRef.objectID].callSign = game.settings.visible.callSign;
     this.characters[shipRef.objectID].colorScheme.light = configObj.colorScheme.light;
     this.characters[shipRef.objectID].colorScheme.medium = configObj.colorScheme.medium;
     this.characters[shipRef.objectID].colorScheme.dark = configObj.colorScheme.dark;

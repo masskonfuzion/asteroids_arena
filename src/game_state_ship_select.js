@@ -1,4 +1,5 @@
 function GameStateShipSelect() {
+    // TODO update this UI with isSelectable (preventing non-selectable UI items from being highlighted)
     GameStateBase.call(this);
 
     this.uiItems = [];
@@ -20,6 +21,11 @@ GameStateShipSelect.prototype.initialize = function(transferObj = null) {
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
     
     // NOTE: game is a global object
+    var uiItemCallsignText = new uiItemText(null, "36px", "MenuFont", "white", 0.5, 0.25, "center", "middle", null);
+    uiItemCallsignText.setBoundObj(game.settings.visible);
+    uiItemCallsignText.setBoundKey("callSign");
+    this.uiItems.push( uiItemCallsignText );
+
     this.uiItems.push( new uiItemText("Select Ship", "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "Playing"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
     this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 

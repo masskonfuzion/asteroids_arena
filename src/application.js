@@ -38,6 +38,7 @@ GameApplication.prototype.initialize = function() {
     else
     {
         this.settings = { "hidden": {}, "visible": {} };    // hidden settings are, e.g. point values for accomplishing certain goals; visible settings are, e.g. game config options
+        this.settings["visible"]["callSign"] = "PlayerDefault";
         this.settings["visible"]["gameMode"] = "Death Match";
         this.settings["visible"]["gameModeSettings"] = { "deathMatch": { "shipKills": 15,
                                                                          "gunsEnabled": "yes"
