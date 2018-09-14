@@ -110,13 +110,29 @@ GameStateShipSelect.prototype.handleKeyboardInput = function(evt) {
         // haven't decided what (if anything) to do on keydown
     } else if (evt.type == "keyup") {
         switch(evt.code) {
-            //// Up/down arrows not used in this form
-            //case "ArrowUp":
-            //    this.activeItemIndex = (this.activeItemIndex + this.uiItems.length - 1) % this.uiItems.length;
-            //    break;
-            //case "ArrowDown":
-            //    this.activeItemIndex = (this.activeItemIndex + 1) % this.uiItems.length;
-            //    break;
+            case "ArrowUp":
+                // check if we have an active/selected UI item (this is janky. Again, there should be a class/object to handle this)
+                // The up/down arrows should only move the highlight, which should work only if the menu/form does _not_ have an active/selected UI item
+                if (this.activeItem == null) {
+                    // find previous selectable item (probably should be a function; but also.. a Menu should be an object.. and it's not. So....)
+                    // Because modulo math gets wonky with negative numbers, we'll add the length of the list to the current index, and then subtract an index; then do the mod
+                    this.highlightedItemIndex = ((this.highlightedItemIndex + this.uiItems.length) - 1) % this.uiItems.length;
+                    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
+                        this.highlightedItemIndex = ((this.highlightedItemIndex + this.uiItems.length) - 1) % this.uiItems.length;
+                    }
+                    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
+                }
+                break;
+            case "ArrowDown":
+                // check if we have an active/selected UI item (this is janky. Again, there should be a class/object to handle this)
+                if (this.activeItem == null) {
+                    this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+                    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
+                        this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+                    }
+                    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
+                }
+                break;
             case "ArrowLeft":
                 this.shipSelectIdx = (this.shipSelectIdx - 1 + this.numSelectableShips) % this.numSelectableShips;
                 break;
@@ -124,7 +140,6 @@ GameStateShipSelect.prototype.handleKeyboardInput = function(evt) {
                 this.shipSelectIdx = (this.shipSelectIdx + 1) % this.numSelectableShips;
                 break;
             case "Enter":
-            case "Space":
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
 
                 // If we have an active item, deactivate it

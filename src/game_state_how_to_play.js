@@ -102,7 +102,6 @@ GameStateHowToPlay.prototype.handleKeyboardInput = function(evt) {
                 }
                 break;
             case "Enter":
-            case "Space":
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
 
                 // If we have an active item, deactivate it
