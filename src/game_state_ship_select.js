@@ -1,5 +1,4 @@
 function GameStateShipSelect() {
-    // TODO update this UI with isSelectable (preventing non-selectable UI items from being highlighted)
     GameStateBase.call(this);
 
     this.uiItems = [];
@@ -9,6 +8,12 @@ function GameStateShipSelect() {
     this.shipSelectMap = {};    // A dict of ships to choose from
     this.shipSelectIdx = 0;
     this.numSelectableShips = 0;
+
+    this.highlightedItemIndex = 0;
+    this.highlightedItem = null;    // Highlighted item, not necessarily selected/active
+
+    this.activeItemIndex = -1;      // -1 means "no active selection"; but probably rely on the value of activeItem itself to determine whether or not the user is interacting with an item
+    this.activeItem = null;         // Active/selected item
 }
 
 GameStateShipSelect.prototype = Object.create(GameStateBase.prototype);
@@ -29,15 +34,19 @@ GameStateShipSelect.prototype.initialize = function(transferObj = null) {
     this.uiItems.push( new uiItemText("Select Ship", "36px", "MenuFont", "white", 0.5, 0.45, "center", "middle", {"command": "changeState", "params": {"stateName": "Playing"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
     this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 
-    this.activeItemIndex = 0;
-    this.activeItem = this.uiItems[this.activeItemIndex];
-
     // Note: the colorScheme values are hard-coded based on color/pixel analysis of the texture images, using GIMP
     this.shipSelectMap = { 0: { "imgObj": game.imgMgr.imageMap["ship0"].imgObj, "colorScheme": { "light": [249, 23, 23], "medium": [162, 16, 16], "dark": [81, 8, 8] }},
                            1: { "imgObj": game.imgMgr.imageMap["ship1"].imgObj, "colorScheme": { "light": [64, 16, 234], "medium": [48, 12, 158], "dark": [24, 6, 80] }},
                            2: { "imgObj": game.imgMgr.imageMap["ship2"].imgObj, "colorScheme": { "light": [87, 82, 82], "medium": [29, 26, 26], "dark": [15, 13, 13] }}
                          };
     this.numSelectableShips = Object.keys(this.shipSelectMap).length;
+
+    // highlight the first highlightable item (this code duplicates the ArrorDown key handler. I'm being really lazy/sloppy with the code here)
+    this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
+        this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
+    }
+    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
 };
 
 GameStateShipSelect.prototype.cleanup = function() {
@@ -69,15 +78,22 @@ GameStateShipSelect.prototype.render = function(canvasContext, dt_s) {
         item.draw(canvasContext);
     }
 
-    // Highlight active item
-    var hlItem = this.uiItems[this.activeItemIndex];
+    // Draw highlight box around currently highlightedItem (should really be part of a Menu/UI class)
+    // TODO look at the alignment of the highlighted item - adjust highlight position based on left/center/align (actual text rendering position seems to be affected by that)
+    var hlItem = this.uiItems[this.highlightedItemIndex];
     var hlWidth = Math.ceil( hlItem.getWidth(canvasContext) * 1.5 );
     var hlHeight = Math.ceil( hlItem.getHeight(canvasContext) * 1.5);
-    var hlX = Math.floor(MathUtils.lerp(hlItem.posNDC[0], 0, canvasContext.canvas.width) - hlWidth/2);
-    var hlY = Math.floor(MathUtils.lerp(hlItem.posNDC[1], 0, canvasContext.canvas.height) - hlHeight/2);
+
+    var hlXOffset = (hlItem.hasOwnProperty("align") && hlItem.align == "center") ? -hlWidth / 2 : 0;
+    //var hlYOffset = (hlItem.hasOwnProperty("baseline") && hlItem.align == "middle") ? -hlHeight / 2 : 0; // TODO delete, or update to handle top/middle/bottom
+    var hlYOffset = -hlHeight / 2;  // Note: this highlight assumes that textBaseline (vertical align) is "middle"
+
+    var hlX = Math.floor(MathUtils.lerp(hlItem.posNDC[0], 0, canvasContext.canvas.width) + hlXOffset);
+    var hlY = Math.floor(MathUtils.lerp(hlItem.posNDC[1], 0, canvasContext.canvas.height) + hlYOffset);
 
     canvasContext.lineWidth = 3;
-    canvasContext.strokeStyle = "yellow";
+    
+    canvasContext.strokeStyle = this.activeItem == null ? "yellow" : "red";
     canvasContext.strokeRect(hlX, hlY, hlWidth, hlHeight);
 
     canvasContext.restore();
@@ -94,12 +110,13 @@ GameStateShipSelect.prototype.handleKeyboardInput = function(evt) {
         // haven't decided what (if anything) to do on keydown
     } else if (evt.type == "keyup") {
         switch(evt.code) {
-            case "ArrowUp":
-                this.activeItemIndex = (this.activeItemIndex + this.uiItems.length - 1) % this.uiItems.length;
-                break;
-            case "ArrowDown":
-                this.activeItemIndex = (this.activeItemIndex + 1) % this.uiItems.length;
-                break;
+            //// Up/down arrows not used in this form
+            //case "ArrowUp":
+            //    this.activeItemIndex = (this.activeItemIndex + this.uiItems.length - 1) % this.uiItems.length;
+            //    break;
+            //case "ArrowDown":
+            //    this.activeItemIndex = (this.activeItemIndex + 1) % this.uiItems.length;
+            //    break;
             case "ArrowLeft":
                 this.shipSelectIdx = (this.shipSelectIdx - 1 + this.numSelectableShips) % this.numSelectableShips;
                 break;
@@ -110,20 +127,44 @@ GameStateShipSelect.prototype.handleKeyboardInput = function(evt) {
             case "Space":
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
 
-                // transferObj is used if we are switching into the Playing state.
-                // The hard-coding feels janky here, but it will get the job done
-                var transferObj = null;
-                if (this.uiItems[this.activeItemIndex].actionMsg["params"].stateName == "Playing") {
-                    transferObj = this.shipSelectMap[this.shipSelectIdx];
+                // If we have an active item, deactivate it
+                if (this.activeItem) {
+                    this.activeItem.isActive = false;   // The UI Items store their activation state, so the menu can query it and determine how to interact with the UI items, based on user input
+                    this.activeItemIndex = -1;
+                    this.activeItem = null; // Unassign activeItem reference
                 }
 
-                var cmdMsg = { "topic": "UICommand",
-                               "targetObj": this,
-                               "command": this.uiItems[this.activeItemIndex].actionMsg["command"],
-                               "params": this.uiItems[this.activeItemIndex].actionMsg["params"],
-                               "transferObj": transferObj
-                             };
-                this.messageQueue.enqueue(cmdMsg);
+                // Else, we need to either select/activate the highlighted item (if it is selectable), or otherwise call the command of the "non-selectable" item
+                else {
+                    if (this.highlightedItem.actionMsg) {
+                        // transferObj is used if we are switching into the Playing state.
+                        // The hard-coding feels janky here, but it will get the job done
+                        var transferObj = null;
+                        if (this.uiItems[this.highlightedItemIndex].actionMsg["params"].stateName == "Playing") {
+                            transferObj = this.shipSelectMap[this.shipSelectIdx];
+                        }
+
+                        // if the UI item has an actionMsg associated with it, then enqueue that message
+                        var cmdMsg = { "topic": "UICommand",
+                                       "targetObj": this,
+                                       "command": this.uiItems[this.highlightedItemIndex].actionMsg["command"],
+                                       "params": this.uiItems[this.highlightedItemIndex].actionMsg["params"],
+                                        "transferObj": transferObj
+                                     };
+                        this.messageQueue.enqueue(cmdMsg);
+                    }
+                    else {
+                        // Else, select the item (if it's selectable)
+                        if (this.highlightedItem.isSelectable) {
+                            this.activeItemIndex = this.highlightedItemIndex;
+                            this.activeItem = this.uiItems[this.highlightedItemIndex];
+                            this.activeItem.isActive = true;
+                        }
+                        else {
+                            // This case is probably nonsense. I don't think it's possible, given the properties of the UI. But at this point, I'm writing hack'n'slash code, so here is the case, anyway
+                        }
+                    }
+                }
                 break;
         }
     }
