@@ -5,6 +5,7 @@ function GameStateStatsOverlay() {
     this.messageQueue = null;
     this.activeItemIndex = 0;
     this.activeItem = null;
+    this.bgm = null;
 }
 
 GameStateStatsOverlay.prototype = Object.create(GameStateBase.prototype);
@@ -17,16 +18,21 @@ GameStateStatsOverlay.prototype.initialize = function(transferObj = null) {
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
 
     // create the end-of-game message display, based on the passed-in object
-    this.createDisplayMessage(transferObj);
+    this.createDisplayMessage(transferObj.scoresAndStats);
 
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
+
+    this.bgm = transferObj.bgmObj;
 
 };
 
 
 GameStateStatsOverlay.prototype.cleanup = function() {
     this.uiItems = [];
+    if (this.bgm) {
+        this.bgm.stop();
+    }
 };
 
 

@@ -23,6 +23,9 @@ function GameLogic() {
 
     this.commandMap["createExplosion"] = this.createExplosion;
     this.bulletSoundPool = null;
+
+    this.bgm_track_list = [];
+    this.bgm = null;
 }
 
 GameLogic.prototype = Object.create(GameObject.prototype);
@@ -59,6 +62,11 @@ GameLogic.prototype.initialize = function(configObj = null) {
     this.bulletSoundPool = new SoundPool("assets/sounds/laser01.mp3", null, 5);   // TODO make resource manager for sounds (and.. other assets, while we're at it?)
     this.shipExplosionSoundPool = new SoundPool("assets/sounds/grenade_explosion-soundbible.com.wav", null, 5);
     this.asteroidExplosionSoundPool = new SoundPool("assets/sounds/rock_debris_explosion-freesfx.co.uk.mp3", null, 5);
+
+    this.bgm_track_list = ["assets/sounds/masskonfuzion-astro_ravenous.mp3", "assets/sounds/masskonfuzion-asterisk.mp3"];
+    var track_to_play = Math.floor( Math.random() * this.bgm_track_list.length );
+    this.bgm = new Sound(this.bgm_track_list[track_to_play]);
+    this.bgm.play({"volume": 0.5});    // TODO move bgm out to a sound/resource manager - make it possible to play a new song when the current song finishes. Also note: this bgm object gets passed through a state transition
 
     // Begin initializing game subsystems. Note that the order of operations is important
 
@@ -373,6 +381,10 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     // NOTE: UI controls are hard-coded currently; but they could also be stored in a key mapping,
     // like this.keyCtrlMap, for easy customization
     else if (evt.code == "Escape") {
+        if (this.bgm) {
+            this.bgm.stop();
+        }
+
         // TODO Pop up confirmation before exiting. Probably easiest to make a separate game state (i.e., stack it on top of the playing state)
         cmdMsg = { "topic": "UICommand",
                    "targetObj": this,
@@ -908,11 +920,16 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
                                          "characters": this.characters
                                        };
 
+                    // Transfer this GameLogicObject's bgm object into the GameOver state, so the music can keep playing
+                    var transferBGM = this.bgm; // should increment the reference count of the obj referenced by this.bgm by 1
+                    this.bgm = null;    // should leave transferBGM as-is, and set my this.bgm ref to null, reducing the ref count to the actual Sound obj by 1 (at this point, the ref count should be 1
+
                     var cmdMsg = { "topic": "UICommand",
                                    "targetObj": this,
                                    "command": "changeState",
                                    "params": {"stateName": "GameOver",
-                                              "transferObj": gameOverInfo } // TODO make a Character/Player class (or some object) that can store the name of the ship (instead of ship0, etc)
+                                              "transferObj": {"scoresAndStats": gameOverInfo, "bgmObj": transferBGM } 
+                                             }
                                  };
                     this.messageQueue.enqueue(cmdMsg);
                 }
@@ -940,6 +957,9 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
                     }
                 }
 
+                    var transferBGM = this.bgm; // should increment the reference count of the obj referenced by this.bgm by 1
+                    this.bgm = null;    // should leave transferBGM as-is, and set my this.bgm ref to null, reducing the ref count to the actual Sound obj by 1 (at this point, the ref count should be 1
+
                 // TODO make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
                 // e.g. Most kills, best score, most deaths
                 var gameOverInfo = { "winnerInfo": winner,
@@ -953,7 +973,8 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
                                "targetObj": this,
                                "command": "changeState",
                                "params": {"stateName": "GameOver",
-                                          "transferObj": gameOverInfo }
+                                          "transferObj": {"scoresAndStats": gameOverInfo, "bgmObj": transferBGM } 
+                                         }
                              };
                 this.messageQueue.enqueue(cmdMsg);
             }
