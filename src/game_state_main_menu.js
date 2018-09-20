@@ -5,10 +5,6 @@ function GameStateMainMenu() {
     this.uiItems = [];
 
     this.messageQueue = null;
-
-    // TODO move bgm out to a sound/resource manager. We're just testing here -- make the BGM/sound manager global (or, at least not actually "global", but visible to all game states)
-    this.bgm = new Sound("assets/raw_do_not_upload/sounds/GJ-Disconscient-Creative_Commons.mp4");
-
 }
 
 GameStateMainMenu.prototype = Object.create(GameStateBase.prototype);
@@ -29,6 +25,8 @@ GameStateMainMenu.prototype.initialize = function(transferObj = null) {
     this.activeItemIndex = 0;
     this.activeItem = this.uiItems[this.activeItemIndex];
 
+    // TODO move bgm out to a sound/resource manager. We're just testing here -- make the BGM/sound manager global (or, at least not actually "global", but visible to all game states)
+    this.bgm = new Sound("assets/sounds/masskonfuzion-horizon.mp3");
     this.bgm.play({"volume": 0.7});    // TODO move bgm out to a sound/resource manager
 };
 

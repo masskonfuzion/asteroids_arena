@@ -1,11 +1,18 @@
 function GameStatePlaying() {
     this.gameLogic = null;
+    this.bgm_track_list = [];
+    this.bgm = null;
 }
 
 GameStatePlaying.prototype = Object.create(GameStateBase.prototype);
 GameStatePlaying.prototype.constructor = GameStatePlaying;
 
 GameStatePlaying.prototype.initialize = function(transferObj = null) {
+    this.bgm_track_list = ["assets/sounds/masskonfuzion-astro_ravenous.mp3", "assets/sounds/masskonfuzion-asterisk.mp3"];
+    var track_to_play = Math.floor( Math.random() * this.bgm_track_list.length );
+    this.bgm = new Sound(this.bgm_track_list[track_to_play]);
+    this.bgm.play({"volume": 0.5});    // TODO move bgm out to a sound/resource manager - make it possible to play a new song when the current song finishes
+
     this.gameLogic = new GameLogic();
     this.gameLogic.initialize(transferObj);
 
@@ -14,6 +21,7 @@ GameStatePlaying.prototype.initialize = function(transferObj = null) {
 GameStatePlaying.prototype.cleanup = function() {
     // implement cleanup (maybe empty out some arrays? Of course, JS is garbage-collected, so... maybe do nothing :-D)
     // NOTE: we're not removing/reassigning-to-null this.gameLogic because we need it in states that follow (e.g. GameOver)
+    this.bgm.stop();    // TODO move bgm out to a sound/resource manager
 };
 
 // Do things before rendering the scene (e.g.:
