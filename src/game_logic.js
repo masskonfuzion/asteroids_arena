@@ -901,6 +901,7 @@ GameLogic.prototype.doUICommand = function(msg) {
 
 
 GameLogic.prototype.checkForGameOver = function(dt_s) {
+    // TODO implement score tie breakers to present proper winners at the end of games
     switch (game.settings.visible.gameMode) {
         case "Death Match":
             for (var shipID in this.gameStats) {
