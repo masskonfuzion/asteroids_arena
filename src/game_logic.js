@@ -33,13 +33,12 @@ GameLogic.prototype.constructor = GameLogic;
 
 
 GameLogic.prototype.initialize = function(configObj = null) {
-    // Key control map is keyed on keypress event "code", e.g. "KeyW" (as opposed to "keyCode", which is a number, like 87)
-    // Based on documentation on the Mozilla Developer Network (MDN), "code" is preferred, and "keyCode" is deprecated
+    // Key control map is keyed on keypress event "key", e.g. "w" 
     // TODO change from using "code" to using "key" (see Mozilla Developers' Network documentation on KeyboardEvents)
-    this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
-    this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
-    this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
-    this.keyCtrlMap["fireA"] = { "code": "ShiftLeft", "state": false };
+    this.keyCtrlMap["thrust"] = { "key": "w", "state": false };
+    this.keyCtrlMap["turnLeft"] = { "key": "a", "state": false };
+    this.keyCtrlMap["turnRight"] = { "key": "d", "state": false };
+    this.keyCtrlMap["fireA"] = { "key": "Shift", "state": false };
 
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(64);
@@ -284,7 +283,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
 
     // NOTE: apparently, it is not possible to disable key repeat in HTML5/Canvas/JS..
     var cmdMsg = {};
-    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
+    if (evt.key == this.keyCtrlMap["thrust"]["key"]) {
         // User pressed thrust key
         this.keyCtrlMap["thrust"]["state"] = true;
 
@@ -297,7 +296,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.code == this.keyCtrlMap["fireA"]["code"]) {
+    if (evt.key == this.keyCtrlMap["fireA"]["key"]) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOn",
@@ -307,7 +306,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
+    if (evt.key == this.keyCtrlMap["turnLeft"]["key"]) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
@@ -317,7 +316,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
                  };
         this.messageQueue.enqueue(cmdMsg);
     }
-    else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
+    else if (evt.key == this.keyCtrlMap["turnRight"]["key"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
@@ -334,7 +333,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     //console.log('Key code ' + evt.keyCode + ' up');
 
     var cmdMsg = {};
-    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
+    if (evt.key == this.keyCtrlMap["thrust"]["key"]) {
         // User released thrust key
         this.keyCtrlMap["thrust"]["state"] = false;
 
@@ -346,7 +345,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.code == this.keyCtrlMap["fireA"]["code"]) {
+    if (evt.key == this.keyCtrlMap["fireA"]["key"]) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOff",
@@ -356,7 +355,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
+    if (evt.key == this.keyCtrlMap["turnLeft"]["key"]) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
@@ -367,7 +366,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
+    else if (evt.key == this.keyCtrlMap["turnRight"]["key"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
