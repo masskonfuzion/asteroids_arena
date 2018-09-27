@@ -85,7 +85,6 @@ GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
 };
 
 GameStateStatsOverlay.prototype.render = function(canvasContext, dt_s) {
-    // TODO maybe this game stats overlay state should have its own canvas context/object
     canvasContext.save();
     canvasContext.setTransform(1,0,0,1,0,0);    // Reset transformation (similar to OpenGL loadIdentity() for matrices)
 
@@ -170,7 +169,7 @@ GameStateStatsOverlay.prototype.doUICommand = function(msg) {
             // NOTE: This popState command calls the gameStateManager's resumeState(). There is a pushState() and popState() - maybe consolidate pauseState and resumeState into pushState and popState?
 
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
-            //gameStateMgr.resumeState();   // This is what we would call in an actual overlay. //TODO change the name of this state to GameStateGameOver or something like that?
+            //gameStateMgr.resumeState();   // This is what we would call in an actual overlay.
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
             break;
     }
