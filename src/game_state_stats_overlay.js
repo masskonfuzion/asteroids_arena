@@ -41,6 +41,7 @@ GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
 
 // Create the game over display message (using menu/ui items)
 GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
+    // TODO Process the gameStats object (passed into this function via param) into collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order).  Sort scores -- implement tie breakers to present proper winners at the end of games (if, e.g. 2 players have the score for the key scoring metric)
     switch(infoObj.settings.gameMode) {
         case "Death Match":
         var winMsg = infoObj.winnerInfo.characterName + " wins!";

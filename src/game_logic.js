@@ -897,14 +897,14 @@ GameLogic.prototype.doUICommand = function(msg) {
 
 
 GameLogic.prototype.checkForGameOver = function(dt_s) {
-    // TODO implement score tie breakers to present proper winners at the end of games
+    // TODO implement a high scores menu (should be accessible from the main menu)
+
     switch (game.settings.visible.gameMode) {
         case "Death Match":
             for (var shipID in this.gameStats) {
                 var scoreObj = this.gameStats[shipID];
 
                 if (scoreObj.kills == game.settings.visible.gameModeSettings.deathMatch.shipKills) {
-                    // TODO instead of passing in this.gameStats raw, make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
 
                     var shipObjectID = this.gameObjs[shipID].objectID;
                     var characterName = this.characters[shipObjectID].callSign;
