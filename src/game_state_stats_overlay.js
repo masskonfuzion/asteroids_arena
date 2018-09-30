@@ -55,6 +55,9 @@ GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
         break;
     }
 
+
+    var rankedShipIDs = this.sortScores(infoObj.stats);
+
     var i = 0;
 
     // A couple of vars to control layout. NOTE: next time around, we'll use a layout object of some sort (maybe a JSON layout?)
@@ -65,7 +68,9 @@ GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
     var shipObjectID = "";
     var characterName = "";
 
-    for (var shipID in infoObj.stats) {
+    // Iterate backwards because rankedShipIDs is sorted in ascending order; we want to print out highest to lowest scores
+    for (var loopIdx = rankedShipIDs.length - 1; loopIdx >= 0; loopIdx -= 1) {
+        var shipID = rankedShipIDs[loopIdx];
         // I could use Object.keys() and Object.values()... but I don't trust JavaScript.. O(n**2) lookup it is..
         for (var shipObjectID in infoObj.shipDict) {
             if (infoObj.shipDict[shipObjectID] == shipID) {
@@ -175,4 +180,25 @@ GameStateStatsOverlay.prototype.doUICommand = function(msg) {
             break;
     }
 
+};
+
+
+GameStateStatsOverlay.prototype.sortScores = function(scoreObj) {
+    var rankedShipIDs = Object.getOwnPropertyNames(scoreObj);
+
+    // sort ascending by kills
+    for (var fill_slot = rankedShipIDs.length - 1; fill_slot > 0; fill_slot -= 1) {
+        var pos_of_max = 0;
+        for (var loc  = 1; loc <= fill_slot; loc += 1) {
+            if (scoreObj[rankedShipIDs[loc]].kills > scoreObj[rankedShipIDs[pos_of_max]].kills) {
+                pos_of_max = loc;
+            }
+        }
+
+        var temp = rankedShipIDs[fill_slot];
+        rankedShipIDs[fill_slot] = rankedShipIDs[pos_of_max];
+        rankedShipIDs[pos_of_max] = temp;
+    }
+
+    return rankedShipIDs;
 };

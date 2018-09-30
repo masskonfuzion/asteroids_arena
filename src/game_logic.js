@@ -33,11 +33,12 @@ GameLogic.prototype.constructor = GameLogic;
 
 
 GameLogic.prototype.initialize = function(configObj = null) {
-    // Key control map is keyed on keypress event "key", e.g. "w" 
-    this.keyCtrlMap["thrust"] = { "key": "w", "state": false };
-    this.keyCtrlMap["turnLeft"] = { "key": "a", "state": false };
-    this.keyCtrlMap["turnRight"] = { "key": "d", "state": false };
-    this.keyCtrlMap["fireA"] = { "key": "Shift", "state": false };
+    // Key control map is keyed on keypress event "code", e.g. "KeyW" (note that this is based on location, not scancode.. based on QWERTY, but e.g., "KeyW" may not be where the W key is on a non-qwerty layout)
+    this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
+    this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
+    this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
+    this.keyCtrlMap["fireA"] = { "code": "ShiftLeft", "state": false };
+
 
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(64);
@@ -282,7 +283,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
 
     // NOTE: apparently, it is not possible to disable key repeat in HTML5/Canvas/JS..
     var cmdMsg = {};
-    if (evt.key == this.keyCtrlMap["thrust"]["key"]) {
+    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
         // User pressed thrust key
         this.keyCtrlMap["thrust"]["state"] = true;
 
@@ -295,7 +296,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.key == this.keyCtrlMap["fireA"]["key"]) {
+    if (evt.code == this.keyCtrlMap["fireA"]["code"]) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOn",
@@ -305,7 +306,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.key == this.keyCtrlMap["turnLeft"]["key"]) {
+    if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
@@ -315,7 +316,7 @@ GameLogic.prototype.handleKeyDownEvent = function(evt) {
                  };
         this.messageQueue.enqueue(cmdMsg);
     }
-    else if (evt.key == this.keyCtrlMap["turnRight"]["key"]) {
+    else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = true;
         cmdMsg = { "topic": "GameCommand",
@@ -332,7 +333,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     //console.log('Key code ' + evt.keyCode + ' up');
 
     var cmdMsg = {};
-    if (evt.key == this.keyCtrlMap["thrust"]["key"]) {
+    if (evt.code == this.keyCtrlMap["thrust"]["code"]) {
         // User released thrust key
         this.keyCtrlMap["thrust"]["state"] = false;
 
@@ -344,7 +345,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.key == this.keyCtrlMap["fireA"]["key"]) {
+    if (evt.code == this.keyCtrlMap["fireA"]["code"]) {
         // User pressed the fire A key (e.g. primary weapon)
         cmdMsg = { "topic": "GameCommand",
                    "command": "setFireAOff",
@@ -354,7 +355,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    if (evt.key == this.keyCtrlMap["turnLeft"]["key"]) {
+    if (evt.code == this.keyCtrlMap["turnLeft"]["code"]) {
         // User pressed turnLeft key
         this.keyCtrlMap["turnLeft"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
@@ -365,7 +366,7 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
         this.messageQueue.enqueue(cmdMsg);
     }
 
-    else if (evt.key == this.keyCtrlMap["turnRight"]["key"]) {
+    else if (evt.code == this.keyCtrlMap["turnRight"]["code"]) {
         // User pressed turnRight key
         this.keyCtrlMap["turnRight"]["state"] = false;
         cmdMsg = { "topic": "GameCommand",
@@ -898,6 +899,8 @@ GameLogic.prototype.doUICommand = function(msg) {
 
 GameLogic.prototype.checkForGameOver = function(dt_s) {
     // TODO implement a high scores menu (should be accessible from the main menu)
+
+    // TODO add detail about asteroids blasted (maybe by size, too?) to scores/stats
 
     switch (game.settings.visible.gameMode) {
         case "Death Match":
