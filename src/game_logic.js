@@ -2,6 +2,9 @@ function GameScoresAndStats() {
     this.score = 0;
     this.deaths = 0;
     this.kills = 0;
+    this.asteroids_blasted_s = 0;   // small asteroids blasted
+    this.asteroids_blasted_m = 0;   // medium asteroids blasted
+    this.asteroids_blasted_l = 0;   // large asteroids blasted
 }
 
 function GameLogic() {
@@ -531,12 +534,15 @@ GameLogic.prototype.processCollisionEvent = function(msg) {
         switch (asteroidRef.size) {
             case 0:
                 this.gameStats[shipName].score += this.settings["hidden"]["pointValues"]["destroySmallAsteroid"];
+                this.gameStats[shipName].asteroids_blasted_s += 1;
                 break;
             case 1:
                 this.gameStats[shipName].score += this.settings["hidden"]["pointValues"]["destroyMediumAsteroid"];
+                this.gameStats[shipName].asteroids_blasted_m += 1;
                 break;
             case 2:
                 this.gameStats[shipName].score += this.settings["hidden"]["pointValues"]["destroyLargeAsteroid"];
+                this.gameStats[shipName].asteroids_blasted_l += 1;
                 break;
         }
 
