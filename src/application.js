@@ -29,6 +29,12 @@ GameApplication.prototype.initialize = function() {
 
     this.timer = new Timer();
 
+    this.loadSettings();
+
+}
+
+
+GameApplication.prototype.loadSettings = function() {
     // Try to get settings from localStorage
     // TODO maybe validate that the settings in localStorage conform to the structure expected by the game (e.g., say an update is pushed, which changes the structure of settings.. Auto-discover that, and handle it)
     var settingsObj = localStorage.getItem('settings');
@@ -50,4 +56,4 @@ GameApplication.prototype.initialize = function() {
     // Save settings to localStorage. We have to JSON.stringify() the object, because localStorage wants key/value pairs of strings (even numbers get saved as strings)
     // TODO maybe make wrapper functions in the game/application object, for saving/loading localSettings 
     localStorage.setItem('settings', JSON.stringify(this.settings));
-}
+};
