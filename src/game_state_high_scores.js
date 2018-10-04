@@ -12,6 +12,8 @@ function GameStateHighScores() {
     this.activeItemIndex = -1;      // -1 means "no active selection"; but probably rely on the value of activeItem itself to determine whether or not the user is interacting with an item
     this.activeItem = null;         // Active/selected item
 
+    this.highScores = {};
+
     this.bgm = null;
 }
 
@@ -30,8 +32,31 @@ GameStateHighScores.prototype.initialize = function(transferObj = null) {
     var timeLimit = timeLimits[0];      // the first item in the timeLimits list. But also, TODO - implement pages
     // Display the time limit
     this.uiItems.push( new uiItemText(timeLimit, "32px", "MenuFont", "white", 0.05, 0.05, "left", "middle") );
+
+    var yNDC = 0.25;
+    var ySpacing = 0.1;
+
     // scores
-    for (var scoreItem of this.highScores["timeAttack"][timeLimit]) {
+    for (var i = 0; i < this.highScores["timeAttack"][timeLimit].length; i++) {
+        var scoreItem = this.highScores["timeAttack"][timeLimit][i];
+
+        var callSign = scoreItem.callSign;
+        this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.1, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("Kills:", "20px", "MenuFont", "white", 0.2, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.kills.toString(), "20px", "MenuFont", "white", 0.26, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("Deaths:", "20px", "MenuFont", "white", 0.32, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.deaths.toString(), "20px", "MenuFont", "white", 0.38, yNDC + (i * ySpacing), "center", "middle", null ) );
+
+        this.uiItems.push( new uiItemText("Asteroids:", "20px", "MenuFont", "white", 0.46, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("S:", "20px", "MenuFont", "white", 0.54, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.ast_s.toString(), "20px", "MenuFont", "white", 0.58, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("M:", "20px", "MenuFont", "white", 0.62, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.ast_m.toString(), "20px", "MenuFont", "white", 0.66, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("L:", "20px", "MenuFont", "white", 0.70, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.ast_l.toString(), "20px", "MenuFont", "white", 0.74, yNDC + (i * ySpacing), "center", "middle", null ) );
+
+        this.uiItems.push( new uiItemText("Score:", "20px", "MenuFont", "white", 0.80, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.score.toString(), "20px", "MenuFont", "white", 0.88, yNDC + (i * ySpacing), "center", "middle", null ) );
     }
 
 
@@ -75,7 +100,7 @@ GameStateHighScores.prototype.createNewEmptyScoreObj = function() {
 
     // Initialize top 5 scores at each level
     for (var i = 0; i < 5; i++) {
-        retObj.push( { "callSign": "", "kills": 0, "deaths": 0, "ast_s": 0, "ast_m": 0, "ast_l": 0 } );
+        retObj.push( { "callSign": "Incognito", "kills": 0, "deaths": 0, "ast_s": 0, "ast_m": 0, "ast_l": 0, "score": 0 } );
     }
 
     return retObj;
