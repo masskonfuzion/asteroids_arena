@@ -30,7 +30,6 @@ GameApplication.prototype.initialize = function() {
     this.timer = new Timer();
 
     this.loadSettings();
-
 }
 
 
@@ -57,3 +56,5 @@ GameApplication.prototype.loadSettings = function() {
     // TODO maybe make wrapper functions in the game/application object, for saving/loading localSettings 
     localStorage.setItem('settings', JSON.stringify(this.settings));
 };
+
+
