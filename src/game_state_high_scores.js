@@ -12,7 +12,10 @@ function GameStateHighScores() {
     this.activeItemIndex = -1;      // -1 means "no active selection"; but probably rely on the value of activeItem itself to determine whether or not the user is interacting with an item
     this.activeItem = null;         // Active/selected item
 
+    this.page = 0;  // "Page" number, for looking at different "pages" of high scores data
     this.highScores = {};
+    this.timeLimitPageLabels = [];  // List of "page labels" -- the different time lengths (in timeAttack) that have 
+    // TODO maybe also keep high scores for fastest times to reach kill counts, in DeathMatch mode
 
     this.bgm = null;
 }
@@ -27,9 +30,53 @@ GameStateHighScores.prototype.initialize = function(transferObj = null) {
 
     this.loadHighScores();    //TODO uncomment once the loadhighScores function is written
 
+    this.refreshPage();
+
+
+    // Get background music player object
+    if (transferObj && transferObj.bgmObj) {
+        this.bgm = transferObj.bgmObj;
+    }
+    // Note: no else case for the bgmObj.. technically, we shouldn't even need the "if", because there should always be a bgmObj coming from the previous state (which should always be the MainMenu)
+};
+
+//TODO finish high scores. Make high scores load and unload entirely from within the high scores menu (so, make a high scores menu)
+GameStateHighScores.prototype.loadHighScores = function() {
+    var highScoresObj = localStorage.getItem('highScores');
+
+    if (highScoresObj) {
+        this.highScores = JSON.parse(highScoresObj);
+    }
+    else {
+        // timeLimitPageLabels for this high scores obj is taken (hard-coded) from the settings menu. It is hard-coded. TODO maybe specify the time limits somewhere centralized/global
+        var timeLimitPageLabels = [ "1:00", "2:00", "3:00", "5:00", "7:00", "10:00", "15:00", "20:00", "25:00", "30:00" ];
+        this.highScores = { "timeAttack": {},
+                          };
+        for (var timeLimit of timeLimitPageLabels) {
+            this.highScores["timeAttack"][timeLimit] = this.createNewEmptyScoreObj();
+        }
+        // Note that there are no high scores for deathMatch -- maybe we can track highest score reached (based on kills/asteroids blasted), but meh..
+    }
+    this.timeLimitPageLabels = Object.getOwnPropertyNames(this.highScores["timeAttack"]);
+};
+
+GameStateHighScores.prototype.createNewEmptyScoreObj = function() {
+    var retObj = [];
+
+    // Initialize top 5 scores at each level
+    for (var i = 0; i < 5; i++) {
+        retObj.push( { "callSign": "Incognito", "kills": 0, "deaths": 0, "ast_s": 0, "ast_m": 0, "ast_l": 0, "score": 0 } );
+    }
+
+    return retObj;
+};
+
+
+GameStateHighScores.prototype.refreshPage = function() {
+    this.uiItems = [];  // clear the uiItems list so we can build it anew
+
     // TODO implement all pages of high scores (for timeLimit in this.highScores.timeAttack)
-    var timeLimits = Object.getOwnPropertyNames(this.highScores["timeAttack"]);
-    var timeLimit = timeLimits[0];      // the first item in the timeLimits list. But also, TODO - implement pages
+    var timeLimit = this.timeLimitPageLabels[this.page];
     // Display the time limit
     this.uiItems.push( new uiItemText(timeLimit, "32px", "MenuFont", "white", 0.05, 0.05, "left", "middle") );
 
@@ -68,42 +115,6 @@ GameStateHighScores.prototype.initialize = function(transferObj = null) {
         this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
     }
     this.highlightedItem = this.uiItems[this.highlightedItemIndex];
-
-    // Get background music player object
-    if (transferObj && transferObj.bgmObj) {
-        this.bgm = transferObj.bgmObj;
-    }
-    // Note: no else case for the bgmObj.. technically, we shouldn't even need the "if", because there should always be a bgmObj coming from the previous state (which should always be the MainMenu)
-};
-
-//TODO finish high scores. Make high scores load and unload entirely from within the high scores menu (so, make a high scores menu)
-GameStateHighScores.prototype.loadHighScores = function() {
-    var highScoresObj = localStorage.getItem('highScores');
-
-    if (highScoresObj) {
-        this.highScores = JSON.parse(highScoresObj);
-    }
-    else {
-        // timeLimits for this high scores obj is taken (hard-coded) from the settings menu. It is hard-coded. TODO maybe specify the time limits somewhere centralized/global
-        var timeLimits = [ "1:00", "2:00", "3:00", "5:00", "7:00", "10:00", "15:00", "20:00", "25:00", "30:00" ];
-        this.highScores = { "timeAttack": {},
-                          };
-        for (var timeLimit of timeLimits) {
-            this.highScores["timeAttack"][timeLimit] = this.createNewEmptyScoreObj();
-        }
-        // Note that there are no high scores for deathMatch -- maybe we can track highest score reached (based on kills/asteroids blasted), but meh..
-    }
-};
-
-GameStateHighScores.prototype.createNewEmptyScoreObj = function() {
-    var retObj = [];
-
-    // Initialize top 5 scores at each level
-    for (var i = 0; i < 5; i++) {
-        retObj.push( { "callSign": "Incognito", "kills": 0, "deaths": 0, "ast_s": 0, "ast_m": 0, "ast_l": 0, "score": 0 } );
-    }
-
-    return retObj;
 };
 
 
@@ -187,22 +198,39 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
                 break;
             // TODO - correct KeyDown to KeyUp, everywhere
             case "ArrowLeft":
-                var cmdMsg = { "topic": "UICommand",
-                               "targetObj": this,
-                               "command": "sendUserInputToActiveItem",
-                               "params": { "event": "ActiveUIItem_HandleEvent_KeyDown_ArrowLeft" }
-                             };
-                this.messageQueue.enqueue(cmdMsg);
+                // If there is an active/selected UI item, send input to it
+                if (this.activeItem) {
+                    var cmdMsg = { "topic": "UICommand",
+                                   "targetObj": this,
+                                   "command": "sendUserInputToActiveItem",
+                                   "params": { "event": "ActiveUIItem_HandleEvent_KeyDown_ArrowLeft" }
+                                 };
+                    this.messageQueue.enqueue(cmdMsg);
+                }
+                // Otherwise, decrease the "page number" of displayed high score data
+                else {
+                    this.page = (this.page + this.timeLimitPageLabels.length - 1) % this.timeLimitPageLabels.length;
+                    this.refreshPage();
+                }
                 break;
             case "ArrowRight":
                 // NOTE: "ActiveUIItem_HandleEvent_KeyDown_ArrowRight and etc. will be used to trigger function calls in the UI Items.  This object (i.e., the menu/form will need to call the functions on the form's active items.
                 // Side note: I don't like this design. It forces the menu/UI itself to call the functions that make the UI items handle their own internal data. That's ugly. If I ever have to write another UI, I'd have menus be an object in & of themselves. The menu objects would store the menu layout, and also, they'd have the functions necessary to handle user input and pass whatever needs to be passed into UI items.
-                var cmdMsg = { "topic": "UICommand",
-                               "targetObj": this,
-                               "command": "sendUserInputToActiveItem",
-                               "params": { "event": "ActiveUIItem_HandleEvent_KeyDown_ArrowRight" }
-                             };
-                this.messageQueue.enqueue(cmdMsg);
+
+                // If there is an active/selected UI item, send input to it
+                if (this.activeItem) {
+                    var cmdMsg = { "topic": "UICommand",
+                                   "targetObj": this,
+                                   "command": "sendUserInputToActiveItem",
+                                   "params": { "event": "ActiveUIItem_HandleEvent_KeyDown_ArrowRight" }
+                                 };
+                    this.messageQueue.enqueue(cmdMsg);
+                }
+                // Otherwise, increase the "page number" of displayed high score data
+                else {
+                    this.page = (this.page + 1) % this.timeLimitPageLabels.length;
+                    this.refreshPage();
+                }
                 break;
             case "Enter":
                 // Enqueue an action to be handled in the postRender step. We want all actions (e.g. state changes, etc.) to be handled in postRender, so that when the mainloop cycles back to the beginning, the first thing that happens is the preRender step in the new state (if the state changed)
