@@ -40,8 +40,8 @@ GameStateHighScores.prototype.initialize = function(transferObj = null) {
     // Note: no else case for the bgmObj.. technically, we shouldn't even need the "if", because there should always be a bgmObj coming from the previous state (which should always be the MainMenu)
 };
 
-//TODO finish high scores. Make high scores load and unload entirely from within the high scores menu (so, make a high scores menu)
 GameStateHighScores.prototype.loadHighScores = function() {
+    // TODO move the initialization of high scores to the "main" menu -- the high scores object should be created without requiring the user to visit the high scores menu
     var highScoresObj = localStorage.getItem('highScores');
 
     if (highScoresObj) {
@@ -123,7 +123,7 @@ GameStateHighScores.prototype.cleanup = function() {
 
     // Save settings to localStorage. We have to JSON.stringify() the object, because localStorage wants key/value pairs of strings (even numbers get saved as strings)
     // TODO maybe the localStorage saving shouldn't happen in cleanup(), but in the handler for the return action
-    //localStorage.setItem('highScores', JSON.stringify(this.highScores));  // TODO uncomment when ready
+    localStorage.setItem('highScores', JSON.stringify(this.highScores));
 
     if (this.bgm) {
         this.bgm.stop();    // TODO move bgm out to a sound/resource manager

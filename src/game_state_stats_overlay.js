@@ -16,6 +16,9 @@ GameStateStatsOverlay.prototype.initialize = function(transferObj = null) {
     this.messageQueue = new MessageQueue();
     this.messageQueue.initialize(2);
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
+    
+    // TODO possibly modify checkForHighScore to support multiple game modes
+    this.checkForHighScore(transferObj);
 
     // create the end-of-game message display, based on the passed-in object
     this.createDisplayMessage(transferObj.scoresAndStats);
@@ -35,6 +38,37 @@ GameStateStatsOverlay.prototype.cleanup = function() {
     }
 };
 
+GameStateStatsOverlay.prototype.checkForHighScore = function(gameInfo) {
+    // We can simply load high scores (without testing for existence) because the high scores
+    // object should have been created on application started (if it wasn't already present)
+
+    // Load high scores. Note that gameInfo is an object that contains both the game stats and the game settings
+    var highScores = JSON.parse(localStorage.getItem('highScores'));
+
+    var gameMode = gameInfo.scoresAndStats.gameMode;    // e.g., "Time Attack"  // TODO maybe change gameMode to match camel-casing, for easy high score table lookups
+    var gameModeSetting = gameInfo.scoresAndStats.settings.gameModeSettings.timeAttack.timeLimit;    // e.g., "1:00" - time length of time attack. TODO don't hardcode gameModeSetting; select it based on gameMode
+    var playerCallSign = gameInfo.scoresAndStats.settings.callSign;
+    var playerStats = gameInfo.scoresAndStats.stats.ship0;
+
+
+    var relevantScoreList = highScores.timeAttack[gameModeSetting]; // A reference to a (mutable) list within the highScores object
+    for (var i = 0; i < relevantScoreList.length; i++) {
+        var highScoreItem = relevantScoreList[i];
+        // TODO implement tie breaker
+        if (playerStats.kills > highScoreItem.kills) {
+            // Insert new high score into place
+            relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "kills": playerStats.kills, "deaths": playerStats.deaths, "ast_s": playerStats.asteroids_blasted_s, "ast_m": playerStats.asteroids_blasted_m, "ast_l": playerStats.asteroids_blasted_l, "score": playerStats.score });
+            // pop the very last score off the list
+            relevantScoreList.pop();
+
+            // Write new high scores out
+            localStorage.setItem('highScores', JSON.stringify(highScores));
+
+            // TODO indicate that the player achieved a new high score
+            break;
+        }
+    }
+};
 
 GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
 };
