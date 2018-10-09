@@ -90,12 +90,12 @@ GameStateHighScores.prototype.refreshPage = function() {
 
         var callSign = scoreItem.callSign;
         this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.1, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText("Kills:", "20px", "MenuFont", "white", 0.2, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kills_icon"].imgObj, 0.2, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText(scoreItem.kills.toString(), "20px", "MenuFont", "white", 0.26, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText("Deaths:", "20px", "MenuFont", "white", 0.32, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["deaths_icon"].imgObj, 0.32, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText(scoreItem.deaths.toString(), "20px", "MenuFont", "white", 0.38, yNDC + (i * ySpacing), "center", "middle", null ) );
 
-        this.uiItems.push( new uiItemText("Asteroids:", "20px", "MenuFont", "white", 0.46, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["asteroids_icon"].imgObj, 0.48, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText("S:", "20px", "MenuFont", "white", 0.54, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText(scoreItem.ast_s.toString(), "20px", "MenuFont", "white", 0.58, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText("M:", "20px", "MenuFont", "white", 0.62, yNDC + (i * ySpacing), "center", "middle", null ) );
