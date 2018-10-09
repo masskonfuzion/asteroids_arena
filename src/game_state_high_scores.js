@@ -83,6 +83,7 @@ GameStateHighScores.prototype.refreshPage = function() {
     var yNDC = 0.25;
     var ySpacing = 0.1;
 
+    // TODO implement an Image UI Type
     // scores
     for (var i = 0; i < this.highScores["timeAttack"][timeLimit].length; i++) {
         var scoreItem = this.highScores["timeAttack"][timeLimit][i];
