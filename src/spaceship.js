@@ -264,10 +264,10 @@ Spaceship.prototype.draw = function(canvasContext) {
 
 
     // ----- DEBUGGING stuff
-    var myCollisionComp = this.components["collision"];
-    var topleft = vec2.clone(myCollisionComp.center);
-    vec2.set(topleft, topleft[0] - myCollisionComp.getWidth() / 2, topleft[1] - myCollisionComp.getHeight() / 2);
-    myCollisionComp.draw(canvasContext);
+    //var myCollisionComp = this.components["collision"];
+    //var topleft = vec2.clone(myCollisionComp.center);
+    //vec2.set(topleft, topleft[0] - myCollisionComp.getWidth() / 2, topleft[1] - myCollisionComp.getHeight() / 2);
+    //myCollisionComp.draw(canvasContext);
     // -----
 
 };
