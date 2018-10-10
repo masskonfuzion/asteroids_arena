@@ -6,6 +6,7 @@ function GameStateStatsOverlay() {
     this.activeItemIndex = 0;
     this.activeItem = null;
     this.bgm = null;
+    this.newHighScore = false;
 }
 
 GameStateStatsOverlay.prototype = Object.create(GameStateBase.prototype);
@@ -18,7 +19,7 @@ GameStateStatsOverlay.prototype.initialize = function(transferObj = null) {
     this.messageQueue.registerListener('UICommand', this, this.doUICommand);
     
     // TODO possibly modify checkForHighScore to support multiple game modes
-    this.checkForHighScore(transferObj);
+    this.newHighScore = this.checkForHighScore(transferObj);
 
     // create the end-of-game message display, based on the passed-in object
     this.createDisplayMessage(transferObj.scoresAndStats);
@@ -69,9 +70,10 @@ GameStateStatsOverlay.prototype.checkForHighScore = function(gameInfo) {
             localStorage.setItem('highScores', JSON.stringify(highScores));
 
             // TODO indicate that the player achieved a new high score
-            break;
+            return true;
         }
     }
+    return false;
 };
 
 GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
@@ -133,6 +135,10 @@ GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
         this.uiItems.push( new uiItemText("Score:", "20px", "MenuFont", "white", 0.80, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText(infoObj.stats[shipID].score.toString(), "20px", "MenuFont", "white", 0.88, yNDC + (i * ySpacing), "center", "middle", null ) );
         i += 1;
+    }
+
+    if (this.newHighScore) {
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["new_high_score"].imgObj, 0.85, 0.15, "center", "middle", null ) );
     }
 };
 
