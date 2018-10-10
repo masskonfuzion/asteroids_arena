@@ -904,10 +904,6 @@ GameLogic.prototype.doUICommand = function(msg) {
 
 
 GameLogic.prototype.checkForGameOver = function(dt_s) {
-    // TODO implement a high scores menu (should be accessible from the main menu)
-
-    // TODO add detail about asteroids blasted (maybe by size, too?) to scores/stats
-
     switch (game.settings.visible.gameMode) {
         case "Death Match":
             for (var shipID in this.gameStats) {

@@ -54,8 +54,12 @@ GameStateStatsOverlay.prototype.checkForHighScore = function(gameInfo) {
     var relevantScoreList = highScores.timeAttack[gameModeSetting]; // A reference to a (mutable) list within the highScores object
     for (var i = 0; i < relevantScoreList.length; i++) {
         var highScoreItem = relevantScoreList[i];
-        // TODO implement tie breaker
-        if (playerStats.kills > highScoreItem.kills) {
+
+        // Note -- this logic is for the time attack mode. TODO implement high scores for Death Match mode? (maybe fastest time to achieve the kill target?)
+        if (playerStats.kills > highScoreItem.kills || 
+            playerStats.kills == highScoreItem.kills && playerStats.deaths < highScoreItem.deaths ||
+            playerStats.kills == highScoreItem.kills && playerStats.deaths == highScoreItem.deaths && playerStats.score > highScoreItem.score) {
+
             // Insert new high score into place
             relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "kills": playerStats.kills, "deaths": playerStats.deaths, "ast_s": playerStats.asteroids_blasted_s, "ast_m": playerStats.asteroids_blasted_m, "ast_l": playerStats.asteroids_blasted_l, "score": playerStats.score });
             // pop the very last score off the list
@@ -75,7 +79,6 @@ GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
 
 // Create the game over display message (using menu/ui items)
 GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
-    // TODO Process the gameStats object (passed into this function via param) into collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order).  Sort scores -- implement tie breakers to present proper winners at the end of games (if, e.g. 2 players have the score for the key scoring metric)
     switch(infoObj.settings.gameMode) {
         case "Death Match":
         var winMsg = infoObj.winnerInfo.characterName + " wins!";
@@ -226,10 +229,11 @@ GameStateStatsOverlay.prototype.doUICommand = function(msg) {
 };
 
 
+// Return a list of shipIDs, to be used to display scores in sorted order
 GameStateStatsOverlay.prototype.sortScores = function(scoreObj) {
     var rankedShipIDs = Object.getOwnPropertyNames(scoreObj);
 
-    // sort ascending by kills
+    // first pass: sort shipIDs, ascending, based on the # of kills achieved by that ship
     for (var fill_slot = rankedShipIDs.length - 1; fill_slot > 0; fill_slot -= 1) {
         var pos_of_max = 0;
         for (var loc  = 1; loc <= fill_slot; loc += 1) {
@@ -241,6 +245,33 @@ GameStateStatsOverlay.prototype.sortScores = function(scoreObj) {
         var temp = rankedShipIDs[fill_slot];
         rankedShipIDs[fill_slot] = rankedShipIDs[pos_of_max];
         rankedShipIDs[pos_of_max] = temp;
+    }
+
+    // check for any ties by kills (We assume at least 2 ships)
+    ////for (var i = 0; i < rankedShipIDs.length - 1; i++) {
+    ////    for (var j = 1; j < rankedShipIDs.length; j++) {
+    for (var i = rankedShipIDs.length - 1; i > 1; i--) {
+        for (var j = (rankedShipIDs.length - 1) - 1; j > 0; j--) {
+            // if ship j has the same # of kills as ship i
+            if (scoreObj[rankedShipIDs[j]].kills == scoreObj[rankedShipIDs[j]].kills) {
+                // Break tie on deaths
+                if (scoreObj[rankedShipIDs[j]].deaths < scoreObj[rankedShipIDs[i]].deaths) {
+                    // If ship j has fewer deaths than ship i, then swap j's rank with i (move j up in rank)
+                    var temp = rankedShipIDs[i];
+                    rankedShipIDs[i] = rankedShipIDs[j];
+                    rankedShipIDs[j] = temp;
+                }
+                else if (scoreObj[rankedShipIDs[j]].deaths == scoreObj[rankedShipIDs[i]].deaths) {
+                    // If ship j has the same # of deaths as i, break ties on score
+                    if (scoreObj[rankedShipIDs[j]].score > scoreObj[rankedShipIDs[i]].score) {
+                        // If ship j has a higher score than ship i (incorporates asteroids blasted), then swap j's rank with i (move j up in rank)
+                        var temp = rankedShipIDs[i];
+                        rankedShipIDs[i] = rankedShipIDs[j];
+                        rankedShipIDs[j] = temp;
+                    }
+                }
+            }
+        }
     }
 
     return rankedShipIDs;
