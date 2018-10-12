@@ -89,10 +89,9 @@ AsteroidManager.prototype.update = function(dt_s, config = null) {
         asteroid.update(dt_s);
 
         // Disable asteroid when it goes out of bounds
-        // NOTE: This should be taken care of in most cases by normal collision detection with the arena boundarise
+        // NOTE: This is normally taken care of in most cases by collision detection between the asteroid and arena boundaries
         // However, sometimes asteroids that are blasted near arena walls spawn new asteroids outside the walls
-        // Developer of this game (some schmuck who shall remain nameless) should handle that case and not allow asteroids to spawn out of bounds.
-        // But this is a quick and dirty solution
+        // That issue should be handled in the code for pawning new asteroids. But this is a quick and dirty catch-all solution
         if (!arena.containsPt(asteroid.components["physics"].currPos)) {
             // We have to pass in a dict obj, containing a list of asteroids, because of design choices made when writing disableAsteroids()
             this.disableAsteroids( {"disableList": [asteroid]} );
