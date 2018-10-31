@@ -46,6 +46,7 @@
 <script src="src/game_state_stats_overlay.js" type="text/javascript"></script>
 <script src="src/game_state_ship_select.js" type="text/javascript"></script>
 <script src="src/game_state_high_scores.js" type="text/javascript"></script>
+<script src="src/game_state_pause.js" type="text/javascript"></script>
 <script src="src/game_logic.js" type="text/javascript"></script>
 <script src="src/finite_state_machine.js" type="text/javascript"></script>
 <script src="src/physics_component.js" type="text/javascript"></script>
@@ -85,6 +86,7 @@ gameStateMgr.addState( "Settings", new GameStateSettings() );
 gameStateMgr.addState( "GameOver", new GameStateStatsOverlay() );       // NVM probably change the "StatsOverlay" part of this name to GameOver
 gameStateMgr.addState( "ShipSelect", new GameStateShipSelect() );
 gameStateMgr.addState( "HighScores", new GameStateHighScores() );
+gameStateMgr.addState( "Pause", new GameStatePause() );
 
 
 // Trap keyboard events and forward them to game logic
@@ -166,10 +168,8 @@ function mainloop(timestamp)
 
     var currState = gameStateMgr.currState();
 	while (game.timer.elapsed >= game.fixed_dt_s) {
-        // The current state is the last state (i.e. if the state manager's array is 2 items, then currState() is array[1])
-        for (var gameState of gameStateMgr.states) {
-            gameState.preRender(game.context, game.fixed_dt_s);
-        }
+        // Call the update (preRender) step of the current state (i.e. if the state manager's array is 2 items, then currState() is array[1])
+        currState.preRender(game.context, game.fixed_dt_s);
 
 		game.timer.elapsed -= game.fixed_dt_s;
 	}
