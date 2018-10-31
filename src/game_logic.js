@@ -383,12 +383,6 @@ GameLogic.prototype.handleKeyUpEvent = function(evt) {
     // NOTE: UI controls are hard-coded currently; but they could also be stored in a key mapping,
     // like this.keyCtrlMap, for easy customization
     else if (evt.code == "Escape") {
-        // TODO 2018-10-16 make a game paused state that is an overlay on top of the GamePlaying state -- we want to draw both (make the canvas size of the pause state not-as-big-as the rest of the canvas; also.. the paused state should continue playing music, etc.
-        if (this.bgm) {
-            this.bgm.stop();
-        }
-
-        // TODO Pop up confirmation before exiting. Probably easiest to make a separate game state (i.e., stack it on top of the playing state)
         cmdMsg = { "topic": "UICommand",
                    "targetObj": this,
                    "command": "pauseState",
@@ -904,11 +898,19 @@ GameLogic.prototype.doUICommand = function(msg) {
         case "changeState":
             // call the game state manager's changestate function
             // NOTE gameStateMgr is global, because I felt like making it that way. But we could also have the GameStateManager handle the message (instead of having this (active game state) handle the message, by calling a GameStateManager member function
-            // Note how we're using the transferObj here. It should be like this everywhere we call changeState or pauseState or whatever
-            // TODO 2018-10-19 instead of _assigning_ transfer object, update the existing transfer object with msg.params.transferObj, if it exists
-            var transferObj = msg.params.hasOwnProperty("transferObj") ? msg.params.transferObj : null;   // Use msg.params if it exists; else pass null
+
+            // Start by grabbing a reference to transfer object (if any) that was already part of the message
+            var transferObj = msg.params.hasOwnProperty("transferObj") ? msg.params.transferObj : {};   // Use msg.params if it exists; else create an empty one
+
+            // Next, update the transferObj with the background music object (bgmObj) from this state, to pass it into the state to which we transition
+            if (msg.params.sendBGM) {
+                var transferBGM = this.bgm;
+                this.bgm = null;    // destroy the bgm obj in this state; pass it into the next state (most likely, the next sate is the pause menu, or other in-game menu.)
+
+                transferObj["bgmObj"] = transferBGM;
+            }
+
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName], transferObj);
-            break;
 
         case "pauseState":
             gameStateMgr.pauseState(gameStateMgr.stateMap[msg.params.stateName], transferObj);

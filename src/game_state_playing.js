@@ -19,6 +19,7 @@ GameStatePlaying.prototype.initialize = function(transferObj = null) {
 GameStatePlaying.prototype.cleanup = function() {
     // implement cleanup (maybe empty out some arrays? Of course, JS is garbage-collected, so... maybe do nothing :-D)
     // NOTE: we're not removing/reassigning-to-null this.gameLogic because we need it in states that follow (e.g. GameOver)
+    this.gameLogic = null;  // assign null to gameLogic (whcih reduces the refcount of the existing gameLogic object to 0, enabling it for garbage collection)
 };
 
 // Do things before rendering the scene (e.g.:

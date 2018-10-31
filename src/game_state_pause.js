@@ -97,7 +97,7 @@ GameStatePause.prototype.createDisplayMessage = function(configObj = null) {
     var characterName = "";
 
     this.uiItems.push( new uiItemText("Resume Game", "32px", "MenuFont", "white", 0.5, 0.72, "center", "middle", {"command": "resumeState", "params": null}) );  // Currently, stateName is the name of the state obj (var) in the global scope
-    this.uiItems.push( new uiItemText("Return to Main Menu", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) ); // TODO make sure that we properly clean up the playing state properly if we exit straight to the main menu from here. Possibly pass a parameter to somehow instruct Playing to clean itself up
+    this.uiItems.push( new uiItemText("Return to Main Menu", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "exitGame", "params": null}) ); // TODO make sure that we properly clean up the playing state properly if we exit straight to the main menu from here. Possibly pass a parameter to somehow instruct Playing to clean itself up. Or, make the command here call a function that exits the game (cleans up the gameLogic object and the Playing State
 };
 
 GameStatePause.prototype.render = function(canvasContext, dt_s) {
@@ -229,13 +229,33 @@ GameStatePause.prototype.doUICommand = function(msg) {
     //console.log("In doUICommand(), with msg = ", msg);
 
     switch (msg.command) {
+        // TODO probably remove changeState
         case "changeState":
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName]);
             break;
         case "resumeState":
             gameStateMgr.resumeState();
             break;
+        case "exitGame":
+            this.exitGame()
+            break;
     }
 };
 
 
+// Exit the game
+// Call cleanup() on GameStatePlaying, and also clean up the gameLogic object
+GameStatePause.prototype.exitGame = function() {
+    // Reach straight into the game state manager to get the playing game state (NVM: possibly make a function, getState())
+    gameStateMgr.stateMap["Playing"].cleanup()
+
+    // "Dequeue" a state off the front of the state array/stack/queue thing (do this because the
+    // Paused state is at the "top" of the stack (which is implemented with an array); however,
+    // the Playing state is also on the stack. If we don't remove the Playing state, it will still
+    // be on the stack when we return to the MainMenu
+    gameStateMgr.states.shift(1);
+
+    // Call gameStateMgr.changeState directly from here (we could also enqueue a changeState meessage at this point, and let the message processor handle it in its next message queue iteration, but.. meh
+    // This calls the current state's cleanup()
+    gameStateMgr.changeState( gameStateMgr.stateMap["MainMenu"] );
+};
