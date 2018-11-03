@@ -58,33 +58,66 @@ GameStateStatsOverlay.prototype.checkForHighScore = function(gameInfo) {
     // Load high scores. Note that gameInfo is an object that contains both the game stats and the game settings
     var highScores = JSON.parse(localStorage.getItem('highScores'));
 
-    var gameMode = gameInfo.scoresAndStats.gameMode;    // e.g., "Time Attack"  // TODO maybe change gameMode to match camel-casing, for easy high score table lookups
-    var gameModeSetting = gameInfo.scoresAndStats.settings.gameModeSettings.timeAttack.timeLimit;    // e.g., "1:00" - time length of time attack. TODO don't hardcode gameModeSetting; select it based on gameMode
+    var gameMode = gameInfo.scoresAndStats.gameMode;
+    // TODO 2018-11-03 - don't hardcode the gameMode in "gameModeSetting" (and perhaps we should rename to highScorePageSelector); in deathmatch, it's killCount, not timeLimit
     var playerCallSign = gameInfo.scoresAndStats.settings.callSign;
     var playerStats = gameInfo.scoresAndStats.stats.ship0;
 
+    var gameModeSetting;    // e.g., in Death Match, this is the kill count (e.g. "25"); in Time Attack, this would be the time limit, e.g. "1:00"
+    var relevantScoreList;  // A reference to a (mutable) list within the highScores object
+    var highScoreItem;
 
-    var relevantScoreList = highScores.timeAttack[gameModeSetting]; // A reference to a (mutable) list within the highScores object
-    for (var i = 0; i < relevantScoreList.length; i++) {
-        var highScoreItem = relevantScoreList[i];
+    switch (gameInfo.scoresAndStats.settings.gameMode) {
+        case "Death Match":
+            gameModeSetting = gameInfo.scoresAndStats.settings.gameModeSettings.deathMatch.shipKills;
+            relevantScoreList = highScores.deathMatch[gameModeSetting];
+            var truncated_elapsed  = Math.floor(gameInfo.scoresAndStats.elapsed * 10) / 10;   // truncate to the 1 decimal place (the 10ths place)
 
-        // Note -- this logic is for the time attack mode. TODO implement high scores for Death Match mode? (maybe fastest time to achieve the kill target?)
-        if (playerStats.kills > highScoreItem.kills || 
-            playerStats.kills == highScoreItem.kills && playerStats.deaths < highScoreItem.deaths ||
-            playerStats.kills == highScoreItem.kills && playerStats.deaths == highScoreItem.deaths && playerStats.score > highScoreItem.score) {
+            for (var i = 0; i < relevantScoreList.length; i++) {
+                highScoreItem = relevantScoreList[i];
 
-            // Insert new high score into place
-            relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "kills": playerStats.kills, "deaths": playerStats.deaths, "ast_s": playerStats.asteroids_blasted_s, "ast_m": playerStats.asteroids_blasted_m, "ast_l": playerStats.asteroids_blasted_l, "score": playerStats.score });
-            // pop the very last score off the list
-            relevantScoreList.pop();
+                // If the human player is the one who reached the kill count AND achieved a record time, then add their time to the high scores
+                if (playerStats.kills == gameModeSetting || 
+                    truncated_elapsed < highScoreItem.Time ) {
 
-            // Write new high scores out
-            localStorage.setItem('highScores', JSON.stringify(highScores));
+                    // Insert new high score into place
+                    relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "Time": truncated_elapsed });
+                    // pop the very last score off the list
+                    relevantScoreList.pop();
 
-            // TODO indicate that the player achieved a new high score
-            return true;
-        }
+                    // Write new high scores out
+                    localStorage.setItem('highScores', JSON.stringify(highScores));
+                    // TODO maybe set a "new high score" flag var, and break out of the loop? I don't like returning/exiting the function without officially terminating the loop
+                    return true;
+                }
+            }
+        break;
+
+        case "Time Attack":
+            gameModeSetting = gameInfo.scoresAndStats.settings.gameModeSettings.timeAttack.timeLimit;
+            relevantScoreList = highScores.timeAttack[gameModeSetting];
+
+            for (var i = 0; i < relevantScoreList.length; i++) {
+                highScoreItem = relevantScoreList[i];
+
+                if (playerStats.kills > highScoreItem.kills || 
+                    playerStats.kills == highScoreItem.kills && playerStats.deaths < highScoreItem.deaths ||
+                    playerStats.kills == highScoreItem.kills && playerStats.deaths == highScoreItem.deaths && playerStats.score > highScoreItem.score) {
+
+                    // Insert new high score into place
+                    relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "kills": playerStats.kills, "deaths": playerStats.deaths, "ast_s": playerStats.asteroids_blasted_s, "ast_m": playerStats.asteroids_blasted_m, "ast_l": playerStats.asteroids_blasted_l, "score": playerStats.score });
+                    // pop the very last score off the list
+                    relevantScoreList.pop();
+
+                    // Write new high scores out
+                    localStorage.setItem('highScores', JSON.stringify(highScores));
+                    // TODO maybe set a "new high score" flag var, and break out of the loop? I don't like returning/exiting the function without officially terminating the loop
+                    return true;
+                }
+            }
+        break;
     }
+
     return false;
 };
 

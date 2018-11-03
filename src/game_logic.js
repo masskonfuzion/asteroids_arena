@@ -21,6 +21,7 @@ function GameLogic() {
     // NOTE: this.settings (i.e. gameLogic.settings) is DIFFERENT than the settings object stored in localStorage. localStorage has user-configurable settings. gameLogic has settings for the game itself (shouldn't be modified by the player/user
     this.settings = { "hidden": {}, "visible": {} };    // hidden settings are, e.g. point values for accomplishing certain goals; visible settings are, e.g. game config options
     this.gameStats = {};    // store things, e.g. player's score, in-game achievements, state variables, etc.
+    this.time_elapsed_s = 0.0;      // game time elapsed, in seconds
 
     this.addComponent("xplodPE", new ParticleEmitter());
 
@@ -932,11 +933,13 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
                     var characterName = this.characters[shipObjectID].callSign;
                     var winner = { "characterName": characterName
                                  }
+                    // Note: I don't like hard-coding the gameMode property; perhaps we can pull from game.settings.visible.gameMode (which is stored as "Death Match") and convert to camelCase.. But hard-coding is quicker :-D
                     var gameOverInfo = { "winnerInfo": winner,
                                          "settings": game.settings["visible"],
                                          "stats": this.gameStats,
                                          "shipDict" : this.shipDict,
-                                         "characters": this.characters
+                                         "characters": this.characters,
+                                         "elapsed": this.time_elapsed_s
                                        };
 
                     // Transfer this GameLogicObject's bgm object into the GameOver state, so the music can keep playing
@@ -981,11 +984,12 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
 
                 // TODO instead of passing in this.gameStats raw, make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
                 // e.g. Most kills, best score, most deaths
+                    // Note: I don't like hard-coding the gameMode property; perhaps we can pull from game.settings.visible.gameMode (which is stored as "Death Match") and convert to camelCase.. But hard-coding is quicker :-D
                 var gameOverInfo = { "winnerInfo": winner,
                                      "settings": game.settings["visible"],
                                      "stats": this.gameStats,
                                      "shipDict" : this.shipDict,
-                                     "characters": this.characters
+                                     "characters": this.characters,
                                    };
 
                 var cmdMsg = { "topic": "UICommand",
@@ -999,4 +1003,5 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
             }
         break;
     }
+    this.time_elapsed_s += dt_s;
 }
