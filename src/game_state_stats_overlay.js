@@ -77,11 +77,11 @@ GameStateStatsOverlay.prototype.checkForHighScore = function(gameInfo) {
                 highScoreItem = relevantScoreList[i];
 
                 // If the human player is the one who reached the kill count AND achieved a record time, then add their time to the high scores
-                if (playerStats.kills == gameModeSetting || 
-                    truncated_elapsed < highScoreItem.Time ) {
+                if (playerStats.kills == gameModeSetting &&
+                    truncated_elapsed <= highScoreItem.time ) {
 
                     // Insert new high score into place
-                    relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "Time": truncated_elapsed });
+                    relevantScoreList.splice(i, 0, { "callSign": playerCallSign, "time": truncated_elapsed });
                     // pop the very last score off the list
                     relevantScoreList.pop();
 

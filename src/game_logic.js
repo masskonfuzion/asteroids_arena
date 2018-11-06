@@ -406,8 +406,9 @@ GameLogic.prototype.update = function(dt_s, config = null) {
     }
 
     // Do game-over check
-    this.checkForGameOver(dt_s);
 
+    this.checkForGameOver(dt_s);
+    this.time_elapsed_s += dt_s;
 };
 
 GameLogic.prototype.sendCmdToGameObj = function(msg) {
@@ -912,6 +913,7 @@ GameLogic.prototype.doUICommand = function(msg) {
             }
 
             gameStateMgr.changeState(gameStateMgr.stateMap[msg.params.stateName], transferObj);
+            break;
 
         case "pauseState":
             gameStateMgr.pauseState(gameStateMgr.stateMap[msg.params.stateName], transferObj);
@@ -931,6 +933,7 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
 
                     var shipObjectID = this.gameObjs[shipID].objectID;
                     var characterName = this.characters[shipObjectID].callSign;
+                    // TODO add the winning time to the display message (time_elapsed_s)
                     var winner = { "characterName": characterName
                                  }
                     // Note: I don't like hard-coding the gameMode property; perhaps we can pull from game.settings.visible.gameMode (which is stored as "Death Match") and convert to camelCase.. But hard-coding is quicker :-D
@@ -984,7 +987,7 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
 
                 // TODO instead of passing in this.gameStats raw, make the transfer object be a collection of messages and their corresponding positions (essentially a control template for the display of the Game Over message -- i.e. score leaders in descending order)
                 // e.g. Most kills, best score, most deaths
-                    // Note: I don't like hard-coding the gameMode property; perhaps we can pull from game.settings.visible.gameMode (which is stored as "Death Match") and convert to camelCase.. But hard-coding is quicker :-D
+                // Note: I don't like hard-coding the gameMode property; perhaps we can pull from game.settings.visible.gameMode (which is stored as "Death Match") and convert to camelCase.. But hard-coding is quicker :-D
                 var gameOverInfo = { "winnerInfo": winner,
                                      "settings": game.settings["visible"],
                                      "stats": this.gameStats,
@@ -1003,5 +1006,4 @@ GameLogic.prototype.checkForGameOver = function(dt_s) {
             }
         break;
     }
-    this.time_elapsed_s += dt_s;
 }

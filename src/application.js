@@ -101,7 +101,7 @@ GameApplication.prototype.createNewEmptyDeathMatchHighScoreObj = function() {
 
     // Initialize top 5 scores at each level
     for (var i = 0; i < 5; i++) {
-        retObj.push( { "callSign": "Incognito", "Time": 9999 } );  // NOTE: time is stored in seconds, but we'll output times in MM:SS.s (let's try to do 10ths of seconds, to make the scores more interesting)
+        retObj.push( { "callSign": "Incognito", "time": 9999 } );  // NOTE: time is stored in seconds, but we'll output times in MM:SS.s (let's try to do 10ths of seconds, to make the scores more interesting)
     }
 
     return retObj;
