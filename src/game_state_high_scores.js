@@ -369,6 +369,7 @@ GameStateHighScores.prototype.refreshScorePageDeathMatch = function() {
     }
 };
 
+// Return a time string (e.g. MM:SS.D), given an input number (float) of seconds
 GameStateHighScores.prototype.getTimeStringFromFloatValue = function(val) {
     var minutes = Math.floor(val / 60);
     var seconds = val % 60;

@@ -7,7 +7,7 @@ function GameStateStatsOverlay() {
     this.highlightedItemIndex = 0;
     this.highlightedItem = null;    // Highlighted item, not necessarily selected/active
 
-    this.activeItemIndex = 0;
+    this.activeItemIndex = -1;
     this.activeItem = null;
 
     this.bgm = null;
@@ -29,8 +29,8 @@ GameStateStatsOverlay.prototype.initialize = function(transferObj = null) {
     // create the end-of-game message display, based on the passed-in object
     this.createDisplayMessage(transferObj.scoresAndStats);
 
-    this.activeItemIndex = 0;
-    this.activeItem = this.uiItems[this.activeItemIndex];
+    this.activeItemIndex = -1;
+    this.activeItem = null;         // Active/selected item
 
     this.bgm = transferObj.bgmObj;
 
@@ -128,7 +128,9 @@ GameStateStatsOverlay.prototype.preRender = function(canvasContext, dt_s) {
 GameStateStatsOverlay.prototype.createDisplayMessage = function(infoObj) {
     switch(infoObj.settings.gameMode) {
         case "Death Match":
-        var winMsg = infoObj.winnerInfo.characterName + " wins!";
+        var truncated_elapsed  = Math.floor(infoObj.elapsed * 10) / 10;   // truncate to the 1 decimal place (the 10ths place) // (TODO put truncation into a function? It's called in createDisplayMessage and checkForHighScore
+
+        var winMsg = infoObj.winnerInfo.characterName + " wins (reached kill target in " + this.getTimeStringFromFloatValue(truncated_elapsed) + ")!!";
         this.uiItems.push( new uiItemText(winMsg, "36px", "MenuFont", "white", 0.5, 0.35, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"} }) );
 
         break;
@@ -375,3 +377,16 @@ GameStateStatsOverlay.prototype.sortScores = function(scoreObj) {
 
     return rankedShipIDs;
 };
+
+
+// Return a time string (e.g. MM:SS.D), given an input number (float) of seconds
+GameStateStatsOverlay.prototype.getTimeStringFromFloatValue = function(val) {
+    var minutes = Math.floor(val / 60);
+    var seconds = val % 60;
+
+    // string values of min/sec
+    var sMin = minutes.toString();
+    var sSec = seconds < 10 ? seconds.toString().padStart(2, "0") : seconds.toString();    // Use padStart() to 0-pad seconds
+    return sMin + ":" + sSec
+};
+
