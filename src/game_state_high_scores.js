@@ -332,21 +332,21 @@ GameStateHighScores.prototype.refreshScorePageTimeAttack = function() {
 
         var callSign = scoreItem.callSign;
         this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.02, yNDC + (i * ySpacing), "left", "middle", null ) );
-        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kills_icon"].imgObj, 0.2, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(scoreItem.kills.toString(), "20px", "MenuFont", "white", 0.26, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["deaths_icon"].imgObj, 0.32, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(scoreItem.deaths.toString(), "20px", "MenuFont", "white", 0.38, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kills_icon"].imgObj, 0.27, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.kills.toString(), "20px", "MenuFont", "white", 0.28, yNDC + (i * ySpacing), "left", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["deaths_icon"].imgObj, 0.38, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.deaths.toString(), "20px", "MenuFont", "white", 0.40, yNDC + (i * ySpacing), "left", "middle", null ) );
 
-        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["asteroids_icon"].imgObj, 0.48, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText("S:", "20px", "MenuFont", "white", 0.54, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(scoreItem.ast_s.toString(), "20px", "MenuFont", "white", 0.58, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText("M:", "20px", "MenuFont", "white", 0.62, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(scoreItem.ast_m.toString(), "20px", "MenuFont", "white", 0.66, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText("L:", "20px", "MenuFont", "white", 0.70, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(scoreItem.ast_l.toString(), "20px", "MenuFont", "white", 0.74, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["asteroids_icon"].imgObj, 0.50, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText("S:", "20px", "MenuFont", "white", 0.54, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.ast_s.toString(), "20px", "MenuFont", "white", 0.55, yNDC + (i * ySpacing), "left", "middle", null ) );
+        this.uiItems.push( new uiItemText("M:", "20px", "MenuFont", "white", 0.62, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.ast_m.toString(), "20px", "MenuFont", "white", 0.63, yNDC + (i * ySpacing), "left", "middle", null ) );
+        this.uiItems.push( new uiItemText("L:", "20px", "MenuFont", "white", 0.70, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.ast_l.toString(), "20px", "MenuFont", "white", 0.71, yNDC + (i * ySpacing), "left", "middle", null ) );
 
-        this.uiItems.push( new uiItemText("Score:", "20px", "MenuFont", "white", 0.80, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(scoreItem.score.toString(), "20px", "MenuFont", "white", 0.88, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText("Score:", "20px", "MenuFont", "white", 0.84, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(scoreItem.score.toString(), "20px", "MenuFont", "white", 0.86, yNDC + (i * ySpacing), "left", "middle", null ) );
     }
 };
 
