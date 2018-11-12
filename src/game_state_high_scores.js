@@ -367,9 +367,9 @@ GameStateHighScores.prototype.refreshScorePageDeathMatch = function() {
         var scoreItem = this.highScores["deathMatch"][killCount][i];
 
         var callSign = scoreItem.callSign;
-        this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.1, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["clock_icon"].imgObj, 0.2, yNDC + (i * ySpacing), "center", "middle", null ) );
-        this.uiItems.push( new uiItemText(this.getTimeStringFromFloatValue(scoreItem.time), "20px", "MenuFont", "white", 0.26, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.02, yNDC + (i * ySpacing), "left", "middle", null ) );
+        this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["clock_icon"].imgObj, 0.27, yNDC + (i * ySpacing), "right", "middle", null ) );
+        this.uiItems.push( new uiItemText(this.getTimeStringFromFloatValue(scoreItem.time), "20px", "MenuFont", "white", 0.28, yNDC + (i * ySpacing), "left", "middle", null ) );
     }
 };
 
