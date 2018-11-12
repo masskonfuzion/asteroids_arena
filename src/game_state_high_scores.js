@@ -318,8 +318,10 @@ GameStateHighScores.prototype.sendUserInputToActiveItem = function(params) {
 // (Assumes that this.uiItems is an empty list
 GameStateHighScores.prototype.refreshScorePageTimeAttack = function() {
     var timeLimit = this.timeAttackPageLabels[this.page];
-    // Display the time limit (TODO position a little bit lower on the screen, to make room for the game mode)
-    this.uiItems.push( new uiItemText(timeLimit, "32px", "MenuFont", "white", 0.05, 0.05, "left", "middle") );
+    this.uiItems.push( new uiItemText("Time Attack", "36px", "MenuFont", "lightgray", 0.052, 0.052, "left", "middle") );
+    this.uiItems.push( new uiItemText("Time Attack", "36px", "MenuFont", "yellow", 0.05, 0.05, "left", "middle") );
+    this.uiItems.push( new uiItemText("Time Limit", "32px", "MenuFont", "white", 0.02, 0.15, "left", "middle") );
+    this.uiItems.push( new uiItemText(timeLimit, "32px", "MenuFont", "white", 0.22, 0.15, "left", "middle") );
 
     var yNDC = 0.25;
     var ySpacing = 0.1;
@@ -329,7 +331,7 @@ GameStateHighScores.prototype.refreshScorePageTimeAttack = function() {
         var scoreItem = this.highScores["timeAttack"][timeLimit][i];
 
         var callSign = scoreItem.callSign;
-        this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.1, yNDC + (i * ySpacing), "center", "middle", null ) );
+        this.uiItems.push( new uiItemText(callSign, "20px", "MenuFont", "white", 0.02, yNDC + (i * ySpacing), "left", "middle", null ) );
         this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kills_icon"].imgObj, 0.2, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemText(scoreItem.kills.toString(), "20px", "MenuFont", "white", 0.26, yNDC + (i * ySpacing), "center", "middle", null ) );
         this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["deaths_icon"].imgObj, 0.32, yNDC + (i * ySpacing), "center", "middle", null ) );
@@ -353,7 +355,9 @@ GameStateHighScores.prototype.refreshScorePageTimeAttack = function() {
 GameStateHighScores.prototype.refreshScorePageDeathMatch = function() {
     var killCount = this.deathMatchPageLabels[this.page];
     // Display kill count (TODO position a little bit lower on the screen, to make room for the game mode)
-    this.uiItems.push( new uiItemText(killCount, "32px", "MenuFont", "white", 0.05, 0.05, "left", "middle") );
+    this.uiItems.push( new uiItemText("Death Match", "36px", "MenuFont", "lightgray", 0.052, 0.052, "left", "middle") );
+    this.uiItems.push( new uiItemText("Death Match", "36px", "MenuFont", "yellow", 0.05, 0.05, "left", "middle") );
+    this.uiItems.push( new uiItemText(killCount, "32px", "MenuFont", "white", 0.05, 0.15, "left", "middle") );
 
     var yNDC = 0.25;
     var ySpacing = 0.1;
