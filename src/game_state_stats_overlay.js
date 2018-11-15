@@ -382,7 +382,7 @@ GameStateStatsOverlay.prototype.sortScores = function(scoreObj) {
 // Return a time string (e.g. MM:SS.D), given an input number (float) of seconds
 GameStateStatsOverlay.prototype.getTimeStringFromFloatValue = function(val) {
     var minutes = Math.floor(val / 60);
-    var seconds = val % 60;
+    var seconds = Math.floor(val % 60 * 10) / 10;   // This pesky % operation introduces floating pt error
 
     // string values of min/sec
     var sMin = minutes.toString();
