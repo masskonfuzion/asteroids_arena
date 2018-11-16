@@ -41,7 +41,7 @@ GameLogic.prototype.initialize = function(configObj = null) {
     this.keyCtrlMap["thrust"] = { "code": "KeyW", "state": false };
     this.keyCtrlMap["turnLeft"] = { "code": "KeyA", "state": false };
     this.keyCtrlMap["turnRight"] = { "code": "KeyD", "state": false };
-    this.keyCtrlMap["fireA"] = { "code": "ShiftLeft", "state": false };
+    this.keyCtrlMap["fireA"] = { "code": "Space", "state": false };
 
 
     this.messageQueue = new MessageQueue();
