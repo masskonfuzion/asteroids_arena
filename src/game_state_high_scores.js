@@ -11,7 +11,8 @@ function GameStateHighScores() {
     this.activeItemIndex = -1;      // -1 means "no active selection"; but probably rely on the value of activeItem itself to determine whether or not the user is interacting with an item
     this.activeItem = null;         // Active/selected item
 
-    this.page = 0;  // "Page" number, for looking at different "pages" of high scores data
+    this.currPage = 0;  // "Page" number, for looking at different "pages" of high scores data
+    this.numPages = 0;
     this.highScores = {};
 
     this.scoreCategories = ["timeAttack", "deathMatch"];
@@ -62,9 +63,11 @@ GameStateHighScores.prototype.refreshPage = function() {
     switch(this.scoreCategorySelector) {
         case 0: // timeAttack
             this.refreshScorePageTimeAttack();
+            this.numPages = this.timeAttackPageLabels.length;
         break;
         case 1: // deathMatch
             this.refreshScorePageDeathMatch();
+            this.numPages = this.deathMatchPageLabels.length;
         break;
     }
 
@@ -170,7 +173,7 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
                 }
                 // Otherwise, decrease the "page number" of displayed high score data
                 else {
-                    this.page = (this.page + this.timeAttackPageLabels.length - 1) % this.timeAttackPageLabels.length;
+                    this.currPage = (this.currPage + this.numPages - 1) % this.numPages;
                     this.refreshPage();
                 }
                 break;
@@ -189,7 +192,7 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
                 }
                 // Otherwise, increase the "page number" of displayed high score data
                 else {
-                    this.page = (this.page + 1) % this.timeAttackPageLabels.length;
+                    this.currPage = (this.currPage + 1) % this.numPages;
                     this.refreshPage();
                 }
                 break;
@@ -197,14 +200,14 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
                 if (!this.activeItem) {
                     // Change the score category selector, as long as there are no active/selected items (we don't want to change category while an item is active)
                     this.scoreCategorySelector = (this.scoreCategorySelector + 1) % this.scoreCategories.length;
-                    this.page = 0;
+                    this.currPage = 0;
                     this.refreshPage();
                 }
                 break;
             case "PageUp":
                 if (!this.activeItem) {
                     this.scoreCategorySelector = (this.scoreCategorySelector + this.scoreCategories.length - 1) % this.scoreCategories.length;
-                    this.page = 0;
+                    this.currPage = 0;
                     this.refreshPage();
                 }
                 break;
@@ -317,7 +320,7 @@ GameStateHighScores.prototype.sendUserInputToActiveItem = function(params) {
 // Generate a list of UI items for a page of high scores, for time attack mode
 // (Assumes that this.uiItems is an empty list
 GameStateHighScores.prototype.refreshScorePageTimeAttack = function() {
-    var timeLimit = this.timeAttackPageLabels[this.page];
+    var timeLimit = this.timeAttackPageLabels[this.currPage];
     this.uiItems.push( new uiItemText("Time Attack", "36px", "MenuFont", "lightgray", 0.052, 0.052, "left", "middle") );
     this.uiItems.push( new uiItemText("Time Attack", "36px", "MenuFont", "yellow", 0.05, 0.05, "left", "middle") );
     this.uiItems.push( new uiItemText("Time Limit", "32px", "MenuFont", "white", 0.02, 0.15, "left", "middle") );
@@ -353,7 +356,7 @@ GameStateHighScores.prototype.refreshScorePageTimeAttack = function() {
 // Generate a list of UI items for a page of high scores, for death match mode
 // (Assumes that this.uiItems is an empty list
 GameStateHighScores.prototype.refreshScorePageDeathMatch = function() {
-    var killCount = this.deathMatchPageLabels[this.page];
+    var killCount = this.deathMatchPageLabels[this.currPage];
     // Display kill count (TODO position a little bit lower on the screen, to make room for the game mode)
     this.uiItems.push( new uiItemText("Death Match", "36px", "MenuFont", "lightgray", 0.052, 0.052, "left", "middle") );
     this.uiItems.push( new uiItemText("Death Match", "36px", "MenuFont", "yellow", 0.05, 0.05, "left", "middle") );
