@@ -136,31 +136,8 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
     if (evt.type == "keydown") {
         // haven't decided what (if anything) to do on keydown
     } else if (evt.type == "keyup") {
+        // TODO - correct KeyDown to KeyUp, everywhere
         switch(evt.code) {
-            case "ArrowUp":
-                // check if we have an active/selected UI item (this is janky. Again, there should be a class/object to handle this)
-                // The up/down arrows should only move the highlight, which should work only if the menu/form does _not_ have an active/selected UI item
-                if (this.activeItem == null) {
-                    // find previous selectable item (probably should be a function; but also.. a Menu should be an object.. and it's not. So....)
-                    // Because modulo math gets wonky with negative numbers, we'll add the length of the list to the current index, and then subtract an index; then do the mod
-                    this.highlightedItemIndex = ((this.highlightedItemIndex + this.uiItems.length) - 1) % this.uiItems.length;
-                    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
-                        this.highlightedItemIndex = ((this.highlightedItemIndex + this.uiItems.length) - 1) % this.uiItems.length;
-                    }
-                    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
-                }
-                break;
-            case "ArrowDown":
-                // check if we have an active/selected UI item (this is janky. Again, there should be a class/object to handle this)
-                if (this.activeItem == null) {
-                    this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
-                    while (this.uiItems[this.highlightedItemIndex].isSelectable != true) {
-                        this.highlightedItemIndex = (this.highlightedItemIndex + 1) % this.uiItems.length;
-                    }
-                    this.highlightedItem = this.uiItems[this.highlightedItemIndex];
-                }
-                break;
-            // TODO - correct KeyDown to KeyUp, everywhere
             case "ArrowLeft":
                 // If there is an active/selected UI item, send input to it
                 if (this.activeItem) {
@@ -196,6 +173,7 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
                     this.refreshPage();
                 }
                 break;
+            case "ArrowDown":
             case "PageDown":
                 if (!this.activeItem) {
                     // Change the score category selector, as long as there are no active/selected items (we don't want to change category while an item is active)
@@ -204,6 +182,7 @@ GameStateHighScores.prototype.handleKeyboardInput = function(evt) {
                     this.refreshPage();
                 }
                 break;
+            case "ArrowUp":
             case "PageUp":
                 if (!this.activeItem) {
                     this.scoreCategorySelector = (this.scoreCategorySelector + this.scoreCategories.length - 1) % this.scoreCategories.length;
