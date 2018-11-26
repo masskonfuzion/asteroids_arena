@@ -71,6 +71,15 @@ GameStateHighScores.prototype.refreshPage = function() {
         break;
     }
 
+
+    // Static UI items
+    this.uiItems.push( new uiItemText("Mode", "16px", "MenuFont", "white", 0.85, 0.05, "right", "middle", null ) );
+    this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kb_up_icon"].imgObj, 0.9, 0.05, "center", "middle", null ) );
+    this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kb_down_icon"].imgObj, 0.95, 0.05, "center", "middle", null ) );
+    this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kb_left_icon"].imgObj, 0.07, 0.85, "center", "middle", null ) );
+    this.uiItems.push( new uiItemText("Prev", "16px", "MenuFont", "white", 0.07, 0.80, "center", "middle", null ) );
+    this.uiItems.push( new uiItemImage(game.imgMgr.imageMap["kb_right_icon"].imgObj, 0.93, 0.85, "center", "middle", null ) );
+    this.uiItems.push( new uiItemText("Next", "16px", "MenuFont", "white", 0.93, 0.80, "center", "middle", null ) );
     this.uiItems.push( new uiItemText("Return", "36px", "MenuFont", "white", 0.5, 0.85, "center", "middle", {"command": "changeState", "params": {"stateName": "MainMenu"}}) );  // Currently, stateName is the name of the state obj (var) in the global scope
 
     // highlight the first highlightable item (this code duplicates the ArrorDown key handler. I'm being really lazy/sloppy with the code here)
